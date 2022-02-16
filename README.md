@@ -1,3 +1,4 @@
+![LAMBDATEST Logo](http://labs.lambdatest.com/images/fills-copy.svg)
 
 ## Test At Scale
 
