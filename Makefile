@@ -1,8 +1,8 @@
 NUCLEUS_DOCKER_FILE ?= ./build/nucleus/Dockerfile
-NUCLEUS_IMAGE_NAME ?= nucleus
+NUCLEUS_IMAGE_NAME ?= lambdatest/nucleus:latest
 
 SYNAPSE_DOCKER_FILE ?= ./build/synapse/Dockerfile
-SYNAPSE_IMAGE_NAME ?= synapse
+SYNAPSE_IMAGE_NAME ?= lambdatest/synapse:latest
 
 usage:						## Show this help
 	@fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | sed -e 's/:.*##\s*/##/g' | awk -F'##' '{ printf "%-25s -> %s\n", $$1, $$2 }'
