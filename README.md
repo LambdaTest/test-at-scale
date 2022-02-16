@@ -58,11 +58,14 @@ curl https://raw.githubusercontent.com/LambdaTest/test-at-scale/master/.sample.s
 ### Step 3 - Installation
 
 <details>
-<summary>Docker</summary>
+<summary>Local Machine</summary>
 
 ### Prerequisites
 - [Docker](https://docs.docker.com/get-docker/)
 - [Docker-Compose](https://docs.docker.com/compose/install/) (Recommended)
+- **Minimum System Requirement**
+  - CPU: 2 cores
+  - RAM: 4 GB
 
 ### Docker Compose
 - Create a configuration file using [these steps](https://www.lambdatest.com/support/docs/tas-self-hosted-installation#step-2--creating-a-configuration-file).
