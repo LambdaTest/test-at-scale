@@ -57,8 +57,8 @@ curl https://raw.githubusercontent.com/LambdaTest/test-at-scale/master/.sample.s
 
 ### Step 3 - Installation
 
-<details>
-<summary>Local Machine</summary>
+<details id="docker">
+<summary>Docker</summary>
 
 ### Prerequisites
 - [Docker](https://docs.docker.com/get-docker/)
@@ -95,6 +95,16 @@ docker run —name synapse —-restart always \
     lambdatest/synapse:latest
 ```
 > **WARNING:** We strongly recommend to use docker-compose while Test at Scale on Self hosted environment.
+
+</details>
+<br>
+
+#### **Supported Platforms:**
+
+<details>
+<summary>Local Machine</summary>
+
+Setup using [docker](#docker).
 
 </details>
 
