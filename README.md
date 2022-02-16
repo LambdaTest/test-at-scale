@@ -68,7 +68,7 @@ curl https://raw.githubusercontent.com/LambdaTest/test-at-scale/master/.sample.s
   - RAM: 4 GB
 
 ### Docker Compose
-- Create a configuration file using [these steps](https://www.lambdatest.com/support/docs/tas-self-hosted-installation#step-2--creating-a-configuration-file).
+- Create a configuration file using [these steps](https://www.lambdatest.com/support/docs/tas-self-hosted-installation/#step-2--creating-a-configuration-file).
 - Download and run the docker compose file using the following command.
 ```bash
 curl -L https://raw.githubusercontent.com/LambdaTest/test-at-scale/master/docker-compose.yml -o docker-compose.yml
