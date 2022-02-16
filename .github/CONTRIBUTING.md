@@ -50,7 +50,7 @@ You find all issues suitable for first-time contributors [here.](https://github.
 
 ### Repo overview
 
-[LambdtaTest/test-at-scale](https://github.com/LambdaTest/test-at-scale/) consists of 2 components:
+[LambdaTest/test-at-scale](https://github.com/LambdaTest/test-at-scale/) consists of 2 components:
 
 - **Synapse:** is the agent responsible for fetching jobs from Test at Scale servers to execute them on the self hosted environment (your laptop or your server farm). Synapse coordinates with nucleus (test runner) and TAS cloud to execute tests and push out test details such as test name, test suite, execution logs, execution metrics.
 - **Test Runners:** component is the driving agent of the container executed to run the actions received by synapse. All actions will be executed on Linux containers and itself manages the lifecycle of the container. It provides functionalities such as logging, metric collections, etc. It primarily conducts two primary stages viz. test discovery and test execution. Both of these stage are accomplished by using plugins for language and framework to make sure nucleus is not tightly coupled with specific languages.
