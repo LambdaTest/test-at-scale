@@ -30,10 +30,10 @@
 In order to create an account, visit [TAS Login Page](https://tas.lambdatest.com/login/). (Or [TAS Home Page](https://tas.lambdatest.com/))
 - Login using a suitable git provider and select your organization you want to continue with.
 - Tell us your specialization, team size. 
-  ![N|Solid](https://staging.lambdatest.com/support/assets/images/signup_gi-c46290845329881e7893705add21d7cd.gif)
+  ![N|Solid](https://www.lambdatest.com/support/assets/images/signup_gi-c46290845329881e7893705add21d7cd.gif)
 - Select **TAS Self Hosted** and click on Proceed.
 - You will find your **Lambdatest Secret Key** on this page which will be required in the next steps.
-  ![N|Solid](https://staging.lambdatest.com/support/assets/images/synapse-b3e8b6b475967d82bbee0d56339daf5a.gif)
+  ![N|Solid](https://www.lambdatest.com/support/assets/images/synapse-b3e8b6b475967d82bbee0d56339daf5a.gif)
 
 ### Step 2 - Creating a configuration file for self hosted setup
 
@@ -79,7 +79,7 @@ docker-compose up -d
 To get up and running quickly, you can use the following instructions to setup Test at Scale on Self hosted environment without docker-compose.
 
 
-- Create a configuration file using [these steps](tas-self-hosted-installation#creating-a-configuration-file).
+- Create a configuration file using [these steps](https://www.lambdatest.com/support/docs/tas-self-hosted-installation#step-2--creating-a-configuration-file).
 - Execute the following command to run Test at Scale docker container
 
 ```bash
@@ -120,19 +120,19 @@ Setup on [GCP](https://www.lambdatest.com/support/docs/tas-self-hosted-installat
 ### Step 4 - Importing your repo
 - Click the Import button for the repository you want to integrate with TAS.
 - Once Imported Successfully, Click on Go to Project to proceed further.
-![N|Solid](https://staging.lambdatest.com/support/assets/images/import-postmerge-b6f7146b6b43d5f8876ec9bb73a478a1.gif)
+![N|Solid](https://www.lambdatest.com/support/assets/images/import-postmerge-b6f7146b6b43d5f8876ec9bb73a478a1.gif)
 
 ### Step 5 - Configuring TAS yml
 - In order to configure your imported repository follow the steps given on the yml configuration page. Know more about yml configuration parameters [here](https://www.lambdatest.com/support/docs/tas-configuring-tas-yml).
-![N|Solid](https://staging.lambdatest.com/support/assets/images/yml-download-375c25fabbe3fe533782b94adecd2f95.gif)
+![N|Solid](https://www.lambdatest.com/support/assets/images/yml-download-375c25fabbe3fe533782b94adecd2f95.gif)
 
 ## **Language & Framework Support** 
 Currently we support Mocha, Jest and Jasmine for testing Javascript codebases.
 
 ## **Tutorials**
-- [Setting up you first repo on TAS - Cloud](https://staging.lambdatest.com/support/docs/tas-getting-started-integrating-your-first-repo) (Sample repos : [Mocha](https://github.com/LambdaTest/mocha-demos), [Jest](https://github.com/LambdaTest/jest-demos), [Jasmine](https://github.com/LambdaTest/jasmine-node-js-example).)
-- [Setting up you first repo on TAS - Self Hosted](https://staging.lambdatest.com/support/docs/tas-self-hosted-installation) (Sample repos : [Mocha](https://github.com/LambdaTest/mocha-demos), [Jest](https://github.com/LambdaTest/jest-demos), [Jasmine](https://github.com/LambdaTest/jasmine-node-js-example).)
-- [How to configure a .tas.yml file](https://www.lambdatest.com/support/docs/getting-started-with-tas/#configuring-tas-yml)
+- [Setting up you first repo on TAS - Cloud](https://www.lambdatest.com/support/docs/tas-getting-started-integrating-your-first-repo/) (Sample repos : [Mocha](https://github.com/LambdaTest/mocha-demos), [Jest](https://github.com/LambdaTest/jest-demos), [Jasmine](https://github.com/LambdaTest/jasmine-node-js-example).)
+- [Setting up you first repo on TAS - Self Hosted](https://www.lambdatest.com/support/docs/tas-self-hosted-installation) (Sample repos : [Mocha](https://github.com/LambdaTest/mocha-demos), [Jest](https://github.com/LambdaTest/jest-demos), [Jasmine](https://github.com/LambdaTest/jasmine-node-js-example).)
+- [How to configure a .tas.yml file](https://www.lambdatest.com/support/docs/tas-configuring-tas-yml)
 
 ## **Contribute**
 We love our contributors! If you'd like to contribute anything from a bug fix to a feature update, start here:
@@ -146,7 +146,7 @@ Engage with Developers, SDETs, and Testers around the world. Get the latest prod
 
 ### **Support & Troubleshooting** 
 The documentation and community will help you troubleshoot most issues. If you have encountered a bug, you can contact us using one of the following channels:
-- Help yourself with our [Documentation](https://www.lambdatest.com/support/docs/getting-started-with-tas/)📚.
+- Help yourself with our [Documentation](https://www.lambdatest.com/support/docs/tas-overview)📚.
 - In case of Issue & bugs go to [GitHub issues](https://github.com/LambdaTest/test-at-scale/issues)🐛.
 - For support & feedback join our [Discord](https://discord.gg/Wyf8srhf6K) or reach out to us on our [email](mailto:hello.tas@lambdatest.com)💬. 
 
