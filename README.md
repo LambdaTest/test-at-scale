@@ -9,14 +9,13 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/LambdaTest/test-at-scale/tree/master/licenses"><img src="https://img.shields.io/badge/license-PolyForm--Shield--1.0.0-lightgrey"></img></a> <a href="https://discord.gg/Wyf8srhf6K"><img src="https://img.shields.io/badge/Discord-5865F2"></img></a>
+  <a href="https://github.com/LambdaTest/test-at-scale/tree/master/licenses"><img src="https://img.shields.io/badge/license-PolyForm--Shield--1.0.0-lightgrey"></img></a>
+  <a><img src="https://github.com/lambdatest/test-at-scale/actions/workflows/main.yml/badge.svg"></img></a>
+  <a><img src="https://github.com/lambdatest/test-at-scale/actions/workflows/golangci-lint.yml/badge.svg"></img></a>
+  <a><img src="https://github.com/lambdatest/test-at-scale/actions/workflows/stale.yml/badge.svg"></img></a>
+  <a href="https://discord.gg/Wyf8srhf6K"><img src="https://img.shields.io/badge/Discord-5865F2"></img></a>
 
 </p>
-
-## **Status**
-
-![Go report card & Test coverage](https://github.com/lambdatest/test-at-scale/actions/workflows/main.yml/badge.svg) ![Linting](https://github.com/lambdatest/test-at-scale/actions/workflows/golangci-lint.yml/badge.svg) ![close issues and PR](https://github.com/lambdatest/test-at-scale/actions/workflows/stale.yml/badge.svg)
-
 
 ## Table of contents 
 - 🚀 [Getting Started](#getting-started)
