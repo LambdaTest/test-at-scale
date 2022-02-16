@@ -1,6 +1,6 @@
-# Jira Ticket
+# Issue Link
 
-Add Jira ticket links here.
+Add GitHub issue links here.
 
 # Description
 

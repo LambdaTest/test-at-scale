@@ -1,7 +1,7 @@
 version: "3.9" 
 services:
   synapse:
-    image: nevilmlt/synapse-stage:latest
+    image: lambdatest/synapse:latest
     restart: always
     networks:
       - test-at-scale
