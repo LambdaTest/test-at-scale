@@ -1,4 +1,4 @@
-![LAMBDATEST Logo](http://labs.lambdatest.com/images/fills-copy.svg)
+![LAMBDATEST Logo](https://www.lambdatest.com/blog/wp-content/uploads/2020/08/LambdaTest-320-180.png)
 
 ## Test At Scale
 
@@ -53,7 +53,7 @@ cd ~/test-at-scale
 curl https://raw.githubusercontent.com/LambdaTest/test-at-scale/master/.sample.synapse.json -o .synapse.json
 ```
 
-- This file will be used to store certain parameters such as **Lambdatest Secret Key**, **Git Token**, **Repository Secrets**, **Container Registry** etc that will be required in configuring test-at-scale on your local/self-hosted environment. You can learn more about the configuration options [here](tas-self-hosted-configuration#parameters).
+- This file will be used to store certain parameters such as **LambdaTest Secret Key**, **Git Token**, **Repository Secrets**, **Container Registry** etc that will be required in configuring test-at-scale on your local/self-hosted environment. You can learn more about the configuration options [here](tas-self-hosted-configuration#parameters).
 
 
 ### Step 3 - Installation
@@ -154,9 +154,9 @@ We are committed to fostering an open and welcoming environment in the community
 
 ## **License**
 
-Copyright 2022 Lamdatest Inc.
+Copyright 2022 LambdaTest Inc.
  
 - Test-at-scale Self Hosted Edition is licensed under the [PolyForm Shield License 1.0.0](https://github.com/LambdaTest/test-at-scale/blob/anmolg-LT-Docs/licenses/PolyForm-Shield-1.0.0.txt). You may obtain a copy of this license in the licenses directory at the root of this repository.
 - Additionally, this repo contains code belonging to Test-at-scale Enterprise Plan that is licensed under the [PolyForm Free Trial License 1.0.0](https://github.com/LambdaTest/test-at-scale/blob/anmolg-LT-Docs/licenses/PolyForm-Free-Trial-1.0.0.txt). You may obtain a copy of this license in the licenses directory at the root of this repository.
 
-If you need a different license to the Test-at-scale Self Hosted Edition or Test-at-scale Cloud, please contact Lamdatest sales.
+If you need a different license to the Test-at-scale Self Hosted Edition or Test-at-scale Cloud, please contact LambdaTest sales.
