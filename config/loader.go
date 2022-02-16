@@ -111,9 +111,6 @@ func ValidateCfg(cfg *SynapseConfig, logger lumber.Logger) error {
 	if cfg.Lambdatest.SecretKey == "" {
 		return errors.New("error finding lambdatest secretkey in configuration file")
 	}
-	if cfg.Git.Token == "" {
-		return errors.New("error finding git token in configuration file")
-	}
 	if cfg.ContainerRegistry.Mode == "" {
 		return errors.New("error finding ContainerRegistry Mode in configuration file")
 	}
