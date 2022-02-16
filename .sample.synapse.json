@@ -1,0 +1,23 @@
+{
+    "env": "stage",
+    "logConfig": {
+      "enableConsole": true,
+      "consoleJSONFormat": true,
+      "consolelevel": "debug"
+    },
+    "Lambdatest": {
+      "SecretKey": "SecretKeyForLambdaTest"
+    },
+    "Git": {
+      "Token": "GitToken"
+    },
+    "ContainerRegistry": {
+      "PullPolicy": "never",
+      "Mode": "private"
+    },
+    "RepoSecrets": {
+      "repository1":{
+        "AWS_REGION": "us-east-1"
+      }
+    }
+}
