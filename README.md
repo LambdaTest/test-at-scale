@@ -168,7 +168,7 @@ We are committed to fostering an open and welcoming environment in the community
 
 Copyright 2022 LambdaTest Inc.
  
-- Test-at-scale Self Hosted Edition is licensed under the [PolyForm Shield License 1.0.0](https://github.com/LambdaTest/test-at-scale/blob/anmolg-LT-Docs/licenses/PolyForm-Shield-1.0.0.txt). You may obtain a copy of this license in the licenses directory at the root of this repository.
-- Additionally, this repo contains code belonging to Test-at-scale Enterprise Plan that is licensed under the [PolyForm Free Trial License 1.0.0](https://github.com/LambdaTest/test-at-scale/blob/anmolg-LT-Docs/licenses/PolyForm-Free-Trial-1.0.0.txt). You may obtain a copy of this license in the licenses directory at the root of this repository.
+- Test-at-scale Self Hosted Edition is licensed under the [PolyForm Shield License 1.0.0](https://github.com/LambdaTest/test-at-scale/tree/master/licenses/PolyForm-Shield-1.0.0.txt). You may obtain a copy of this license in the licenses directory at the root of this repository.
+- Additionally, this repo contains code belonging to Test-at-scale Enterprise Plan that is licensed under the [PolyForm Free Trial License 1.0.0](https://github.com/LambdaTest/test-at-scale/tree/master/licenses/PolyForm-Free-Trial-1.0.0.txt). You may obtain a copy of this license in the licenses directory at the root of this repository.
 
 If you need a different license to the Test-at-scale Self Hosted Edition or Test-at-scale Cloud, please contact LambdaTest sales.
