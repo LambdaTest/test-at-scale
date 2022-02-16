@@ -9,14 +9,13 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/LambdaTest/test-at-scale/tree/master/licenses"><img src="https://img.shields.io/badge/license-PolyForm--Shield--1.0.0-lightgrey"></img></a> <a href="https://discord.gg/Wyf8srhf6K"><img src="https://img.shields.io/badge/Discord-5865F2"></img></a>
+  <a href="https://github.com/LambdaTest/test-at-scale/tree/master/licenses"><img src="https://img.shields.io/badge/license-PolyForm--Shield--1.0.0-lightgrey"></img></a>
+  <a><img src="https://github.com/lambdatest/test-at-scale/actions/workflows/main.yml/badge.svg"></img></a>
+  <a><img src="https://github.com/lambdatest/test-at-scale/actions/workflows/golangci-lint.yml/badge.svg"></img></a>
+  <a><img src="https://github.com/lambdatest/test-at-scale/actions/workflows/stale.yml/badge.svg"></img></a>
+  <a href="https://discord.gg/Wyf8srhf6K"><img src="https://img.shields.io/badge/Discord-5865F2"></img></a>
 
 </p>
-
-## **Status**
-
-![Go report card & Test coverage](https://github.com/lambdatest/test-at-scale/actions/workflows/main.yml/badge.svg) ![Linting](https://github.com/lambdatest/test-at-scale/actions/workflows/golangci-lint.yml/badge.svg) ![close issues and PR](https://github.com/lambdatest/test-at-scale/actions/workflows/stale.yml/badge.svg)
-
 
 ## Table of contents 
 - 🚀 [Getting Started](#getting-started)
@@ -53,20 +52,23 @@ cd ~/test-at-scale
 curl https://raw.githubusercontent.com/LambdaTest/test-at-scale/master/.sample.synapse.json -o .synapse.json
 ```
 
-- This file will be used to store certain parameters such as **Lambdatest Secret Key**, **Git Token**, **Repository Secrets**, **Container Registry** etc that will be required in configuring test-at-scale on your local/self-hosted environment. You can learn more about the configuration options [here](tas-self-hosted-configuration#parameters).
+- This file will be used to store certain parameters such as **Lambdatest Secret Key**, **Git Token**, **Repository Secrets**, **Container Registry** etc that will be required in configuring test-at-scale on your local/self-hosted environment. You can learn more about the configuration options [here](https://www.lambdatest.com/support/docs/tas-self-hosted-configuration#parameters).
 
 
 ### Step 3 - Installation
 
-<details>
+<details id="docker">
 <summary>Docker</summary>
 
 ### Prerequisites
 - [Docker](https://docs.docker.com/get-docker/)
 - [Docker-Compose](https://docs.docker.com/compose/install/) (Recommended)
+- **Minimum System Requirement**
+  - CPU: 2 cores
+  - RAM: 4 GB
 
 ### Docker Compose
-- Create a configuration file using [these steps](tas-self-hosted-installation#creating-a-configuration-file).
+- Create a configuration file using [these steps](https://www.lambdatest.com/support/docs/tas-self-hosted-installation/#step-2--creating-a-configuration-file).
 - Download and run the docker compose file using the following command.
 ```bash
 curl -L https://raw.githubusercontent.com/LambdaTest/test-at-scale/master/docker-compose.yml -o docker-compose.yml
@@ -79,7 +81,7 @@ docker-compose up -d
 To get up and running quickly, you can use the following instructions to setup Test at Scale on Self hosted environment without docker-compose.
 
 
-- Create a configuration file using [these steps](https://www.lambdatest.com/support/docs/tas-self-hosted-installation#step-2--creating-a-configuration-file).
+- Create a configuration file using [these steps](https://www.lambdatest.com/support/docs/tas-self-hosted-installation/#step-2--creating-a-configuration-file).
 - Execute the following command to run Test at Scale docker container
 
 ```bash
@@ -93,6 +95,16 @@ docker run —name synapse —-restart always \
     lambdatest/synapse:latest
 ```
 > **WARNING:** We strongly recommend to use docker-compose while Test at Scale on Self hosted environment.
+
+</details>
+<br>
+
+#### **Supported Platforms:**
+
+<details>
+<summary>Local Machine</summary>
+
+Setup using [docker](#docker).
 
 </details>
 
