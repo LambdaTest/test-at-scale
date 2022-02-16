@@ -53,7 +53,7 @@ cd ~/test-at-scale
 curl https://raw.githubusercontent.com/LambdaTest/test-at-scale/master/.sample.synapse.json -o .synapse.json
 ```
 
-- This file will be used to store certain parameters such as **Lambdatest Secret Key**, **Git Token**, **Repository Secrets**, **Container Registry** etc that will be required in configuring test-at-scale on your local/self-hosted environment. You can learn more about the configuration options [here](tas-self-hosted-configuration#parameters).
+- This file will be used to store certain parameters such as **Lambdatest Secret Key**, **Git Token**, **Repository Secrets**, **Container Registry** etc that will be required in configuring test-at-scale on your local/self-hosted environment. You can learn more about the configuration options [here](https://www.lambdatest.com/support/docs/tas-self-hosted-configuration#parameters).
 
 
 ### Step 3 - Installation
@@ -66,7 +66,7 @@ curl https://raw.githubusercontent.com/LambdaTest/test-at-scale/master/.sample.s
 - [Docker-Compose](https://docs.docker.com/compose/install/) (Recommended)
 
 ### Docker Compose
-- Create a configuration file using [these steps](tas-self-hosted-installation#creating-a-configuration-file).
+- Create a configuration file using [these steps](https://www.lambdatest.com/support/docs/tas-self-hosted-configuration#parameters).
 - Download and run the docker compose file using the following command.
 ```bash
 curl -L https://raw.githubusercontent.com/LambdaTest/test-at-scale/master/docker-compose.yml -o docker-compose.yml
