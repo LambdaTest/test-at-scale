@@ -8,11 +8,11 @@
       "SecretKey": "SecretKeyForLambdaTest"
     },
     "Git": {
-      "Token": "GitToken"
+      "Token": ""
     },
     "ContainerRegistry": {
-      "PullPolicy": "never",
-      "Mode": "private"
+      "PullPolicy": "always",
+      "Mode": "public"
     },
     "RepoSecrets": {
       "repository1":{
