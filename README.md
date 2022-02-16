@@ -66,7 +66,7 @@ curl https://raw.githubusercontent.com/LambdaTest/test-at-scale/master/.sample.s
 - [Docker-Compose](https://docs.docker.com/compose/install/) (Recommended)
 
 ### Docker Compose
-- Create a configuration file using [these steps](https://www.lambdatest.com/support/docs/tas-self-hosted-configuration#parameters).
+- Create a configuration file using [these steps](https://www.lambdatest.com/support/docs/tas-self-hosted-installation#step-2--creating-a-configuration-file).
 - Download and run the docker compose file using the following command.
 ```bash
 curl -L https://raw.githubusercontent.com/LambdaTest/test-at-scale/master/docker-compose.yml -o docker-compose.yml
@@ -79,7 +79,7 @@ docker-compose up -d
 To get up and running quickly, you can use the following instructions to setup Test at Scale on Self hosted environment without docker-compose.
 
 
-- Create a configuration file using [these steps](https://www.lambdatest.com/support/docs/tas-self-hosted-installation#step-2--creating-a-configuration-file).
+- Create a configuration file using [these steps](https://www.lambdatest.com/support/docs/tas-self-hosted-installation/#step-2--creating-a-configuration-file).
 - Execute the following command to run Test at Scale docker container
 
 ```bash
