@@ -59,7 +59,7 @@ You find all issues suitable for first-time contributors [here.](https://github.
 <summary>Read More</summary>
 We've engineered the platform such that you can setup the test-runners anywhere, from your local workstation to any cloud (AWS, Azure, GCP etc), as per your convenience. 
 <p align="center">
-<img loading="lazy" src={require('https://staging.lambdatest.com/support/assets/images/synapse-tas-interaction-a70a50f02b2e6e99491777ce636538f4.png').default} alt="Synapse Architecture" width="1340" height="617" className="doc_img"/>
+<img loading="lazy" src={require('https://www.lambdatest.com/support/assets/images/synapse-tas-interaction-a70a50f02b2e6e99491777ce636538f4.png').default} alt="Synapse Architecture" width="1340" height="617" className="doc_img"/>
 </p>
 
 When you configure TAS to run in a self-hosted environment, all the test execution jobs are executed inside your  environment. Your code stays within your setup environment. To provide you with test-insights on the TAS portal we store information only related to tests like name of testFile, testCase, testSuite and execution logs. At no point, we collect business logic of your code.
