@@ -50,7 +50,7 @@ cd ~/test-at-scale
 - Download our sample configuration file using the following command.
 
 ```bash
-curl https://raw.githubusercontent.com/LambdaTest/test-at-scale/master/sample.synapse.json -o .synapse.json
+curl https://raw.githubusercontent.com/LambdaTest/test-at-scale/master/.sample.synapse.json -o .synapse.json
 ```
 
 - This file will be used to store certain parameters such as **Lambdatest Secret Key**, **Git Token**, **Repository Secrets**, **Container Registry** etc that will be required in configuring test-at-scale on your local/self-hosted environment. You can learn more about the configuration options [here](tas-self-hosted-configuration#parameters).
