@@ -1,16 +1,14 @@
-name: Nucleus
+name: Go report card & Test coverage
 
 on:
   push:
     branches:
       - master
-      - stage
-      - ci/cd
+
       
   pull_request:
     branches:
       - master
-      - stage
 
 jobs:
   Unit_Test_Cases:
