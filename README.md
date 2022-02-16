@@ -14,7 +14,7 @@
 
 ## **Status**
 
-![Go report card](https://github.com/lambdatest/test-at-scale/actions/workflows/main.yml/badge.svg) ![Linting](https://github.com/lambdatest/test-at-scale/actions/workflows/golangci-lint.yml/badge.svg) ![close issues and PR](https://github.com/lambdatest/test-at-scale/actions/workflows/stale.yml/badge.svg)
+![Go report card & Test coverage](https://github.com/lambdatest/test-at-scale/actions/workflows/main.yml/badge.svg) ![Linting](https://github.com/lambdatest/test-at-scale/actions/workflows/golangci-lint.yml/badge.svg) ![close issues and PR](https://github.com/lambdatest/test-at-scale/actions/workflows/stale.yml/badge.svg)
 
 
 ## Table of contents 
