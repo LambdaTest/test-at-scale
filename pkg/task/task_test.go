@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/LambdaTest/synapse/pkg/lumber"
-	"github.com/LambdaTest/synapse/testUtils"
+	"github.com/LambdaTest/synapse/testutils"
 )
 
 func TestTask_UpdateStatus(t *testing.T) {
@@ -33,12 +33,12 @@ func TestTask_UpdateStatus(t *testing.T) {
 			fmt.Println("Logger can't be established")
 		}
 
-		cfg, err := testUtils.GetConfig()
+		cfg, err := testutils.GetConfig()
 		if err != nil {
 			fmt.Printf("Unable to get config, received: %v", err)
 		}
 
-		taskPayload, err := testUtils.GetTaskPayload()
+		taskPayload, err := testutils.GetTaskPayload()
 		if err != nil {
 			t.Errorf("Couldn't get task payload, received: %v", err)
 		}
@@ -68,6 +68,16 @@ func TestTask_UpdateStatus(t *testing.T) {
 
 	}
 
+	t.Run("TestUpdateStatus check for statusOK", func(t *testing.T) {
+		check(t, 200) // statusOk = 200
+	})
+	t.Run("TestUpdateStatus check for non statusOK", func(t *testing.T) {
+		check(t, 404) // statusNotFound
+	})
+}
+
+func TestTask_UpdateStatusForError(t *testing.T) {
+
 	checkErr := func(t *testing.T, st int) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if r.URL.Path != "/task" {
@@ -84,7 +94,7 @@ func TestTask_UpdateStatus(t *testing.T) {
 			fmt.Println("Logger can't be established")
 		}
 
-		taskPayload, err := testUtils.GetTaskPayload()
+		taskPayload, err := testutils.GetTaskPayload()
 		if err != nil {
 			t.Errorf("Couldn't get task payload, received: %v", err)
 		}
@@ -109,13 +119,6 @@ func TestTask_UpdateStatus(t *testing.T) {
 		}
 
 	}
-
-	t.Run("TestUpdateStatus check for statusOK", func(t *testing.T) {
-		check(t, 200) // statusOk = 200
-	})
-	t.Run("TestUpdateStatus check for non statusOK", func(t *testing.T) {
-		check(t, 404) // statusNotFound
-	})
 	t.Run("TestUpdateStatus check for error", func(t *testing.T) {
 		checkErr(t, 404) // statusNotFound
 	})

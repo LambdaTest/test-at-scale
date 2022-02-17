@@ -20,7 +20,7 @@ func TestSecret_GetRepoSecret(t *testing.T) {
 		path := "../../testUtils/testdata/secretTestData/PathNotExist/a.json"
 		secret, err := secretParser.GetRepoSecret(path)
 		if secret != nil || err != nil {
-			t.Errorf("Expected nil error and nil secret, recieved secret: %v, error: %v", secret, err)
+			t.Errorf("Expected nil error and nil secret, received secret: %v, error: %v", secret, err)
 		}
 	}
 
@@ -29,7 +29,7 @@ func TestSecret_GetRepoSecret(t *testing.T) {
 		secret, err := secretParser.GetRepoSecret(path)
 
 		if secret != nil {
-			t.Errorf("Expected nil error and nil secret, recieved secret: %v, error: %v", secret, err)
+			t.Errorf("Expected nil error and nil secret, received secret: %v, error: %v", secret, err)
 		}
 	}
 
@@ -38,7 +38,7 @@ func TestSecret_GetRepoSecret(t *testing.T) {
 		secret, err := secretParser.GetRepoSecret(path)
 
 		if err != nil {
-			t.Errorf("Recieved secret: %v, Received error: %v", secret, err)
+			t.Errorf("Received secret: %v, Received error: %v", secret, err)
 		}
 	}
 
@@ -64,7 +64,7 @@ func TestSecret_GetOauthSecret(t *testing.T) {
 		path := "../../testUtils/testdata/secretTestData/PathNotExist/a.json"
 		oauth, err := secretParser.GetOauthSecret(path)
 		if errors.Is(err, os.ErrNotExist) == false {
-			t.Errorf("Expected nil error and nil secret, recieved secret: %v, error: %s", oauth, err)
+			t.Errorf("Expected nil error and nil secret, received secret: %v, error: %s", oauth, err)
 		}
 	}
 
@@ -73,7 +73,7 @@ func TestSecret_GetOauthSecret(t *testing.T) {
 		secret, err := secretParser.GetOauthSecret(path)
 
 		if secret != nil {
-			t.Errorf("Expected nil error and nil secret, recieved secret: %v, error: %v", secret, err)
+			t.Errorf("Expected nil error and nil secret, received secret: %v, error: %v", secret, err)
 		}
 	}
 
@@ -82,7 +82,7 @@ func TestSecret_GetOauthSecret(t *testing.T) {
 		oauth, err := secretParser.GetOauthSecret(path)
 
 		if err != nil {
-			t.Errorf("Recieved secret: %v, Received error: %v", oauth, err)
+			t.Errorf("Received secret: %v, Received error: %v", oauth, err)
 		}
 	}
 

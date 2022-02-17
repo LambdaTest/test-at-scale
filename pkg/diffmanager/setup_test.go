@@ -13,20 +13,20 @@ import (
 
 	"github.com/LambdaTest/synapse/pkg/errs"
 	"github.com/LambdaTest/synapse/pkg/global"
-	"github.com/LambdaTest/synapse/testUtils"
+	"github.com/LambdaTest/synapse/testutils"
 )
 
 func Test_GetChanagedFiles(t *testing.T) {
 	server := httptest.NewServer( // mock server
-		http.FileServer(http.Dir("../../testUtils")), // mock data stored at testUtils/testdata/index.txt
+		http.FileServer(http.Dir("../../testutils")), // mock data stored at testutils/testdata/index.txt
 	)
 	defer server.Close()
 
-	logger, err := testUtils.GetLogger()
+	logger, err := testutils.GetLogger()
 	if err != nil {
 		t.Errorf("Can't get logger, received: %s", err)
 	}
-	config, err := testUtils.GetConfig()
+	config, err := testutils.GetConfig()
 	if err != nil {
 		t.Errorf("Can't get logger, received: %s", err)
 	}
@@ -34,7 +34,7 @@ func Test_GetChanagedFiles(t *testing.T) {
 
 	checkPRdiff := func(t *testing.T, location, gitprovider string) {
 		t.Helper()
-		p, err := testUtils.GetPayload()
+		p, err := testutils.GetPayload()
 		if err != nil {
 			t.Errorf("Unable to get payload, error %v", err)
 		}
@@ -59,7 +59,7 @@ func Test_GetChanagedFiles(t *testing.T) {
 			}
 			return
 		}
-		expResp := testUtils.GetGitDiff()
+		expResp := testutils.GetGitDiff()
 		if err != nil {
 			t.Errorf("error in getting changed files, error %v", err.Error())
 		} else if gitprovider == "github" && !reflect.DeepEqual(resp, expResp) {
@@ -68,9 +68,41 @@ func Test_GetChanagedFiles(t *testing.T) {
 			t.Errorf("Expected map entries: 17, received: %v, received map: %v", len(resp), resp)
 		}
 	}
+
+	t.Run("TestDiffManager: PRdiff for github gitprovider", func(t *testing.T) {
+		checkPRdiff(t, "/testdata", "github")
+	})
+	t.Run("TestDiffManager: PRdiff for gitlab gitprovider", func(t *testing.T) {
+		checkPRdiff(t, "/testdata", "gitlab")
+	})
+	t.Run("TestDiffManager: PRdiff for unsupported gitprovider", func(t *testing.T) {
+		checkPRdiff(t, "/testdata", "")
+	})
+	t.Run("TestDiffManager: PRdiff for non 200 status", func(t *testing.T) {
+		checkPRdiff(t, "/notfound/", "github")
+	})
+
+}
+
+func Test_GetChanagedFilesForGithubCommitDiff(t *testing.T) {
+	server := httptest.NewServer( // mock server
+		http.FileServer(http.Dir("../../testutils")), // mock data stored at testutils/testdata/index.txt
+	)
+	defer server.Close()
+
+	logger, err := testutils.GetLogger()
+	if err != nil {
+		t.Errorf("Can't get logger, received: %s", err)
+	}
+	config, err := testutils.GetConfig()
+	if err != nil {
+		t.Errorf("Can't get logger, received: %s", err)
+	}
+	dm := NewDiffManager(config, logger)
+
 	checkCommitDiff := func(t *testing.T, location, baseCommit, targetCommit, gitProvider string) {
 		t.Helper()
-		p, err := testUtils.GetPayload()
+		p, err := testutils.GetPayload()
 		if err != nil {
 			t.Errorf("Unable to get payload, error %v", err)
 		}
@@ -103,9 +135,38 @@ func Test_GetChanagedFiles(t *testing.T) {
 			t.Errorf("Expected: %+v, received: %+v", expResp, resp)
 		}
 	}
+	t.Run("TestDiffManager: Commitdiff", func(t *testing.T) {
+		checkCommitDiff(t, "/testdata", "abc", "xyz", "github")
+	})
+	t.Run("TestDiffManager: Commitdiff for empty base commit", func(t *testing.T) {
+		checkCommitDiff(t, "/tests/", "", "", "github")
+	})
+	t.Run("TestDiffManager: Commitdiff for non 200 status", func(t *testing.T) {
+		checkCommitDiff(t, "/notfound/", "abc", "xyz", "github")
+	})
+	t.Run("TestDiffManager: Commitdiff for non github and gitlab", func(t *testing.T) {
+		checkCommitDiff(t, "/notfound/", "abc", "xyz", "gittest")
+	})
+}
+
+func Test_GetChanagedFilesForGitlabCommitDiff(t *testing.T) {
+	server := httptest.NewServer( // mock server
+		http.FileServer(http.Dir("../../testutils")), // mock data stored at testutils/testdata/index.txt
+	)
+	defer server.Close()
+
+	logger, err := testutils.GetLogger()
+	if err != nil {
+		t.Errorf("Can't get logger, received: %s", err)
+	}
+	config, err := testutils.GetConfig()
+	if err != nil {
+		t.Errorf("Can't get logger, received: %s", err)
+	}
+	dm := NewDiffManager(config, logger)
 	checkGitlabCommitDiff := func(t *testing.T, location, baseCommit, targetCommit, gitProvider string, st int) {
 		t.Helper()
-		data, err := testUtils.GetGitlabCommitDiff()
+		data, err := testutils.GetGitlabCommitDiff()
 		if err != nil {
 			t.Errorf("Received error in getting test gitlab commit diff, error: %v", err)
 		}
@@ -121,7 +182,7 @@ func Test_GetChanagedFiles(t *testing.T) {
 			}
 		}))
 		defer server.Close()
-		p, err := testUtils.GetPayload()
+		p, err := testutils.GetPayload()
 		if err != nil {
 			t.Errorf("Unable to get payload, error %v", err)
 		}
@@ -147,32 +208,8 @@ func Test_GetChanagedFiles(t *testing.T) {
 			t.Errorf("Expected map length: 202, received: %v\nreceived map: %v", len(resp), resp)
 		}
 	}
-	t.Run("TestDiffManager: PRdiff for github gitprovider", func(t *testing.T) {
-		checkPRdiff(t, "/testdata", "github")
-	})
-	t.Run("TestDiffManager: PRdiff for gitlab gitprovider", func(t *testing.T) {
-		checkPRdiff(t, "/testdata", "gitlab")
-	})
-	t.Run("TestDiffManager: PRdiff for unsupported gitprovider", func(t *testing.T) {
-		checkPRdiff(t, "/testdata", "")
-	})
-	t.Run("TestDiffManager: PRdiff for non 200 status", func(t *testing.T) {
-		checkPRdiff(t, "/notfound/", "github")
-	})
-	t.Run("TestDiffManager: Commitdiff", func(t *testing.T) {
-		checkCommitDiff(t, "/testdata", "abc", "xyz", "github")
-	})
 	t.Run("TestDiffManager: Commitdiff", func(t *testing.T) {
 		checkGitlabCommitDiff(t, "/testdata", "abc", "xyz", "gitlab", 200)
-	})
-	t.Run("TestDiffManager: Commitdiff for empty base commit", func(t *testing.T) {
-		checkCommitDiff(t, "/tests/", "", "", "github")
-	})
-	t.Run("TestDiffManager: Commitdiff for non 200 status", func(t *testing.T) {
-		checkCommitDiff(t, "/notfound/", "abc", "xyz", "github")
-	})
-	t.Run("TestDiffManager: Commitdiff for non github and gitlab", func(t *testing.T) {
-		checkCommitDiff(t, "/notfound/", "abc", "xyz", "gittest")
 	})
 }
 
