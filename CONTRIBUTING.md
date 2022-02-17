@@ -109,7 +109,7 @@ Pull requests should be made against the <span style="color:grey">dev</span> bra
  3. Rebase `dev` with your branch and push your changes.
  4. Once you are confident in your code changes, create a pull request in your fork to the `dev` branch in the LambdaTest/test-at-scale base repository.
  5. Link the issue of the base repository in your Pull request description. [Guide](https://docs.github.com/en/issues/tracking-your-work-with-issues/linking-a-pull-request-to-an-issue)
- 6. Fill out the [Pull Request Template](./pull_request_template.md) completely within the body of the PR. If you feel some areas are not relevant add `N/A` but don’t delete those sections.
+ 6. Fill out the [Pull Request Template](./.github/pull_request_template.md) completely within the body of the PR. If you feel some areas are not relevant add `N/A` but don’t delete those sections.
 
 
 ####  **Commit messages**
