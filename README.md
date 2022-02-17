@@ -1,6 +1,7 @@
-![LAMBDATEST Logo](https://www.lambdatest.com/blog/wp-content/uploads/2020/08/LambdaTest-320-180.png)
-
-## Test At Scale
+<p align="center">
+  <img src="https://www.lambdatest.com/blog/wp-content/uploads/2020/08/LambdaTest-320-180.png" />
+</p>
+<h1 align="center">Test At Scale</h1>
 
 ![N|Solid](https://www.lambdatest.com/resources/images/TAS_banner.png)
 
@@ -9,7 +10,6 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/LambdaTest/test-at-scale/tree/master/licenses"><img src="https://img.shields.io/badge/license-PolyForm--Shield--1.0.0-lightgrey"></img></a>
   <a><img src="https://github.com/lambdatest/test-at-scale/actions/workflows/main.yml/badge.svg"></img></a>
   <a><img src="https://github.com/lambdatest/test-at-scale/actions/workflows/golangci-lint.yml/badge.svg"></img></a>
   <a><img src="https://github.com/lambdatest/test-at-scale/actions/workflows/stale.yml/badge.svg"></img></a>
@@ -31,7 +31,7 @@ In order to create an account, visit [TAS Login Page](https://tas.lambdatest.com
 - Tell us your specialization, team size. 
   ![N|Solid](https://www.lambdatest.com/support/assets/images/signup_gi-c46290845329881e7893705add21d7cd.gif)
 - Select **TAS Self Hosted** and click on Proceed.
-- You will find your **Lambdatest Secret Key** on this page which will be required in the next steps.
+- You will find your **LambdaTest Secret Key** on this page which will be required in the next steps.
   ![N|Solid](https://www.lambdatest.com/support/assets/images/synapse-b3e8b6b475967d82bbee0d56339daf5a.gif)
 
 ### Step 2 - Creating a configuration file for self hosted setup
@@ -166,9 +166,4 @@ We are committed to fostering an open and welcoming environment in the community
 
 ## **License**
 
-Copyright 2022 LambdaTest Inc.
- 
-- Test-at-scale Self Hosted Edition is licensed under the [PolyForm Shield License 1.0.0](https://github.com/LambdaTest/test-at-scale/tree/master/licenses/PolyForm-Shield-1.0.0.txt). You may obtain a copy of this license in the licenses directory at the root of this repository.
-- Additionally, this repo contains code belonging to Test-at-scale Enterprise Plan that is licensed under the [PolyForm Free Trial License 1.0.0](https://github.com/LambdaTest/test-at-scale/tree/master/licenses/PolyForm-Free-Trial-1.0.0.txt). You may obtain a copy of this license in the licenses directory at the root of this repository.
-
-If you need a different license to the Test-at-scale Self Hosted Edition or Test-at-scale Cloud, please contact LambdaTest sales.
+TestAtScale is available under the [Apache License 2.0](https://github.com/LambdaTest/test-at-scale/blob/master/LICENSE). Use it wisely.
