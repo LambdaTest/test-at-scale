@@ -67,11 +67,11 @@ jobs:
         uses: actions/checkout@v2
       - name: Run Go Report Card
         run: |
-          issues_threshold=17
+          issues_threshold=13
           gofmt_score_threshold=100
           go_vet_score_threshold=100
-          golint_score_threshold=80
-          gocyclo_score_threshold=86
+          golint_score_threshold=98
+          gocyclo_score_threshold=91
           git clone https://github.com/gojp/goreportcard.git
           cd goreportcard
           make install
