@@ -17,7 +17,7 @@ func TestSecret_GetRepoSecret(t *testing.T) {
 	secretParser := New(logger)
 
 	checkIncorrectPath := func(t *testing.T) {
-		path := "../../testUtils/testdata/secretTestData/PathNotExist/a.json"
+		path := "../../testutils/testdata/secretTestData/PathNotExist/a.json"
 		secret, err := secretParser.GetRepoSecret(path)
 		if secret != nil || err != nil {
 			t.Errorf("Expected nil error and nil secret, received secret: %v, error: %v", secret, err)
@@ -25,7 +25,7 @@ func TestSecret_GetRepoSecret(t *testing.T) {
 	}
 
 	checkInvalidFile := func(t *testing.T) {
-		path := "../../testUtils/testdata/secretTestData/invalidsecretfile"
+		path := "../../testutils/testdata/secretTestData/invalidsecretfile"
 		secret, err := secretParser.GetRepoSecret(path)
 
 		if secret != nil {
@@ -34,7 +34,7 @@ func TestSecret_GetRepoSecret(t *testing.T) {
 	}
 
 	checkCorrectFile := func(t *testing.T) {
-		path := "../../testUtils/testdata/secretTestData/secretfile.json"
+		path := "../../testutils/testdata/secretTestData/secretfile.json"
 		secret, err := secretParser.GetRepoSecret(path)
 
 		if err != nil {
@@ -61,7 +61,7 @@ func TestSecret_GetOauthSecret(t *testing.T) {
 	secretParser := New(logger)
 
 	checkIncorrectPath := func(t *testing.T) {
-		path := "../../testUtils/testdata/secretTestData/PathNotExist/a.json"
+		path := "../../testutils/testdata/secretTestData/PathNotExist/a.json"
 		oauth, err := secretParser.GetOauthSecret(path)
 		if errors.Is(err, os.ErrNotExist) == false {
 			t.Errorf("Expected nil error and nil secret, received secret: %v, error: %s", oauth, err)
@@ -69,7 +69,7 @@ func TestSecret_GetOauthSecret(t *testing.T) {
 	}
 
 	checkInvalidFile := func(t *testing.T) {
-		path := "../../testUtils/testdata/secretTestData/invalidsecretfile"
+		path := "../../testutils/testdata/secretTestData/invalidsecretfile"
 		secret, err := secretParser.GetOauthSecret(path)
 
 		if secret != nil {
@@ -78,7 +78,7 @@ func TestSecret_GetOauthSecret(t *testing.T) {
 	}
 
 	checkCorrectFile := func(t *testing.T) {
-		path := "../../testUtils/testdata/secretTestData/secretfile.json"
+		path := "../../testutils/testdata/secretTestData/secretfile.json"
 		oauth, err := secretParser.GetOauthSecret(path)
 
 		if err != nil {

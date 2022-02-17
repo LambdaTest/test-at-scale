@@ -15,7 +15,7 @@ func removeCopiedPath(path string) {
 }
 func TestCopyFile(t *testing.T) {
 	checkOpenErr := func(t *testing.T) {
-		src := "../../testUtils/file"
+		src := "../../testutils/file"
 		dst := "./dst"
 		err := CopyFile(src, dst, true)
 		if errors.Is(err, os.ErrNotExist) == false {
@@ -24,7 +24,7 @@ func TestCopyFile(t *testing.T) {
 	}
 
 	checkCreateErr := func(t *testing.T) {
-		src := "../../testUtils/testfile"
+		src := "../../testutils/testfile"
 		dst := "../xyz/dst"
 		err := CopyFile(src, dst, true)
 		if errors.Is(err, os.ErrNotExist) == false {
@@ -33,7 +33,7 @@ func TestCopyFile(t *testing.T) {
 	}
 
 	checkFalseChangeMode := func(t *testing.T) {
-		src := "../../testUtils/testfile"
+		src := "../../testutils/testfile"
 		dst := "./dst"
 		err := CopyFile(src, dst, false)
 
@@ -45,7 +45,7 @@ func TestCopyFile(t *testing.T) {
 	}
 
 	checkComplete := func(t *testing.T) {
-		src := "../../testUtils/testfile"
+		src := "../../testutils/testfile"
 		dst := "./copyfile"
 		err := CopyFile(src, dst, true)
 
@@ -73,7 +73,7 @@ func TestCopyFile(t *testing.T) {
 
 func TestCopyDir(t *testing.T) {
 	checkStatErr := func(t *testing.T) {
-		src := "../../testUtils/doesNotExist"
+		src := "../../testutils/doesNotExist"
 		dst := "./dst"
 		err := CopyDir(src, dst, true)
 		if errors.Is(err, os.ErrNotExist) == false {
@@ -82,7 +82,7 @@ func TestCopyDir(t *testing.T) {
 	}
 
 	checkSrcIsDir := func(t *testing.T) {
-		src := "../../testUtils/testfile"
+		src := "../../testutils/testfile"
 		dst := "../xyz/dst"
 		err := CopyDir(src, dst, true)
 		want := "source is not a directory"
@@ -92,7 +92,7 @@ func TestCopyDir(t *testing.T) {
 	}
 
 	checkDstexist := func(t *testing.T) {
-		src := "../../testUtils/testdirectory"
+		src := "../../testutils/testdirectory"
 		dst := "./xyz/dst"
 		err := CopyDir(src, dst, true)
 
@@ -104,7 +104,7 @@ func TestCopyDir(t *testing.T) {
 	}
 
 	checkExistingDst := func(t *testing.T) {
-		src := "../../testUtils/testdirectory"
+		src := "../../testutils/testdirectory"
 		dst := src
 		err := CopyDir(src, dst, true)
 		want := "destination already exists"
@@ -139,7 +139,7 @@ func TestCheckIfExists(t *testing.T) {
 	}
 
 	checkTruePath := func(t *testing.T) {
-		path := "../../testUtils/"
+		path := "../../testutils/"
 		b, err := CheckIfExists(path)
 		if err != nil || b != true {
 			t.Errorf("Received: %v", err)
