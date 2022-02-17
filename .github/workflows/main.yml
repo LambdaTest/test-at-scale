@@ -67,6 +67,11 @@ jobs:
         uses: actions/checkout@v2
       - name: Run Go Report Card
         run: |
+          issues_threshold=17
+          gofmt_score_threshold=100
+          go_vet_score_threshold=100
+          golint_score_threshold=80
+          gocyclo_score_threshold=86
           git clone https://github.com/gojp/goreportcard.git
           cd goreportcard
           make install
@@ -81,18 +86,31 @@ jobs:
           golint_score=$(cat reportcard.txt| grep 'golint:' | awk  '{print $2}' | tr -d \%)
           gocyclo_score=$(cat reportcard.txt| grep 'gocyclo:' | awk  '{print $2}' | tr -d \%)
           rm reportcard.txt
-          if [[ \
-            $issues -gt 17 || \
-            $gofmt_score -lt 100 || \
-            $go_vet_score -lt 100 || \
-            $golint_score -lt 80 || \
-            $gocyclo_score -lt 86 ]] \
-              ; then
-            echo "Your code introduced $(($issues - 17)) new issues"
-            echo "gofmt_score: $gofmt_score%"
-            echo "go_vet_score: $go_vet_score%"
-            echo "golint_score: $golint_score%"
-            echo "gocyclo_score: $gocyclo_score%"
+          failed_checks=0
+          failure_reason=""
+          if [[ $issues -gt $issues_threshold ]]; then
+            failure_reason="${failure_reason}\nIssues: $issues. Threshold was: $issues_threshold."
+            ((failed_checks+=1))
+          fi
+          if [[ $gofmt_score -lt $gofmt_score_threshold ]]; then
+            failure_reason="${failure_reason}\ngo-fmt score: $gofmt_score. Threshold was: $gofmt_score_threshold."
+            ((failed_checks+=1))
+          fi
+          if [[ $go_vet_score -lt $go_vet_score_threshold ]]; then
+            failure_reason="${failure_reason}\ngo-vet score: $go_vet_score. Threshold was: $go_vet_score_threshold."
+            ((failed_checks+=1))
+          fi
+          if [[ $golint_score -lt $golint_score_threshold ]]; then
+            failure_reason="${failure_reason}\ngo-lint score: $golint_score. Threshold was: $golint_score_threshold."
+            ((failed_checks+=1))
+          fi
+          if [[ $gocyclo_score -lt $gocyclo_score_threshold ]]; then
+            failure_reason="${failure_reason}\ngo-cyclo score: $gocyclo_score. Threshold was: $gocyclo_score_threshold."
+            ((failed_checks+=1))
+          fi
+          if [[ $failed_checks -gt 0 ]]; then
+            goreportcard-cli -v
+            printf "\n\n\n${failure_reason}\nFrom the above output, filter out issues in your touched files and fix them."
             exit 1
           else
             exit 0
