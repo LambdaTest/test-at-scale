@@ -150,8 +150,8 @@ Currently we support Mocha, Jest and Jasmine for testing Javascript codebases.
 ## **Contribute**
 We love our contributors! If you'd like to contribute anything from a bug fix to a feature update, start here:
 
-- 📕 Read our Code of Conduct [Code of Conduct](/.github/CODE_OF_CONDUCT.md).
-- 📖 Know more about [test-at-scale](/.github/CONTRIBUTING.md#repo-overview) and contributing from our [Contribution Guide](/.github/CONTRIBUTING.md).
+- 📕 Read our Code of Conduct [Code of Conduct](/CODE_OF_CONDUCT.md).
+- 📖 Know more about [test-at-scale](/CONTRIBUTING.md#repo-overview) and contributing from our [Contribution Guide](/CONTRIBUTING.md).
 - 👾 Explore some good first issues [good first issues](https://github.com/LambdaTest/test-at-scale/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22).
 
 ### **Join our community**
