@@ -4,6 +4,7 @@ package diffmanager
 import (
 	"context"
 	"errors"
+	"fmt"
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
@@ -114,7 +115,10 @@ func Test_GetChanagedFiles(t *testing.T) {
 			}
 			w.WriteHeader(st)
 			w.Header().Set("Content-Type", "application/json")
-			w.Write(data)
+			_, err := w.Write(data)
+			if err != nil {
+				fmt.Printf("Could not write data in httptest server, error: %v", err)
+			}
 		}))
 		defer server.Close()
 		p, err := testUtils.GetPayload()

@@ -1,0 +1,8 @@
+  }
+  const step = compiler.log.step('Bundling Resources...')
+  let count = 0
+
+  const testCommitChangeM = "Added 1 line in steps.ts"
+  // workaround for https://github.com/sindresorhus/globby/issues/127
+  // and https://github.com/mrmlnc/fast-glob#pattern-syntax
+  const resourcesWithForwardSlashes = resources.map((r) => r.replace(/\\/g, '/'))

@@ -79,6 +79,6 @@ mould.log
 
 .env
 
-testdata
+# testdata
 
 .synapse.json

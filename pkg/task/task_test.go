@@ -21,7 +21,10 @@ func TestTask_UpdateStatus(t *testing.T) {
 				return
 			}
 			w.WriteHeader(st)
-			w.Write([]byte(`{"value":"fixed"}`))
+			_, err := w.Write([]byte(`{"value":"fixed"}`))
+			if err != nil {
+				fmt.Printf("Could not write data in httptest server, error: %v", err)
+			}
 		}))
 		defer server.Close()
 

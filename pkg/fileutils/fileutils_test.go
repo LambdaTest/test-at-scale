@@ -7,12 +7,11 @@ import (
 	"testing"
 )
 
-func removeCopiedPath(path string) error {
+func removeCopiedPath(path string) {
 	err := os.RemoveAll(path)
 	if err != nil {
 		fmt.Println("error in removing!!")
 	}
-	return err
 }
 func TestCopyFile(t *testing.T) {
 	checkOpenErr := func(t *testing.T) {
