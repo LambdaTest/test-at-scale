@@ -6,7 +6,7 @@ WORKDIR /nucleus
 
 
 # Build binary
-RUN GOARCH=amd64 GOOS=linux go build -ldflags="-w -s" -o nucleus cmd/nucleus/*.go
+RUN GOARCH=amd64 GOOS=linux go build -ldflags="-w -s" -o nucleus cmd/nucleus/main.go
 # Uncomment only when build is highly stable. Compress binary.
 # RUN strip --strip-unneeded ts
 # RUN upx ts
