@@ -8,5 +8,5 @@ trap 'last_command=$current_command; current_command=$BASH_COMMAND' DEBUG
 trap 'echo "\"${last_command}\" command filed with exit code $?."' EXIT
 
 echo 'Building binary'
-go build -o nucleus ./cmd/nucleus/main.go
+go build -o nucleus ./cmd/nucleus/*.go
 echo 'Binary succesfully build by the name of `nucleus`'

@@ -69,7 +69,7 @@ func (tc *tasConfigManager) LoadConfig(ctx context.Context,
 		if len(matches) == 0 {
 			return nil, errs.New(fmt.Sprintf("Configuration file not found at path: %s", path))
 		}
-		// If there are  files with the both extensions, pick the first match
+		// If there are files with the both extensions, pick the first match
 		path = matches[0]
 	}
 
@@ -125,11 +125,11 @@ func (tc *tasConfigManager) LoadConfig(ctx context.Context,
 	switch eventType {
 	case core.EventPullRequest:
 		if tasConfig.Premerge == nil {
-			return nil, errors.New("`preMerge` is not configured in configuration file")
+			return nil, errs.New("`preMerge` is not configured in configuration file")
 		}
 	case core.EventPush:
 		if tasConfig.Postmerge == nil {
-			return nil, errors.New("`postMerge` is not configured in configuration file")
+			return nil, errs.New("`postMerge` is not configured in configuration file")
 		}
 	}
 	return tasConfig, nil

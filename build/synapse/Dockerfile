@@ -5,7 +5,7 @@ COPY . /synapse
 WORKDIR /synapse
 
 # Build binary
-RUN go build -o synapse cmd/synapse/main.go
+RUN go build -o synapse cmd/synapse/*.go
 
 # use a minimal alpine image
 FROM docker:latest

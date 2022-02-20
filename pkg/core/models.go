@@ -270,7 +270,7 @@ type Oauth struct {
 	} `json:"data"`
 }
 
-//TASConfig represents the .tas.yml file
+// TASConfig represents the .tas.yml file
 type TASConfig struct {
 	SmartRun          bool               `yaml:"smartRun"`
 	Framework         string             `yaml:"framework" validate:"required,oneof=jest mocha jasmine"`
