@@ -34,7 +34,7 @@ func (gm *gitManager) Clone(ctx context.Context, payload *core.Payload, cloneTok
 	repoLink := payload.RepoLink
 	repoItems := strings.Split(repoLink, "/")
 	repoName := repoItems[len(repoItems)-1]
-	commitID := payload.TargetCommit
+	commitID := payload.BuildTargetCommit
 	archiveURL, err := urlmanager.GetCloneURL(payload.GitProvider, repoLink, repoName, commitID)
 	if err != nil {
 		gm.logger.Errorf("failed to get clone url for provider %s, error %v", payload.GitProvider, err)
