@@ -133,7 +133,6 @@ func (tc *tasConfigManager) LoadConfig(ctx context.Context,
 		}
 	}
 	return tasConfig, nil
-
 }
 
 // configureValidator configure the struct validator

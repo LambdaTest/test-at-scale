@@ -161,7 +161,7 @@ func (tes *testExecutionService) Run(ctx context.Context,
 }
 
 // func (tes *testExecutionService) createCoverageManifest(tasConfig *core.TASConfig, coverageDirectory string, removedFiles []string, executeAll bool) error {
-// 	manifestFile := core.CoverageMainfest{
+// 	manifestFile := core.CoverageManifest{
 // 		Removedfiles:     removedFiles,
 // 		AllFilesExecuted: executeAll,
 // 	}

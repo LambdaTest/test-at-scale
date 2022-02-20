@@ -99,11 +99,11 @@ func (s *synapse) processMessage(msg []byte) {
 
 	switch message.Type {
 	case core.MsgError:
-		s.logger.Debugf("error message recieved from server")
+		s.logger.Debugf("error message received from server")
 	case core.MsgInfo:
-		s.logger.Debugf("info message recieved from server")
+		s.logger.Debugf("info message received from server")
 	case core.MsgTask:
-		s.logger.Debugf("task message recieved from server")
+		s.logger.Debugf("task message received from server")
 		go s.processTask(message)
 	default:
 		s.logger.Errorf("message type not found")
