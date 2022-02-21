@@ -127,12 +127,15 @@ docker run —name synapse —-restart always \
 
 ### Step 4 - Importing your repo
 > **NOTE:** Currently we support Mocha, Jest and Jasmine for testing Javascript codebases.
-- Click the Import button for the repository you want to integrate with TAS.
-- Once Imported Successfully, Click on Go to Project to proceed further.
+- Click the Import button for the `JS` repository you want to integrate with TAS.
+- Once Imported successfully, click on `Go to Project` to proceed further.
+- You will be asked to setup a `post-merge` here. We recommend to proceed ahead with default settings. (You can change these later.) 
+
 ![N|Solid](https://www.lambdatest.com/support/assets/images/import-postmerge-b6f7146b6b43d5f8876ec9bb73a478a1.gif)
 
 ### Step 5 - Configuring TAS yml
 - In order to configure your imported repository follow the steps given on the yml configuration page. Know more about yml configuration parameters [here](https://www.lambdatest.com/support/docs/tas-configuring-tas-yml).
+
 ![N|Solid](https://www.lambdatest.com/support/assets/images/yml-download-375c25fabbe3fe533782b94adecd2f95.gif)
 
 ## **Language & Framework Support** 
