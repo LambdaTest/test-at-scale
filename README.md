@@ -42,7 +42,7 @@ In order to create an account, visit [TAS Login Page](https://tas.lambdatest.com
 
 Before installation we need to create a file that will be used for configuring test-at-scale. 
 
-- Open a `Terminal` of your choice.
+- Open any `Terminal` of your choice.
 - Move to your desired directory or you can create a new directory and move to it using the following command.
 
 ```bash
@@ -56,10 +56,10 @@ cd ~/test-at-scale
 curl https://raw.githubusercontent.com/LambdaTest/test-at-scale/master/.sample.synapse.json -o .synapse.json
 ```
 
-- Open the downloaded ```bash .synapse.json ``` file in any editor of your choice.
+- Open the downloaded `.synapse.json` file in any editor of your choice.
 - You will need to add the following in this file: 
   - 1: **LambdaTest Secret Key**, that you got at the end of Step 1.
-  - 2: **Git Token**, that would be required to clone the repositories after Step 3. [Generating Github Personal Access Token](https://www.lambdatest.com/support/docs/tas-how-to-guides-gh-token) [Generating GitLab Personal Access Token](https://www.lambdatest.com/support/docs/tas-how-to-guides-gl-token) 
+  - 2: **Git Token**, that would be required to clone the repositories after Step 3. Generating[Github](https://www.lambdatest.com/support/docs/tas-how-to-guides-gh-token), [GitLab](https://www.lambdatest.com/support/docs/tas-how-to-guides-gl-token) personal access token.
 - This file will also be used to store certain other parameters such as **Repository Secrets** (Optional), **Container Registry** (Optional) etc that might be required in configuring test-at-scale on your local/self-hosted environment. You can learn more about the configuration options [here](https://www.lambdatest.com/support/docs/tas-self-hosted-configuration#parameters).
 
 
