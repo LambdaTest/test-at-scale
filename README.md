@@ -10,11 +10,11 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/LambdaTest/test-at-scale/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-Apache%20License%202.0.-blue"></img></a>
-  <a><img src="https://github.com/lambdatest/test-at-scale/actions/workflows/main.yml/badge.svg"></img></a>
-  <a><img src="https://github.com/lambdatest/test-at-scale/actions/workflows/golangci-lint.yml/badge.svg"></img></a>
-  <a><img src="https://github.com/lambdatest/test-at-scale/actions/workflows/stale.yml/badge.svg"></img></a>
-  <a href="https://discord.gg/Wyf8srhf6K"><img src="https://img.shields.io/badge/Discord-5865F2"></img></a>
+  <a href="https://github.com/LambdaTest/test-at-scale/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-Apache%20License%202.0.-blue" /></a>
+  <a href="#build"><img src="https://github.com/lambdatest/test-at-scale/actions/workflows/main.yml/badge.svg" /></a>
+  <a href="#lint"><img src="https://github.com/lambdatest/test-at-scale/actions/workflows/golangci-lint.yml/badge.svg" /></a>
+  <a href="#stale"><img src="https://github.com/lambdatest/test-at-scale/actions/workflows/stale.yml/badge.svg" /></a>
+  <a href="https://discord.gg/Wyf8srhf6K"><img src="https://img.shields.io/badge/Discord-5865F2" /></a>
 
 </p>
 
