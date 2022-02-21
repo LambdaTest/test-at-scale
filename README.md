@@ -30,9 +30,12 @@
 In order to create an account, visit [TAS Login Page](https://tas.lambdatest.com/login/). (Or [TAS Home Page](https://tas.lambdatest.com/))
 - Login using a suitable git provider and select your organization you want to continue with.
 - Tell us your specialization, team size. 
+
   ![N|Solid](https://www.lambdatest.com/support/assets/images/signup_gi-c46290845329881e7893705add21d7cd.gif)
+  
 - Select **TAS Self Hosted** and click on Proceed.
 - You will find your **LambdaTest Secret Key** on this page which will be required in the next steps.
+
   ![N|Solid](https://www.lambdatest.com/support/assets/images/synapse-b3e8b6b475967d82bbee0d56339daf5a.gif)
 
 ### Step 2 - Creating a configuration file for self hosted setup
