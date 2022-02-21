@@ -88,7 +88,7 @@ curl https://raw.githubusercontent.com/LambdaTest/test-at-scale/master/.sample.s
 > **NOTE:** This docker-compose file will pull the latest version of test-at-scale and install on your self hosted environment.
 
 <details id="docker">
-<summary>Installation Without Docker Compose</summary>
+<summary>Installation without <b>Docker Compose</b></summary>
 
 To get up and running quickly, you can use the following instructions to setup Test at Scale on Self hosted environment without docker-compose.
 
@@ -111,7 +111,7 @@ docker run —name synapse —-restart always \
 
 
 <details>
-<summary>Installation on Local Machine & Supported Cloud Platforms</summary>
+<summary>Installation on <b> Local Machine </b> & <b> Supported Cloud Platforms </b> </summary>
 
 - Local Machine - Setup using [docker](#docker).
 - Setup on [Azure](https://www.lambdatest.com/support/docs/tas-self-hosted-installation#azure)
