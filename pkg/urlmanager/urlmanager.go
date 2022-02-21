@@ -13,17 +13,16 @@ import (
 func GetDownloadURL(gitprovider, repoSlug, commitID, fileName string) (string, error) {
 	if global.TestEnv {
 		return global.TestServer, nil
-	} else {
-		switch gitprovider {
-		case core.GitHub:
-			return fmt.Sprintf("%s/%s/%s/%s", global.RawContentURLMap[gitprovider], repoSlug, commitID, fileName), nil
+	}
+	switch gitprovider {
+	case core.GitHub:
+		return fmt.Sprintf("%s/%s/%s/%s", global.RawContentURLMap[gitprovider], repoSlug, commitID, fileName), nil
 
-		case core.GitLab:
-			encodedPath := url.QueryEscape(repoSlug)
-			return fmt.Sprintf("%s/%s/repository/files/%s/raw?ref=%s", global.APIHostURLMap[gitprovider], encodedPath, fileName, commitID), nil
-		default:
-			return "", errs.ErrUnsupportedGitProvider
-		}
+	case core.GitLab:
+		encodedPath := url.QueryEscape(repoSlug)
+		return fmt.Sprintf("%s/%s/repository/files/%s/raw?ref=%s", global.APIHostURLMap[gitprovider], encodedPath, fileName, commitID), nil
+	default:
+		return "", errs.ErrUnsupportedGitProvider
 	}
 }
 
@@ -31,15 +30,14 @@ func GetDownloadURL(gitprovider, repoSlug, commitID, fileName string) (string, e
 func GetCloneURL(gitprovider, repoLink, repo, commitID string) (string, error) {
 	if global.TestEnv {
 		return global.TestServer, nil
-	} else {
-		switch gitprovider {
-		case core.GitHub:
-			return fmt.Sprintf("%s/archive/%s.zip", repoLink, commitID), nil
-		case core.GitLab:
-			return fmt.Sprintf("%s/-/archive/%s/%s-%s.zip", repoLink, commitID, repo, commitID), nil
-		default:
-			return "", errs.ErrUnsupportedGitProvider
-		}
+	}
+	switch gitprovider {
+	case core.GitHub:
+		return fmt.Sprintf("%s/archive/%s.zip", repoLink, commitID), nil
+	case core.GitLab:
+		return fmt.Sprintf("%s/-/archive/%s/%s-%s.zip", repoLink, commitID, repo, commitID), nil
+	default:
+		return "", errs.ErrUnsupportedGitProvider
 	}
 }
 
@@ -47,18 +45,17 @@ func GetCloneURL(gitprovider, repoLink, repo, commitID string) (string, error) {
 func GetCommitDiffURL(gitprovider, path, baseCommit, targetCommit string) (string, error) {
 	if global.TestEnv {
 		return global.TestServer, nil
-	} else {
-		switch gitprovider {
-		case core.GitHub:
-			return fmt.Sprintf("%s%s/compare/%s...%s", global.APIHostURLMap[gitprovider], path, baseCommit, targetCommit), nil
+	}
+	switch gitprovider {
+	case core.GitHub:
+		return fmt.Sprintf("%s%s/compare/%s...%s", global.APIHostURLMap[gitprovider], path, baseCommit, targetCommit), nil
 
-		case core.GitLab:
-			encodedPath := url.QueryEscape(path[1:])
-			return fmt.Sprintf("%s/%s/repository/compare?from=%s&to=%s", global.APIHostURLMap[gitprovider], encodedPath, baseCommit, targetCommit), nil
+	case core.GitLab:
+		encodedPath := url.QueryEscape(path[1:])
+		return fmt.Sprintf("%s/%s/repository/compare?from=%s&to=%s", global.APIHostURLMap[gitprovider], encodedPath, baseCommit, targetCommit), nil
 
-		default:
-			return "", errs.ErrUnsupportedGitProvider
-		}
+	default:
+		return "", errs.ErrUnsupportedGitProvider
 	}
 }
 
@@ -66,17 +63,17 @@ func GetCommitDiffURL(gitprovider, path, baseCommit, targetCommit string) (strin
 func GetPullRequestDiffURL(gitprovider, path string, prNumber int) (string, error) {
 	if global.TestEnv {
 		return global.TestServer, nil
-	} else {
-		switch gitprovider {
-		case core.GitHub:
-			return fmt.Sprintf("%s%s/pulls/%d", global.APIHostURLMap[gitprovider], path, prNumber), nil
-
-		case core.GitLab:
-			encodedPath := url.QueryEscape(path[1:])
-			return fmt.Sprintf("%s/%s/merge_requests/%d/changes", global.APIHostURLMap[gitprovider], encodedPath, prNumber), nil
-
-		default:
-			return "", errs.ErrUnsupportedGitProvider
-		}
 	}
+	switch gitprovider {
+	case core.GitHub:
+		return fmt.Sprintf("%s%s/pulls/%d", global.APIHostURLMap[gitprovider], path, prNumber), nil
+
+	case core.GitLab:
+		encodedPath := url.QueryEscape(path[1:])
+		return fmt.Sprintf("%s/%s/merge_requests/%d/changes", global.APIHostURLMap[gitprovider], encodedPath, prNumber), nil
+
+	default:
+		return "", errs.ErrUnsupportedGitProvider
+	}
+
 }
