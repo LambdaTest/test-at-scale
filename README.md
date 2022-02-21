@@ -54,7 +54,7 @@ cd ~/test-at-scale
 curl https://raw.githubusercontent.com/LambdaTest/test-at-scale/master/.sample.synapse.json -o .synapse.json
 ```
 - Download our sample configuration file using the above command.
-- Open the downloaded `.synapse.json` file in any editor of your choice.
+- Open the downloaded `.synapse.json` configuration file in any editor of your choice.
 - You will need to add the following in this file: 
   - 1- **LambdaTest Secret Key**, that you got at the end of **Step 1**.
   - 2- **Git Token**, that would be required to clone the repositories after Step 3. Generating[Github](https://www.lambdatest.com/support/docs/tas-how-to-guides-gh-token), [GitLab](https://www.lambdatest.com/support/docs/tas-how-to-guides-gl-token) personal access token.
@@ -68,27 +68,30 @@ curl https://raw.githubusercontent.com/LambdaTest/test-at-scale/master/.sample.s
 
 ### Prerequisites
 - [Docker](https://docs.docker.com/get-docker/) or [Docker-Compose](https://docs.docker.com/compose/install/) (Recommended)
-> **Minimum System Requirement** CPU: 2cores, RAM: 4 GB  
-  
-  
-- [Docker](https://docs.docker.com/get-docker/) or [Docker-Compose](https://docs.docker.com/compose/install/) (Recommended)
-> **Minimum System Requirement** CPU: 2cores, RAM: 4 GB  
 
 ### Docker Compose
-- Create a configuration file using [these steps](https://www.lambdatest.com/support/docs/tas-self-hosted-installation/#step-2--creating-a-configuration-file).
+- Run the docker application.
+  
+```bash
+  docker info --format "CPU: {{.NCPU}}, RAM: {{.MemTotal}}"
+```
+- Execute the above command to ensure that resources usable by Docker are atleast `CPU: 2, RAM: 4294967296`.
+  > **NOTE:** In order to run test-at-scale you required a minimum configuration of 2 CPU cores and 4 GBs of RAM.
+
+- The `.synapse.json` configuration file made in [Step 2](#step-2---creating-a-configuration-file-for-self-hosted-setup) will be required before executing the next command.
 - Download and run the docker compose file using the following command.
+  
 ```bash
 curl -L https://raw.githubusercontent.com/LambdaTest/test-at-scale/master/docker-compose.yml -o docker-compose.yml
 docker-compose up -d
 ```
 
-> **NOTE:** This docker-compose file will pull the latest version of synapse.
+> **NOTE:** This docker-compose file will pull the latest version of test-at-scale and install on your self hosted environment.
 
 <details id="docker">
 <summary>Installation Without Docker Compose</summary>
 
 To get up and running quickly, you can use the following instructions to setup Test at Scale on Self hosted environment without docker-compose.
-
 
 - Create a configuration file using [these steps](https://www.lambdatest.com/support/docs/tas-self-hosted-installation/#step-2--creating-a-configuration-file).
 - Execute the following command to run Test at Scale docker container
@@ -106,6 +109,7 @@ docker run —name synapse —-restart always \
 > **WARNING:** We strongly recommend to use docker-compose while Test at Scale on Self hosted environment.
 
 </details>  
+  
 </details>
 <br>
 
