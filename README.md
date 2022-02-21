@@ -72,19 +72,19 @@ curl https://raw.githubusercontent.com/LambdaTest/test-at-scale/master/.sample.s
 ### Docker Compose
 - Run the docker application.
   
-```bash
-  docker info --format "CPU: {{.NCPU}}, RAM: {{.MemTotal}}"
-```
+  ```bash
+     docker info --format "CPU: {{.NCPU}}, RAM: {{.MemTotal}}"
+  ```
 - Execute the above command to ensure that resources usable by Docker are atleast `CPU: 2, RAM: 4294967296`.
-  > **NOTE:** In order to run test-at-scale you required a minimum configuration of 2 CPU cores and 4 GBs of RAM.
+  > **NOTE:** In order to run test-at-scale you require a minimum configuration of 2 CPU cores and 4 GBs of RAM.
 
 - The `.synapse.json` configuration file made in [Step 2](#step-2---creating-a-configuration-file-for-self-hosted-setup) will be required before executing the next command.
 - Download and run the docker compose file using the following command.
   
-```bash
-curl -L https://raw.githubusercontent.com/LambdaTest/test-at-scale/master/docker-compose.yml -o docker-compose.yml
-docker-compose up -d
-```
+  ```bash
+  curl -L https://raw.githubusercontent.com/LambdaTest/test-at-scale/master/docker-compose.yml -o docker-compose.yml
+  docker-compose up -d
+  ```
 
 > **NOTE:** This docker-compose file will pull the latest version of test-at-scale and install on your self hosted environment.
 
@@ -109,37 +109,15 @@ docker run —name synapse —-restart always \
 > **WARNING:** We strongly recommend to use docker-compose while Test at Scale on Self hosted environment.
 
 </details>  
-  
-</details>
-<br>
-
-#### **Supported Platforms:**
-
-<details>
-<summary>Local Machine</summary>
-
-Setup using [docker](#docker).
-
 </details>
 
 <details>
-<summary>Azure</summary>
+<summary>Installation on Local Machine & Supported Cloud Platforms</summary>
 
-Setup on [Azure](https://www.lambdatest.com/support/docs/tas-self-hosted-installation#azure)
-
-</details>
-
-<details>
-<summary>AWS</summary>
-  
-Setup on [AWS](https://www.lambdatest.com/support/docs/tas-self-hosted-installation#aws)
-
-</details>
-
-<details>
-<summary>GCP</summary>
-  
-Setup on [GCP](https://www.lambdatest.com/support/docs/tas-self-hosted-installation#gcp)
+- Local Machine - Setup using [docker](#docker).
+- Setup on [Azure](https://www.lambdatest.com/support/docs/tas-self-hosted-installation#azure)
+- Setup on [AWS](https://www.lambdatest.com/support/docs/tas-self-hosted-installation#aws)
+- Setup on [GCP](https://www.lambdatest.com/support/docs/tas-self-hosted-installation#gcp)
 
 </details>
 
