@@ -9,6 +9,7 @@ import (
 	"github.com/LambdaTest/synapse/pkg/global"
 	"github.com/LambdaTest/synapse/pkg/logstream"
 	"github.com/LambdaTest/synapse/pkg/lumber"
+	"github.com/LambdaTest/synapse/pkg/utils"
 )
 
 type testDiscoveryService struct {
@@ -37,7 +38,11 @@ func (tds *testDiscoveryService) Discover(ctx context.Context,
 		envMap = tasConfig.Postmerge.EnvMap
 	}
 	tasYmlModified := false
-	if _, ok := diff[payload.TasFileName]; ok {
+	configFilePath, err := utils.GetConfigFileName(payload.TasFileName)
+	if err != nil {
+		return err
+	}
+	if _, ok := diff[configFilePath]; ok {
 		tasYmlModified = true
 	}
 
