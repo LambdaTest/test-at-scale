@@ -2,8 +2,11 @@ package global
 
 import "time"
 
-var TestEnv bool = false // to set test env for urlmanager package
-var TestServer string    // store server URL of test server while doing mock testing
+// TestEnv : to set test env for urlmanager package
+var TestEnv bool = false
+
+// TestServer : store server URL of test server while doing mock testing
+var TestServer string
 
 // All constant related to nucleus
 const (
