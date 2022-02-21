@@ -38,6 +38,8 @@ In order to create an account, visit [TAS Login Page](https://tas.lambdatest.com
 
   ![N|Solid](https://www.lambdatest.com/support/assets/images/synapse-b3e8b6b475967d82bbee0d56339daf5a.gif)
 
+<br>
+
 ### Step 2 - Creating a configuration file for self hosted setup
 
 Before installation we need to create a file that will be used for configuring test-at-scale. 
@@ -57,6 +59,7 @@ curl https://raw.githubusercontent.com/LambdaTest/test-at-scale/master/.sample.s
   - 2- **Git Token**, that would be required to clone the repositories after Step 3. Generating[Github](https://www.lambdatest.com/support/docs/tas-how-to-guides-gh-token), [GitLab](https://www.lambdatest.com/support/docs/tas-how-to-guides-gl-token) personal access token.
 - This file will also be used to store certain other parameters such as **Repository Secrets** (Optional), **Container Registry** (Optional) etc that might be required in configuring test-at-scale on your local/self-hosted environment. You can learn more about the configuration options [here](https://www.lambdatest.com/support/docs/tas-self-hosted-configuration#parameters).
 
+<br>
 
 ### Step 3 - Installation
 
@@ -116,6 +119,8 @@ docker run —name synapse —-restart always \
 - Setup on [GCP](https://www.lambdatest.com/support/docs/tas-self-hosted-installation#gcp)
 
 </details>
+
+<br>
 
 ### Step 4 - Importing your repo
 - Click the Import button for the repository you want to integrate with TAS.
