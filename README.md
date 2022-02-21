@@ -44,16 +44,13 @@ Before installation we need to create a file that will be used for configuring t
 
 - Open any `Terminal` of your choice.
 - Move to your desired directory or you can create a new directory and move to it using the following command.
+- Download our sample configuration file using the given command.
 
 ```bash
 mkdir ~/test-at-scale
 cd ~/test-at-scale
-```
-
-```bash
 curl https://raw.githubusercontent.com/LambdaTest/test-at-scale/master/.sample.synapse.json -o .synapse.json
 ```
-- Download our sample configuration file using the above command.
 - Open the downloaded `.synapse.json` configuration file in any editor of your choice.
 - You will need to add the following in this file: 
   - 1- **LambdaTest Secret Key**, that you got at the end of **Step 1**.
@@ -63,13 +60,12 @@ curl https://raw.githubusercontent.com/LambdaTest/test-at-scale/master/.sample.s
 
 ### Step 3 - Installation
 
-<details id="docker">
-<summary>Installation via Docker</summary>
+#### Installation via Docker</summary
 
-### Prerequisites
+##### Prerequisites
 - [Docker](https://docs.docker.com/get-docker/) or [Docker-Compose](https://docs.docker.com/compose/install/) (Recommended)
 
-### Docker Compose
+##### Docker Compose
 - Run the docker application.
   
   ```bash
@@ -109,7 +105,7 @@ docker run —name synapse —-restart always \
 > **WARNING:** We strongly recommend to use docker-compose while Test at Scale on Self hosted environment.
 
 </details>  
-</details>
+
 
 <details>
 <summary>Installation on Local Machine & Supported Cloud Platforms</summary>
