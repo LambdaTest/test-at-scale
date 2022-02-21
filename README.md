@@ -60,7 +60,7 @@ curl https://raw.githubusercontent.com/LambdaTest/test-at-scale/master/.sample.s
 
 ### Step 3 - Installation
 
-#### Installation via Docker</summary
+#### Installation on Docker
 
 ##### Prerequisites
 - [Docker](https://docs.docker.com/get-docker/) or [Docker-Compose](https://docs.docker.com/compose/install/) (Recommended)
