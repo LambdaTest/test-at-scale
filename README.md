@@ -58,8 +58,8 @@ curl https://raw.githubusercontent.com/LambdaTest/test-at-scale/master/.sample.s
 
 - Open the downloaded `.synapse.json` file in any editor of your choice.
 - You will need to add the following in this file: 
-  - 1: **LambdaTest Secret Key**, that you got at the end of Step 1.
-  - 2: **Git Token**, that would be required to clone the repositories after Step 3. Generating[Github](https://www.lambdatest.com/support/docs/tas-how-to-guides-gh-token), [GitLab](https://www.lambdatest.com/support/docs/tas-how-to-guides-gl-token) personal access token.
+  - 1- **LambdaTest Secret Key**, that you got at the end of **Step 1**.
+  - 2- **Git Token**, that would be required to clone the repositories after Step 3. Generating[Github](https://www.lambdatest.com/support/docs/tas-how-to-guides-gh-token), [GitLab](https://www.lambdatest.com/support/docs/tas-how-to-guides-gl-token) personal access token.
 - This file will also be used to store certain other parameters such as **Repository Secrets** (Optional), **Container Registry** (Optional) etc that might be required in configuring test-at-scale on your local/self-hosted environment. You can learn more about the configuration options [here](https://www.lambdatest.com/support/docs/tas-self-hosted-configuration#parameters).
 
 
