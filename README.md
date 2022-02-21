@@ -92,7 +92,7 @@ curl https://raw.githubusercontent.com/LambdaTest/test-at-scale/master/.sample.s
 
 To get up and running quickly, you can use the following instructions to setup Test at Scale on Self hosted environment without docker-compose.
 
-- Create a configuration file using [these steps](https://www.lambdatest.com/support/docs/tas-self-hosted-installation/#step-2--creating-a-configuration-file).
+- The `.synapse.json` configuration file made in [Step 2](#step-2---creating-a-configuration-file-for-self-hosted-setup) will be required before executing the next command.
 - Execute the following command to run Test at Scale docker container
 
 ```bash
@@ -109,7 +109,6 @@ docker run —name synapse —-restart always \
 
 </details>  
 
-
 <details>
 <summary>Installation on <b> Local Machine </b> & <b> Supported Cloud Platforms </b> </summary>
 
@@ -117,12 +116,17 @@ docker run —name synapse —-restart always \
 - Setup on [Azure](https://www.lambdatest.com/support/docs/tas-self-hosted-installation#azure)
 - Setup on [AWS](https://www.lambdatest.com/support/docs/tas-self-hosted-installation#aws)
 - Setup on [GCP](https://www.lambdatest.com/support/docs/tas-self-hosted-installation#gcp)
-
 </details>
+
+- Once the installation is complete, go back to the TAS portal.
+- Click the 'Test Connection' button to ensure `test-at-scale` self hosted environment is connected and ready.
+- Hit `Proceed` to move forward to [Step 4](#step-4---importing-your-repo)
+
 
 <br>
 
 ### Step 4 - Importing your repo
+> **NOTE:** Currently we support Mocha, Jest and Jasmine for testing Javascript codebases.
 - Click the Import button for the repository you want to integrate with TAS.
 - Once Imported Successfully, Click on Go to Project to proceed further.
 ![N|Solid](https://www.lambdatest.com/support/assets/images/import-postmerge-b6f7146b6b43d5f8876ec9bb73a478a1.gif)
