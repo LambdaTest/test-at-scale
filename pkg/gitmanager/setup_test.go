@@ -17,21 +17,19 @@ import (
 	"github.com/LambdaTest/synapse/testutils"
 )
 
-func CreateDirectory(path string) error {
+func CreateDirectory(path string) {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		if err := os.MkdirAll(path, 0755); err != nil {
-			return err
+			fmt.Printf("Error: %v", err)
 		}
 	}
-	return nil
 }
 
-func removeFile(path string) error {
+func removeFile(path string) {
 	err := os.RemoveAll(path)
 	if err != nil {
 		fmt.Println("error in removing!!")
 	}
-	return err
 }
 
 func Test_downloadFile(t *testing.T) {
@@ -158,7 +156,7 @@ func TestClone(t *testing.T) {
 
 		// global.RepoDir does not exist on local
 		if err != nil && (errors.Is(err, os.ErrNotExist)) == false {
-			t.Errorf("Expected error: %v, Recieved: %v\n", os.ErrNotExist, err)
+			t.Errorf("Expected error: %v, Received: %v\n", os.ErrNotExist, err)
 			return
 		}
 

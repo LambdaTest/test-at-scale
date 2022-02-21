@@ -8,12 +8,11 @@ import (
 	"testing"
 )
 
-func removeCreatedFile(path string) error {
+func removeCreatedFile(path string) {
 	err := os.RemoveAll(path)
 	if err != nil {
 		fmt.Println("error in removing!!")
 	}
-	return err
 }
 
 func TestMin(t *testing.T) {
@@ -41,7 +40,10 @@ func TestMin(t *testing.T) {
 }
 
 func TestComputeChecksum(t *testing.T) {
-	os.Create("dummy_file")
+	_, err := os.Create("dummy_file")
+	if err != nil {
+		fmt.Printf("Error in creating file, error: %v", err)
+	}
 	type args struct {
 		filename string
 	}
