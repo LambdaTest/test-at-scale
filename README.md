@@ -50,12 +50,10 @@ mkdir ~/test-at-scale
 cd ~/test-at-scale
 ```
 
-- Download our sample configuration file using the following command.
-
 ```bash
 curl https://raw.githubusercontent.com/LambdaTest/test-at-scale/master/.sample.synapse.json -o .synapse.json
 ```
-
+- Download our sample configuration file using the above command.
 - Open the downloaded `.synapse.json` file in any editor of your choice.
 - You will need to add the following in this file: 
   - 1- **LambdaTest Secret Key**, that you got at the end of **Step 1**.
