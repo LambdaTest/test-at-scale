@@ -72,7 +72,7 @@ curl https://raw.githubusercontent.com/LambdaTest/test-at-scale/master/.sample.s
 - Run the docker application.
   
   ```bash
-     docker info --format "CPU: {{.NCPU}}, RAM: {{.MemTotal}}"
+  docker info --format "CPU: {{.NCPU}}, RAM: {{.MemTotal}}"
   ```
 - Execute the above command to ensure that resources usable by Docker are atleast `CPU: 2, RAM: 4294967296`.
   > **NOTE:** In order to run test-at-scale you require a minimum configuration of 2 CPU cores and 4 GBs of RAM.
