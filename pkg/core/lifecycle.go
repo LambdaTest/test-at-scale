@@ -132,13 +132,14 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 		}
 	}()
 
-	coverageDir := filepath.Join(global.CodeCoveragParentDir, payload.OrgID, payload.RepoID, payload.TargetCommit)
-	pl.Logger.Infof("Cloning repo ...")
-	err = pl.GitManager.Clone(ctx, pl.Payload, oauth.Data.AccessToken)
-	if err != nil {
-		pl.Logger.Errorf("Unable to clone repo '%s': %s", payload.RepoLink, err)
-		errRemark = fmt.Sprintf("Unable to clone repo: %s", payload.RepoLink)
-		return err
+	if pl.Cfg.DiscoverMode {
+		pl.Logger.Infof("Cloning repo ...")
+		err = pl.GitManager.Clone(ctx, pl.Payload, oauth.Data.AccessToken)
+		if err != nil {
+			pl.Logger.Errorf("Unable to clone repo '%s': %s", payload.RepoLink, err)
+			errRemark = fmt.Sprintf("Unable to clone repo: %s", payload.RepoLink)
+			return err
+		}
 	}
 
 	// load tas yaml file
@@ -148,6 +149,9 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 		errRemark = err.Error()
 		return err
 	}
+
+	coverageDir := filepath.Join(global.CodeCoverageDir, payload.OrgID, payload.RepoID, payload.TargetCommit)
+	cacheKey := fmt.Sprintf("%s/%s/%s", payload.OrgID, payload.RepoID, tasConfig.Cache.Key)
 
 	pl.Logger.Infof("Tas yaml: %+v", tasConfig)
 
@@ -195,13 +199,6 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 		}
 	}
 
-	err = pl.TestBlockListService.GetBlockListedTests(ctx, tasConfig, payload.RepoID)
-	if err != nil {
-		pl.Logger.Errorf("Unable to fetch blocklisted tests: %v", err)
-		errRemark = errs.GenericErrRemark.Error()
-		return err
-	}
-
 	// read secrets
 	secretMap, err := pl.SecretParser.GetRepoSecret(global.RepoSecretPath)
 	if err != nil {
@@ -210,31 +207,37 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 		return err
 	}
 
-	cacheKey := fmt.Sprintf("%s/%s/%s", payload.OrgID, payload.RepoID, tasConfig.Cache.Key)
-	// TODO:  download from cdn
-	if err = pl.CacheStore.Download(ctx, cacheKey); err != nil {
-		pl.Logger.Errorf("Unable to download cache: %v", err)
-		errRemark = errs.GenericErrRemark.Error()
-		return err
-	}
-
-	if tasConfig.Prerun != nil {
-		pl.Logger.Infof("Running pre-run steps")
-		err = pl.ExecutionManager.ExecuteUserCommands(ctx, PreRun, payload, tasConfig.Prerun, secretMap)
+	if pl.Cfg.DiscoverMode {
+		err = pl.TestBlockListService.GetBlockListedTests(ctx, tasConfig, payload.RepoID)
 		if err != nil {
-			pl.Logger.Errorf("Unable to run pre-run steps %v", err)
-			errRemark = "Error occurred in pre-run steps"
+			pl.Logger.Errorf("Unable to fetch blocklisted tests: %v", err)
+			errRemark = errs.GenericUserFacingBEErrRemark
 			return err
 		}
-	}
-	err = pl.ExecutionManager.ExecuteInternalCommands(ctx, InstallRunners, global.InstallRunnerCmd, global.RepoDir, nil, nil)
-	if err != nil {
-		pl.Logger.Errorf("Unable to install custom runners %v", err)
-		errRemark = errs.GenericErrRemark.Error()
-		return err
-	}
 
-	if pl.Cfg.DiscoverMode {
+		// TODO:  download from cdn
+		if err = pl.CacheStore.Download(ctx, cacheKey); err != nil {
+			pl.Logger.Errorf("Unable to download cache: %v", err)
+			errRemark = errs.GenericUserFacingBEErrRemark
+			return err
+		}
+
+		if tasConfig.Prerun != nil {
+			pl.Logger.Infof("Running pre-run steps")
+			err = pl.ExecutionManager.ExecuteUserCommands(ctx, PreRun, payload, tasConfig.Prerun, secretMap)
+			if err != nil {
+				pl.Logger.Errorf("Unable to run pre-run steps %v", err)
+				errRemark = "Error occurred in pre-run steps"
+				return err
+			}
+		}
+		err = pl.ExecutionManager.ExecuteInternalCommands(ctx, InstallRunners, global.InstallRunnerCmd, global.RepoDir, nil, nil)
+		if err != nil {
+			pl.Logger.Errorf("Unable to install custom runners %v", err)
+			errRemark = errs.GenericUserFacingBEErrRemark
+			return err
+		}
+
 		pl.Logger.Infof("Identifying changed files ...")
 		diff, err := pl.DiffManager.GetChangedFiles(ctx, payload, oauth.Data.AccessToken)
 		if err != nil {
@@ -253,6 +256,13 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 		// mark status as passed
 		taskPayload.Status = Passed
 
+		// Upload cache once for other builds
+		if err = pl.CacheStore.Upload(ctx, cacheKey, tasConfig.Cache.Paths...); err != nil {
+			pl.Logger.Errorf("Unable to upload cache: %v", err)
+			errRemark = errs.GenericUserFacingBEErrRemark
+			return err
+		}
+		pl.Logger.Debugf("Cache uploaded successfully")
 	}
 
 	if pl.Cfg.ExecuteMode {
@@ -288,12 +298,6 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 			}
 		}
 	}
-	if err = pl.CacheStore.Upload(ctx, cacheKey, tasConfig.Cache.Paths...); err != nil {
-		pl.Logger.Errorf("Unable to upload cache: %v", err)
-		errRemark = errs.GenericErrRemark.Error()
-		return err
-	}
-	pl.Logger.Debugf("Cache uploaded successfully")
 	pl.Logger.Debugf("Completed pipeline")
 
 	return nil

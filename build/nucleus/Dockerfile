@@ -43,12 +43,7 @@ RUN su - nucleus -c "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39
 
 WORKDIR /home/nucleus
 # copy the binary from builder
-COPY --chown=nucleus:nucleus --from=builder /nucleus/nucleus .
-COPY --chown=nucleus:nucleus sample-tas.yaml .
-COPY --chown=nucleus:nucleus scripts/ /scripts
-RUN cd /scripts && npm i
-RUN touch .nucleus.yml
-
+COPY --chown=nucleus:nucleus --from=builder /nucleus/nucleus /usr/local/bin/
 # run the binary
 COPY ./build/nucleus/entrypoint.sh /
 ENTRYPOINT  ["/bin/sh", "/entrypoint.sh"]

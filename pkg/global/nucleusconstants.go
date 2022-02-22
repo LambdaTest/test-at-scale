@@ -4,16 +4,16 @@ import "time"
 
 // All constant related to nucleus
 const (
-	CodeCoveragParentDir     = "/coverage"
 	CoverageManifestFileName = "manifest.json"
 	HomeDir                  = "/home/nucleus"
 	RepoDir                  = HomeDir + "/repo"
+	CodeCoverageDir          = RepoDir + "/coverage"
 	DefaultHTTPTimeout       = 45 * time.Second
 	SamplingTime             = 5 * time.Millisecond
 	RepoSecretPath           = "/vault/secrets/reposecrets"
 	OauthSecretPath          = "/vault/secrets/oauth"
 	NeuronRemoteHost         = "http://neuron-service.phoenix"
-	BlocklistedFileLocation  = "/scripts/blocklist.json"
+	BlocklistedFileLocation  = RepoDir + "/blocklist.json"
 	SecretRegex              = `\${{\s*secrets\.(.*?)\s*}}`
 	ExecutionResultChunkSize = 50
 	TestLocatorsDelimiter    = "#TAS#"

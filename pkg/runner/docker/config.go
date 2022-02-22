@@ -17,9 +17,9 @@ import (
 
 const (
 	networkName                = "test-at-scale"
-	defaultContainerVolumePath = "/coverage"
+	defaultContainerVolumePath = "/home/nucleus"
 	defaultVaultPath           = "/vault/secrets"
-	coverageSourcePath         = "/tmp/synapse/coverage"
+	repoSourcePath             = "/tmp/synapse/nucleus"
 	nanoCPUUnit                = 1e9
 	// GB defines number of bytes in 1 GB
 	GB int64 = 1e+9
@@ -85,7 +85,7 @@ func (d *docker) PullImage(containerImageConfig *core.ContainerImageConfig) erro
 }
 
 func (d *docker) getContainerHostConfiguration(r *core.RunnerOptions) *container.HostConfig {
-	if err := utils.CreateDirectory(coverageSourcePath); err != nil {
+	if err := utils.CreateDirectory(repoSourcePath); err != nil {
 		d.logger.Errorf("error creating directory: %v", err)
 	}
 	specs := getSpces(r.Tier)
@@ -99,7 +99,7 @@ func (d *docker) getContainerHostConfiguration(r *core.RunnerOptions) *container
 		Mounts: []mount.Mount{
 			{
 				Type:   mount.TypeBind,
-				Source: coverageSourcePath,
+				Source: repoSourcePath,
 				Target: defaultContainerVolumePath,
 			},
 			{
