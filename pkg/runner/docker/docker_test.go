@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/LambdaTest/synapse/config"
 	"github.com/LambdaTest/synapse/pkg/core"
 	"github.com/google/uuid"
 )
@@ -114,5 +115,31 @@ func TestDockerDestroyWithRunningWithAutoRemove(t *testing.T) {
 	}
 	if err := runner.Destroy(ctx, runnerOpts); err != nil {
 		t.Errorf("error destroying container: %v", err)
+	}
+}
+
+func TestDockerPullAlways(t *testing.T) {
+	runnerOpts := getRunnerOptions()
+	// test create container
+	runnerOpts.PodType = core.NucleusPod
+	if err := runner.PullImage(&core.ContainerImageConfig{
+		Mode:       config.PublicMode,
+		PullPolicy: config.PullAlways,
+		Image:      runnerOpts.DockerImage,
+	}, runnerOpts); err != nil {
+		t.Errorf("Error while pulling image %v", err)
+	}
+}
+
+func TestDockerPullNever(t *testing.T) {
+	runnerOpts := getRunnerOptions()
+	// test create container
+	runnerOpts.PodType = core.NucleusPod
+	if err := runner.PullImage(&core.ContainerImageConfig{
+		Mode:       config.PublicMode,
+		PullPolicy: config.PullNever,
+		Image:      "dummy-image",
+	}, runnerOpts); err != nil {
+		t.Errorf("Error while pulling image %v", err)
 	}
 }

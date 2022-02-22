@@ -58,7 +58,7 @@ type DockerRunner interface {
 	Initiate(context.Context, *RunnerOptions, chan ContainerStatus)
 
 	// PullImage will pull image from remote
-	PullImage(containerImageConfig *ContainerImageConfig) error
+	PullImage(containerImageConfig *ContainerImageConfig, r *RunnerOptions) error
 
 	// KillRunningDocker kills  container spawn by synapse
 	KillRunningDocker(ctx context.Context)

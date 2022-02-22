@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 	"time"
@@ -70,11 +71,21 @@ func New(secretsManager core.SecretsManager,
 
 func (d *docker) Create(ctx context.Context, r *core.RunnerOptions) core.ContainerStatus {
 	containerStatus := core.ContainerStatus{Done: true}
-	container, err := d.getContainerConfiguration(r)
+	containerImageConfig, err := d.secretsManager.GetDockerSecrets(r)
 	if err != nil {
+		d.logger.Errorf("Something went wrong while seeking docker secrets %+v", err)
 		containerStatus.Done = false
 		containerStatus.Error = errs.ERR_DOCKER_CRT(err.Error())
+		return containerStatus
 	}
+
+	if err := d.PullImage(&containerImageConfig, r); err != nil {
+		d.logger.Errorf("Something went wrong while pulling container image %+v", err)
+		containerStatus.Done = false
+		containerStatus.Error = errs.ERR_DOCKER_CRT(err.Error())
+		return containerStatus
+	}
+	container := d.getContainerConfiguration(r)
 	hostConfig := d.getContainerHostConfiguration(r)
 	networkConfig, err := d.getContainerNetworkConfiguration()
 	if err != nil {
@@ -224,4 +235,35 @@ func (d *docker) KillRunningDocker(ctx context.Context) {
 			d.logger.Errorf("Error occur while destroying container ID %s , err %+v", r.ContainerID, err)
 		}
 	}
+}
+
+func (d *docker) PullImage(containerImageConfig *core.ContainerImageConfig, r *core.RunnerOptions) error {
+	if containerImageConfig.PullPolicy == config.PullNever && r.PodType == core.NucleusPod {
+		d.logger.Infof("pull policy %s pod type %s, not pulling any image",
+			containerImageConfig.PullPolicy, r.PodType)
+		return nil
+	}
+	dockerImage := containerImageConfig.Image
+
+	d.logger.Infof("Pulling image : %s", dockerImage)
+	ImagePullOptions := types.ImagePullOptions{}
+	ImagePullOptions.RegistryAuth = containerImageConfig.AuthRegistry
+	reader, err := d.client.ImagePull(context.TODO(), dockerImage, ImagePullOptions)
+	defer func() {
+		if reader == nil {
+			d.logger.Errorf("Reader returned by docker pull is null")
+			return
+		}
+		if err := reader.Close(); err != nil {
+			d.logger.Errorf(err.Error())
+		}
+	}()
+
+	if err != nil {
+		return err
+	}
+	if _, err := io.Copy(os.Stdout, reader); err != nil {
+		return err
+	}
+	return nil
 }

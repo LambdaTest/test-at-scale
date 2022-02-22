@@ -3,11 +3,9 @@ package docker
 import (
 	"context"
 	"fmt"
-	"io"
 	"os"
 	"strconv"
 
-	"github.com/LambdaTest/synapse/config"
 	"github.com/LambdaTest/synapse/pkg/core"
 	"github.com/LambdaTest/synapse/pkg/global"
 	"github.com/LambdaTest/synapse/pkg/synapse"
@@ -28,26 +26,7 @@ const (
 	GB int64 = 1e+9
 )
 
-func (d *docker) getContainerConfiguration(r *core.RunnerOptions) (*container.Config, error) {
-	containerImageConfig, err := d.secretsManager.GetDockerSecrets(r)
-	if err != nil {
-		d.logger.Errorf("Something went wrong while seeking container config %+v", err)
-	}
-
-	if containerImageConfig.PullPolicy == config.PullNever && r.PodType == core.NucleusPod {
-		d.logger.Infof("pull policy %s, not pulling any image", containerImageConfig.PullPolicy)
-		return &container.Config{
-			Image:   r.DockerImage,
-			Env:     r.Env,
-			Tty:     false,
-			Cmd:     r.ContainerArgs,
-			Volumes: make(map[string]struct{}),
-		}, nil
-	}
-	if err := d.PullImage(&containerImageConfig); err != nil {
-		d.logger.Errorf("Something went wrong while pulling image %s", err)
-		return nil, err
-	}
+func (d *docker) getContainerConfiguration(r *core.RunnerOptions) *container.Config {
 
 	return &container.Config{
 		Image:   r.DockerImage,
@@ -55,33 +34,7 @@ func (d *docker) getContainerConfiguration(r *core.RunnerOptions) (*container.Co
 		Tty:     false,
 		Cmd:     r.ContainerArgs,
 		Volumes: make(map[string]struct{}),
-	}, nil
-}
-
-func (d *docker) PullImage(containerImageConfig *core.ContainerImageConfig) error {
-	dockerImage := containerImageConfig.Image
-
-	d.logger.Infof("Pulling image : %s", dockerImage)
-	ImagePullOptions := types.ImagePullOptions{}
-	ImagePullOptions.RegistryAuth = containerImageConfig.AuthRegistry
-	reader, err := d.client.ImagePull(context.TODO(), dockerImage, ImagePullOptions)
-	defer func() {
-		if reader == nil {
-			d.logger.Errorf("Reader returned by docker pull is null")
-			return
-		}
-		if err := reader.Close(); err != nil {
-			d.logger.Errorf(err.Error())
-		}
-	}()
-
-	if err != nil {
-		return err
 	}
-	if _, err := io.Copy(os.Stdout, reader); err != nil {
-		return err
-	}
-	return nil
 }
 
 func (d *docker) getContainerHostConfiguration(r *core.RunnerOptions) *container.HostConfig {
