@@ -6,7 +6,7 @@ import (
 
 // all constant related to synapse
 const (
-	GracefulTimeout      = 10000 * time.Millisecond
+	GracefulTimeout      = 100000 * time.Millisecond
 	ProxyServerPort      = "8000"
 	DirectoryPermissions = 0755
 	FilePermissions      = 0755

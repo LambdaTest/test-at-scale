@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 
 	"github.com/LambdaTest/synapse/config"
 	"github.com/LambdaTest/synapse/pkg/core"
@@ -33,9 +34,6 @@ func (d *docker) getContainerConfiguration(r *core.RunnerOptions) (*container.Co
 		d.logger.Errorf("Something went wrong while seeking container config %+v", err)
 	}
 
-	r.ContainerArgs = append(r.ContainerArgs, "--local", "true")
-	localIp := utils.GetOutboundIP()
-	r.ContainerArgs = append(r.ContainerArgs, "--synapsehost", localIp)
 	if containerImageConfig.PullPolicy == config.PullNever && r.PodType == core.NucleusPod {
 		d.logger.Infof("pull policy %s, not pulling any image", containerImageConfig.PullPolicy)
 		return &container.Config{
@@ -112,12 +110,21 @@ func (d *docker) getContainerHostConfiguration(r *core.RunnerOptions) *container
 			Target: global.WorkspaceCacheDir,
 		})
 	}
-	return &container.HostConfig{
+	hostConfig := container.HostConfig{
 		Mounts:      mounts,
 		AutoRemove:  true,
 		SecurityOpt: []string{"seccomp=unconfined"},
 		Resources:   container.Resources{Memory: specs.RAM * GB, NanoCPUs: nanoCPU},
 	}
+
+	autoRemove, err := strconv.ParseBool(os.Getenv("AutoRemove"))
+	if err != nil {
+		d.logger.Errorf("Error reading os env AutoRemove with error: %v \n returning default host config", err)
+		return &hostConfig
+
+	}
+	hostConfig.AutoRemove = autoRemove
+	return &hostConfig
 }
 
 func (d *docker) getContainerNetworkConfiguration() (*network.NetworkingConfig, error) {

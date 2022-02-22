@@ -2,7 +2,11 @@ package docker
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"os"
+	"strconv"
+	"time"
 
 	"github.com/LambdaTest/synapse/config"
 	"github.com/LambdaTest/synapse/pkg/core"
@@ -94,11 +98,24 @@ func (d *docker) Create(ctx context.Context, r *core.RunnerOptions) core.Contain
 }
 
 func (d *docker) Destroy(ctx context.Context, r *core.RunnerOptions) error {
-	if err := d.client.ContainerStop(ctx, r.ContainerID, nil); err != nil {
+	gracefulyContainerStopDuration := time.Second * 10
+	if err := d.client.ContainerStop(ctx, r.ContainerID, &gracefulyContainerStopDuration); err != nil {
 		d.logger.Errorf("error stopping container %v", err)
 		return err
 	}
-	err := d.client.ContainerRemove(ctx, r.ContainerID, types.ContainerRemoveOptions{})
+	autoRemove, err := strconv.ParseBool(os.Getenv("AutoRemove"))
+	if err != nil {
+		d.logger.Errorf("Error reading AutoRemove os env error: %v", err)
+		return errors.New("Error reading AutoRemove os env error")
+	}
+	if autoRemove {
+		// if autoRemove is set then it docker container will be removed once it stopped or exited
+		return nil
+	}
+	err = d.client.ContainerRemove(ctx, r.ContainerID, types.ContainerRemoveOptions{
+		RemoveVolumes: true,
+		Force:         true,
+	})
 	if err != nil {
 		d.logger.Errorf("error removing container %v", err)
 		return err
@@ -116,18 +133,6 @@ func (d *docker) Run(ctx context.Context, r *core.RunnerOptions) core.ContainerS
 		return containerStatus
 	}
 	d.RunningContainers = append(d.RunningContainers, r)
-
-	err := d.waitForRunning(ctx, r)
-	if err != nil {
-		d.logger.Errorf("error while waiting for the running container: %v", err)
-		containerStatus.Done = false
-		containerStatus.Error = errs.ERR_DOCKER_RUN(err.Error())
-		d.RunningContainers = removeContainerID(d.RunningContainers, r)
-		return containerStatus
-	}
-	d.RunningContainers = removeContainerID(d.RunningContainers, r)
-
-	d.logger.Debugf("Updating status %+v", containerStatus)
 
 	return containerStatus
 }
@@ -153,7 +158,7 @@ func removeContainerID(slice []*core.RunnerOptions, r *core.RunnerOptions) []*co
 	return newSlice
 }
 
-func (d *docker) waitForRunning(ctx context.Context, r *core.RunnerOptions) error {
+func (d *docker) WaitForCompletion(ctx context.Context, r *core.RunnerOptions) error {
 	d.logger.Infof("waiting for  container %s compeletion", r.ContainerID)
 	statusCh, errCh := d.client.ContainerWait(ctx, r.ContainerID, container.WaitConditionRemoved)
 
@@ -182,6 +187,8 @@ func (d *docker) GetInfo(ctx context.Context) (float32, int64) {
 
 func (d *docker) Initiate(ctx context.Context, r *core.RunnerOptions, statusChan chan core.ContainerStatus) {
 	// creating the docker contaienr
+	r.ContainerArgs = append(r.ContainerArgs, "--local", os.Getenv("local"))
+	r.ContainerArgs = append(r.ContainerArgs, "--synapsehost", os.Getenv("synapsehost"))
 	if status := d.Create(ctx, r); !status.Done {
 		d.logger.Errorf("error creating container: %v", status.Error)
 		d.logger.Infof("Update error status after creation")
@@ -195,8 +202,19 @@ func (d *docker) Initiate(ctx context.Context, r *core.RunnerOptions, statusChan
 		statusChan <- status
 		return
 	}
-	d.logger.Infof("container %+s executuion successful", r.ContainerID)
-	statusChan <- core.ContainerStatus{Done: true}
+	containerStatus := core.ContainerStatus{Done: true}
+
+	if err := d.WaitForCompletion(ctx, r); err != nil {
+		d.logger.Errorf("error while waiting for the completion of container: %v", err)
+		containerStatus.Done = false
+		containerStatus.Error = errs.ERR_DOCKER_RUN(err.Error())
+		d.RunningContainers = removeContainerID(d.RunningContainers, r)
+		statusChan <- containerStatus
+		return
+	}
+	d.RunningContainers = removeContainerID(d.RunningContainers, r)
+	d.logger.Infof("container %+s executuion succesful", r.ContainerID)
+	statusChan <- containerStatus
 }
 
 func (d *docker) KillRunningDocker(ctx context.Context) {
