@@ -70,7 +70,7 @@ func (d *docker) getContainerHostConfiguration(r *core.RunnerOptions) *container
 		Resources:   container.Resources{Memory: specs.RAM * GB, NanoCPUs: nanoCPU},
 	}
 
-	autoRemove, err := strconv.ParseBool(os.Getenv("AutoRemove"))
+	autoRemove, err := strconv.ParseBool(os.Getenv(global.AutoRemoveEnv))
 	if err != nil {
 		d.logger.Errorf("Error reading os env AutoRemove with error: %v \n returning default host config", err)
 		return &hostConfig
@@ -83,14 +83,14 @@ func (d *docker) getContainerHostConfiguration(r *core.RunnerOptions) *container
 func (d *docker) getContainerNetworkConfiguration() (*network.NetworkingConfig, error) {
 	var networkResource types.NetworkResource
 	opts := types.NetworkListOptions{
-		Filters: filters.NewArgs(filters.Arg("name", networkName)),
+		Filters: filters.NewArgs(filters.Arg("name", NetworkName)),
 	}
 	networkList, err := d.client.NetworkList(context.TODO(), opts)
 	if err != nil {
 		return nil, err
 	}
 	for _, network := range networkList {
-		if network.Name == networkName {
+		if network.Name == NetworkName {
 			networkResource = network
 		}
 	}
@@ -101,7 +101,7 @@ func (d *docker) getContainerNetworkConfiguration() (*network.NetworkingConfig, 
 	networkConfig := network.NetworkingConfig{
 		EndpointsConfig: map[string]*network.EndpointSettings{},
 	}
-	networkConfig.EndpointsConfig[networkName] = &endpointSettings
+	networkConfig.EndpointsConfig[NetworkName] = &endpointSettings
 
 	return &networkConfig, nil
 }

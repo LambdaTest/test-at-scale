@@ -13,6 +13,10 @@ const (
 	GitConfigFileName    = "oauth"
 	RepoSecretsFileName  = "reposecrets"
 	SynapseContainerURL  = "http://synapse:8000"
+	NetworkEnvName       = "NetworkName"
+	AutoRemoveEnv        = "AutoRemove"
+	SynapseHostEnv       = "synapsehost"
+	LocalEnv             = "local"
 )
 
 // SocketURL lambdatest url for synapse socket

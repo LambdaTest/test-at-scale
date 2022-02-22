@@ -9,11 +9,12 @@ import (
 
 	"github.com/LambdaTest/synapse/config"
 	"github.com/LambdaTest/synapse/pkg/core"
+	"github.com/LambdaTest/synapse/pkg/global"
 	"github.com/google/uuid"
 )
 
 func getRunnerOptions() *core.RunnerOptions {
-	os.Setenv("AutoRemove", strconv.FormatBool(true))
+	os.Setenv(global.AutoRemoveEnv, strconv.FormatBool(true))
 	r := core.RunnerOptions{
 		ContainerName:  fmt.Sprintf("test-container-%s", uuid.NewString()),
 		ContainerArgs:  []string{"sleep", "10"},
@@ -70,7 +71,7 @@ func TestDockerWaitCompletion(t *testing.T) {
 
 func TestDockerDestroyWithoutRunning(t *testing.T) {
 	ctx := context.Background()
-	os.Setenv("AutoRemove", strconv.FormatBool(false))
+	os.Setenv(global.AutoRemoveEnv, strconv.FormatBool(false))
 	runnerOpts := getRunnerOptions()
 	// test create container
 	statusCreate := runner.Create(ctx, runnerOpts)
@@ -86,7 +87,7 @@ func TestDockerDestroyWithRunningWoAutoRemove(t *testing.T) {
 	ctx := context.Background()
 	runnerOpts := getRunnerOptions()
 	// test create container
-	os.Setenv("AutoRemove", strconv.FormatBool(false))
+	os.Setenv(global.AutoRemoveEnv, strconv.FormatBool(false))
 	statusCreate := runner.Create(ctx, runnerOpts)
 	if !statusCreate.Done {
 		t.Errorf("error creating container: %v", statusCreate.Error)
@@ -104,7 +105,7 @@ func TestDockerDestroyWithRunningWithAutoRemove(t *testing.T) {
 	ctx := context.Background()
 	runnerOpts := getRunnerOptions()
 	// test create container
-	os.Setenv("AutoRemove", strconv.FormatBool(true))
+	os.Setenv(global.AutoRemoveEnv, strconv.FormatBool(true))
 	statusCreate := runner.Create(ctx, runnerOpts)
 	if !statusCreate.Done {
 		t.Errorf("error creating container: %v", statusCreate.Error)

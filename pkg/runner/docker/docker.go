@@ -12,6 +12,7 @@ import (
 	"github.com/LambdaTest/synapse/config"
 	"github.com/LambdaTest/synapse/pkg/core"
 	"github.com/LambdaTest/synapse/pkg/errs"
+	"github.com/LambdaTest/synapse/pkg/global"
 	"github.com/LambdaTest/synapse/pkg/lumber"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -21,6 +22,8 @@ import (
 const (
 	mb = 1048576
 )
+
+var NetworkName string
 
 type docker struct {
 	client            *client.Client
@@ -43,7 +46,7 @@ func newDockerClient(secretsManager core.SecretsManager) (*docker, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	NetworkName = os.Getenv(global.NetworkEnvName)
 	return &docker{
 		client:         client,
 		cpu:            float32(dockerInfo.NCPU),
@@ -114,7 +117,7 @@ func (d *docker) Destroy(ctx context.Context, r *core.RunnerOptions) error {
 		d.logger.Errorf("error stopping container %v", err)
 		return err
 	}
-	autoRemove, err := strconv.ParseBool(os.Getenv("AutoRemove"))
+	autoRemove, err := strconv.ParseBool(os.Getenv(global.AutoRemoveEnv))
 	if err != nil {
 		d.logger.Errorf("Error reading AutoRemove os env error: %v", err)
 		return errors.New("Error reading AutoRemove os env error")
@@ -198,8 +201,8 @@ func (d *docker) GetInfo(ctx context.Context) (float32, int64) {
 
 func (d *docker) Initiate(ctx context.Context, r *core.RunnerOptions, statusChan chan core.ContainerStatus) {
 	// creating the docker contaienr
-	r.ContainerArgs = append(r.ContainerArgs, "--local", os.Getenv("local"))
-	r.ContainerArgs = append(r.ContainerArgs, "--synapsehost", os.Getenv("synapsehost"))
+	r.ContainerArgs = append(r.ContainerArgs, "--local", os.Getenv(global.LocalEnv))
+	r.ContainerArgs = append(r.ContainerArgs, "--synapsehost", os.Getenv(global.SynapseHostEnv))
 	if status := d.Create(ctx, r); !status.Done {
 		d.logger.Errorf("error creating container: %v", status.Error)
 		d.logger.Infof("Update error status after creation")
