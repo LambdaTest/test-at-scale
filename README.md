@@ -30,59 +30,69 @@
 In order to create an account, visit [TAS Login Page](https://tas.lambdatest.com/login/). (Or [TAS Home Page](https://tas.lambdatest.com/))
 - Login using a suitable git provider and select your organization you want to continue with.
 - Tell us your specialization, team size. 
+
   ![N|Solid](https://www.lambdatest.com/support/assets/images/signup_gi-c46290845329881e7893705add21d7cd.gif)
+  
 - Select **TAS Self Hosted** and click on Proceed.
 - You will find your **LambdaTest Secret Key** on this page which will be required in the next steps.
+
   ![N|Solid](https://www.lambdatest.com/support/assets/images/synapse-b3e8b6b475967d82bbee0d56339daf5a.gif)
+
+<br>
 
 ### Step 2 - Creating a configuration file for self hosted setup
 
-Before installation we need to create a file that will be used for configuring test-at-scale.
+Before installation we need to create a file that will be used for configuring test-at-scale. 
 
-- Open a `Terminal` of your choice.
+- Open any `Terminal` of your choice.
 - Move to your desired directory or you can create a new directory and move to it using the following command.
+- Download our sample configuration file using the given command.
 
 ```bash
 mkdir ~/test-at-scale
 cd ~/test-at-scale
-```
-
-- Download our sample configuration file using the following command.
-
-```bash
 curl https://raw.githubusercontent.com/LambdaTest/test-at-scale/master/.sample.synapse.json -o .synapse.json
 ```
+- Open the downloaded `.synapse.json` configuration file in any editor of your choice.
+- You will need to add the following in this file: 
+  - 1- **LambdaTest Secret Key**, that you got at the end of **Step 1**.
+  - 2- **Git Token**, that would be required to clone the repositories after Step 3. Generating[GitHub](https://www.lambdatest.com/support/docs/tas-how-to-guides-gh-token), [GitLab](https://www.lambdatest.com/support/docs/tas-how-to-guides-gl-token) personal access token.
+- This file will also be used to store certain other parameters such as **Repository Secrets** (Optional), **Container Registry** (Optional) etc that might be required in configuring test-at-scale on your local/self-hosted environment. You can learn more about the configuration options [here](https://www.lambdatest.com/support/docs/tas-self-hosted-configuration#parameters).
 
-- This file will be used to store certain parameters such as **LambdaTest Secret Key**, **Git Token**, **Repository Secrets**, **Container Registry** etc that will be required in configuring test-at-scale on your local/self-hosted environment. You can learn more about the configuration options [here](https://www.lambdatest.com/support/docs/tas-self-hosted-configuration#parameters).
-
+<br>
 
 ### Step 3 - Installation
 
-<details id="docker">
-<summary>Docker</summary>
+#### Installation on Docker
 
-### Prerequisites
-- [Docker](https://docs.docker.com/get-docker/)
-- [Docker-Compose](https://docs.docker.com/compose/install/) (Recommended)
-- **Minimum System Requirement**
-  - CPU: 2 cores
-  - RAM: 4 GB
+##### Prerequisites
+- [Docker](https://docs.docker.com/get-docker/) or [Docker-Compose](https://docs.docker.com/compose/install/) (Recommended)
 
-### Docker Compose
-- Create a configuration file using [these steps](https://www.lambdatest.com/support/docs/tas-self-hosted-installation/#step-2--creating-a-configuration-file).
+##### Docker Compose
+- Run the docker application.
+  
+  ```bash
+     docker info --format "CPU: {{.NCPU}}, RAM: {{.MemTotal}}"
+  ```
+- Execute the above command to ensure that resources usable by Docker are atleast `CPU: 2, RAM: 4294967296`.
+  > **NOTE:** In order to run test-at-scale you require a minimum configuration of 2 CPU cores and 4 GBs of RAM.
+
+- The `.synapse.json` configuration file made in [Step 2](#step-2---creating-a-configuration-file-for-self-hosted-setup) will be required before executing the next command.
 - Download and run the docker compose file using the following command.
-```bash
-curl -L https://raw.githubusercontent.com/LambdaTest/test-at-scale/master/docker-compose.yml -o docker-compose.yml
-docker-compose up -d
-```
+  
+  ```bash
+  curl -L https://raw.githubusercontent.com/LambdaTest/test-at-scale/master/docker-compose.yml -o docker-compose.yml
+  docker-compose up -d
+  ```
 
-> **NOTE:** This docker-compose file will pull the latest version of synapse.
+> **NOTE:** This docker-compose file will pull the latest version of test-at-scale and install on your self hosted environment.
 
-### Without Docker Compose
+<details id="docker">
+<summary>Installation without <b>Docker Compose</b></summary>
+
 To get up and running quickly, you can use the following instructions to setup Test at Scale on Self hosted environment without docker-compose.
 
-
-- Create a configuration file using [these steps](https://www.lambdatest.com/support/docs/tas-self-hosted-installation/#step-2--creating-a-configuration-file).
+- The `.synapse.json` configuration file made in [Step 2](#step-2---creating-a-configuration-file-for-self-hosted-setup) will be required before executing the next command.
 - Execute the following command to run Test at Scale docker container
 
 ```bash
@@ -97,47 +107,38 @@ docker run —name synapse —-restart always \
 ```
 > **WARNING:** We strongly recommend to use docker-compose while Test at Scale on Self hosted environment.
 
+</details>  
+
+<details>
+<summary>Installation on <b> Local Machine </b> & <b> Supported Cloud Platforms </b> </summary>
+
+- Local Machine - Setup using [docker](#docker).
+- Setup on [Azure](https://www.lambdatest.com/support/docs/tas-self-hosted-installation#azure)
+- Setup on [AWS](https://www.lambdatest.com/support/docs/tas-self-hosted-installation#aws)
+- Setup on [GCP](https://www.lambdatest.com/support/docs/tas-self-hosted-installation#gcp)
 </details>
+
+- Once the installation is complete, go back to the TAS portal.
+- Click the 'Test Connection' button to ensure `test-at-scale` self hosted environment is connected and ready.
+- Hit `Proceed` to move forward to [Step 4](#step-4---importing-your-repo)
+
+
 <br>
 
-#### **Supported Platforms:**
-
-<details>
-<summary>Local Machine</summary>
-
-Setup using [docker](#docker).
-
-</details>
-
-<details>
-<summary>Azure</summary>
-
-Setup on [Azure](https://www.lambdatest.com/support/docs/tas-self-hosted-installation#azure)
-
-</details>
-
-<details>
-<summary>AWS</summary>
-  
-Setup on [AWS](https://www.lambdatest.com/support/docs/tas-self-hosted-installation#aws)
-
-</details>
-
-<details>
-<summary>GCP</summary>
-  
-Setup on [GCP](https://www.lambdatest.com/support/docs/tas-self-hosted-installation#gcp)
-
-</details>
-
 ### Step 4 - Importing your repo
-- Click the Import button for the repository you want to integrate with TAS.
-- Once Imported Successfully, Click on Go to Project to proceed further.
-![N|Solid](https://www.lambdatest.com/support/assets/images/import-postmerge-b6f7146b6b43d5f8876ec9bb73a478a1.gif)
+> **NOTE:** Currently we support Mocha, Jest and Jasmine for testing Javascript codebases.
+- Click the Import button for the `JS` repository you want to integrate with TAS.
+- Once Imported successfully, click on `Go to Project` to proceed further.
+- You will be asked to setup a `post-merge` here. We recommend to proceed ahead with default settings. (You can change these later.) 
+
+  ![N|Solid](https://www.lambdatest.com/support/assets/images/import-postmerge-b6f7146b6b43d5f8876ec9bb73a478a1.gif)
 
 ### Step 5 - Configuring TAS yml
-- In order to configure your imported repository follow the steps given on the yml configuration page. Know more about yml configuration parameters [here](https://www.lambdatest.com/support/docs/tas-configuring-tas-yml).
-![N|Solid](https://www.lambdatest.com/support/assets/images/yml-download-375c25fabbe3fe533782b94adecd2f95.gif)
+A `.tas.yml` file is a basic yaml configuration file that contains steps required for installing necessary dependencies and executing the tests present in your repository.
+- In order to configure your imported repository, follow the steps given on the `.tas.yml`  configuration page. 
+- You can also know more about `.tas.yml` configuration parameters [here](https://www.lambdatest.com/support/docs/tas-configuring-tas-yml).
+
+  ![N|Solid](https://www.lambdatest.com/support/assets/images/yml-download-375c25fabbe3fe533782b94adecd2f95.gif)
 
 ## **Language & Framework Support** 
 Currently we support Mocha, Jest and Jasmine for testing Javascript codebases.
