@@ -23,7 +23,7 @@ const (
 	mb = 1048576
 )
 
-var NetworkName string
+var networkName string
 
 type docker struct {
 	client            *client.Client
@@ -46,7 +46,7 @@ func newDockerClient(secretsManager core.SecretsManager) (*docker, error) {
 	if err != nil {
 		return nil, err
 	}
-	NetworkName = os.Getenv(global.NetworkEnvName)
+	networkName = os.Getenv(global.NetworkEnvName)
 	return &docker{
 		client:         client,
 		cpu:            float32(dockerInfo.NCPU),
@@ -227,7 +227,7 @@ func (d *docker) Initiate(ctx context.Context, r *core.RunnerOptions, statusChan
 		return
 	}
 	d.RunningContainers = removeContainerID(d.RunningContainers, r)
-	d.logger.Infof("container %+s executuion succesful", r.ContainerID)
+	d.logger.Infof("container %+s execution successful", r.ContainerID)
 	statusChan <- containerStatus
 }
 

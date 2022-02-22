@@ -74,7 +74,7 @@ func TestMain(m *testing.M) {
 	}
 
 	if err := createNetworkIfNotExists(client, networkName); err != nil {
-		logger.Errorf("Error in creating network %s", NetworkName)
+		logger.Errorf("Error in creating network %s", networkName)
 		os.Exit(1)
 	}
 	secretsManager = secrets.New(cfg, logger)
@@ -85,7 +85,7 @@ func TestMain(m *testing.M) {
 	}
 	exitCode := m.Run()
 	if err := deletNetworkIfExists(client, networkName); err != nil {
-		logger.Errorf("Error in deleting network %s", NetworkName)
+		logger.Errorf("Error in deleting network %s", networkName)
 		os.Exit(1)
 	}
 	os.Exit(exitCode)

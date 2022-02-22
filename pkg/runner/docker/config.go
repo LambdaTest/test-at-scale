@@ -83,14 +83,14 @@ func (d *docker) getContainerHostConfiguration(r *core.RunnerOptions) *container
 func (d *docker) getContainerNetworkConfiguration() (*network.NetworkingConfig, error) {
 	var networkResource types.NetworkResource
 	opts := types.NetworkListOptions{
-		Filters: filters.NewArgs(filters.Arg("name", NetworkName)),
+		Filters: filters.NewArgs(filters.Arg("name", networkName)),
 	}
 	networkList, err := d.client.NetworkList(context.TODO(), opts)
 	if err != nil {
 		return nil, err
 	}
 	for _, network := range networkList {
-		if network.Name == NetworkName {
+		if network.Name == networkName {
 			networkResource = network
 		}
 	}
@@ -101,7 +101,7 @@ func (d *docker) getContainerNetworkConfiguration() (*network.NetworkingConfig, 
 	networkConfig := network.NetworkingConfig{
 		EndpointsConfig: map[string]*network.EndpointSettings{},
 	}
-	networkConfig.EndpointsConfig[NetworkName] = &endpointSettings
+	networkConfig.EndpointsConfig[networkName] = &endpointSettings
 
 	return &networkConfig, nil
 }
