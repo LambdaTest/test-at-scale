@@ -167,7 +167,7 @@ func (d *docker) waitForRunning(ctx context.Context, r *core.RunnerOptions) erro
 	case status := <-statusCh:
 		d.logger.Debugf("status code: %d", status.StatusCode)
 		if status.StatusCode != 0 {
-			msg := fmt.Sprintf("Recieved non zero status code %v", status.StatusCode)
+			msg := fmt.Sprintf("Received non zero status code %v", status.StatusCode)
 			return errs.ERR_DOCKER_RUN(msg)
 
 		}
@@ -195,7 +195,7 @@ func (d *docker) Initiate(ctx context.Context, r *core.RunnerOptions, statusChan
 		statusChan <- status
 		return
 	}
-	d.logger.Infof("container %+s executuion succesful", r.ContainerID)
+	d.logger.Infof("container %+s executuion successful", r.ContainerID)
 	statusChan <- core.ContainerStatus{Done: true}
 }
 

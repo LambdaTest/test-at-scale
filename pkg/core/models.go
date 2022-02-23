@@ -238,8 +238,8 @@ type TaskPayload struct {
 	Type        TaskType  `json:"type"`
 }
 
-//CoverageMainfest for post processing coverage job
-type CoverageMainfest struct {
+// CoverageManifest for post processing coverage job
+type CoverageManifest struct {
 	Removedfiles      []string           `json:"removed_files"`
 	AllFilesExecuted  bool               `json:"all_files_executed"`
 	CoverageThreshold *CoverageThreshold `json:"coverage_threshold,omitempty"`
@@ -270,7 +270,7 @@ type Oauth struct {
 	} `json:"data"`
 }
 
-//TASConfig represents the .tas.yml file
+// TASConfig represents the .tas.yml file
 type TASConfig struct {
 	SmartRun          bool               `yaml:"smartRun"`
 	Framework         string             `yaml:"framework" validate:"required,oneof=jest mocha jasmine"`

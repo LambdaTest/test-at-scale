@@ -9,4 +9,4 @@ trap 'echo "\"${last_command}\" command filed with exit code $?."' EXIT
 
 echo 'Building binary'
 go build -o synapse ./cmd/synapse/*.go
-echo 'Binary succesfully build by the name of `synapse`'
+echo 'Binary successfully build by the name of `synapse`'
