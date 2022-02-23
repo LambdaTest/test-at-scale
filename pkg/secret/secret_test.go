@@ -1,6 +1,7 @@
 package secret
 
 import (
+	"fmt"
 	"log"
 	"reflect"
 	"testing"
@@ -58,15 +59,17 @@ func Test_secretParser_GetOauthSecret(t *testing.T) {
 		log.Fatalf("Could not instantiate logger %s", err.Error())
 	}
 	secretParser := New(logger)
-	type Data struct {
+	type data struct {
 		AccessToken  string    `json:"access_token"`
 		Expiry       time.Time `json:"expiry"`
 		RefreshToken string    `json:"refresh_token"`
 	}
 	time, err := time.Parse("Mon, 02 Jan 2006 15:04:05 MST", "Tue, 22 Feb 2022 16:22:01 IST")
+	exp := "&{{token 2022-02-22 16:22:01 +0530 IST refresh}}"
 	if err != nil {
 		log.Fatalf("Could not parse time, error: %v", err)
 	}
+	Data := data{AccessToken: "token", Expiry: time, RefreshToken: "refresh"}
 	type args struct {
 		path string
 	}
@@ -76,7 +79,7 @@ func Test_secretParser_GetOauthSecret(t *testing.T) {
 		want    *core.Oauth
 		wantErr bool
 	}{
-		{"Test for correct file", args{path: "../../testutils/testdata/secretTestData/secretOauthFile.json"}, &core.Oauth{Data: Data{AccessToken: "token", Expiry: time, RefreshToken: "refresh"}}, false},
+		{"Test for correct file", args{path: "../../testutils/testdata/secretTestData/secretOauthFile.json"}, &core.Oauth{Data: Data}, false},
 
 		{"Test for incorrect path", args{path: "../../testutils/testdata/secretTestData/PathNotExist/a.json"}, nil, true},
 
@@ -87,6 +90,13 @@ func Test_secretParser_GetOauthSecret(t *testing.T) {
 			got, err := secretParser.GetOauthSecret(tt.args.path)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("secretParser.GetOauthSecret() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if tt.want != nil {
+				received := fmt.Sprintf("%v", got)
+				if received != exp {
+					t.Errorf("Expected: %v, got: %v", exp, received)
+				}
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {

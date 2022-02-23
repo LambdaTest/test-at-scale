@@ -95,7 +95,6 @@ func Test_diffManager_GetChangedFiles_PRDiff(t *testing.T) {
 			} else if tt.args.payload.GitProvider == "gitlab" && len(resp) != 17 {
 				t.Errorf("Expected map entries: 17, received: %v, received map: %v", len(resp), resp)
 			}
-			return
 		})
 	}
 }
@@ -171,7 +170,10 @@ func Test_diffManager_GetChangedFiles_CommitDiff_Gitlab(t *testing.T) {
 		}
 		w.WriteHeader(200)
 		w.Header().Set("Content-Type", "application/json")
-		w.Write(data)
+		_, err2 := w.Write(data)
+		if err2 != nil {
+			t.Errorf("Error in writing response data, error: %v", err)
+		}
 	}))
 	defer server.Close()
 
