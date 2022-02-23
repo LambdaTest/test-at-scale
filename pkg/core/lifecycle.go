@@ -211,14 +211,14 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 		err = pl.TestBlockListService.GetBlockListedTests(ctx, tasConfig, payload.RepoID)
 		if err != nil {
 			pl.Logger.Errorf("Unable to fetch blocklisted tests: %v", err)
-			errRemark = errs.GenericUserFacingBEErrRemark
+			errRemark = errs.GenericErrRemark.Error()
 			return err
 		}
 
 		// TODO:  download from cdn
 		if err = pl.CacheStore.Download(ctx, cacheKey); err != nil {
 			pl.Logger.Errorf("Unable to download cache: %v", err)
-			errRemark = errs.GenericUserFacingBEErrRemark
+			errRemark = errs.GenericErrRemark.Error()
 			return err
 		}
 
@@ -234,7 +234,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 		err = pl.ExecutionManager.ExecuteInternalCommands(ctx, InstallRunners, global.InstallRunnerCmd, global.RepoDir, nil, nil)
 		if err != nil {
 			pl.Logger.Errorf("Unable to install custom runners %v", err)
-			errRemark = errs.GenericUserFacingBEErrRemark
+			errRemark = errs.GenericErrRemark.Error()
 			return err
 		}
 
@@ -259,7 +259,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 		// Upload cache once for other builds
 		if err = pl.CacheStore.Upload(ctx, cacheKey, tasConfig.Cache.Paths...); err != nil {
 			pl.Logger.Errorf("Unable to upload cache: %v", err)
-			errRemark = errs.GenericUserFacingBEErrRemark
+			errRemark = errs.GenericErrRemark.Error()
 			return err
 		}
 		pl.Logger.Debugf("Cache uploaded successfully")

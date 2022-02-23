@@ -2,11 +2,13 @@ package docker
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os"
 
 	"github.com/LambdaTest/synapse/config"
 	"github.com/LambdaTest/synapse/pkg/core"
+	"github.com/LambdaTest/synapse/pkg/synapse"
 	"github.com/LambdaTest/synapse/pkg/utils"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -19,7 +21,7 @@ const (
 	networkName                = "test-at-scale"
 	defaultContainerVolumePath = "/home/nucleus"
 	defaultVaultPath           = "/vault/secrets"
-	repoSourcePath             = "/tmp/synapse/nucleus"
+	repoSourcePath             = "/tmp/synapse/%s/nucleus"
 	nanoCPUUnit                = 1e9
 	// GB defines number of bytes in 1 GB
 	GB int64 = 1e+9
@@ -85,9 +87,6 @@ func (d *docker) PullImage(containerImageConfig *core.ContainerImageConfig) erro
 }
 
 func (d *docker) getContainerHostConfiguration(r *core.RunnerOptions) *container.HostConfig {
-	if err := utils.CreateDirectory(repoSourcePath); err != nil {
-		d.logger.Errorf("error creating directory: %v", err)
-	}
 	specs := getSpces(r.Tier)
 	/*
 		https://pkg.go.dev/github.com/docker/docker@v20.10.12+incompatible/api/types/container#Resources
@@ -95,19 +94,26 @@ func (d *docker) getContainerHostConfiguration(r *core.RunnerOptions) *container
 	*/
 	nanoCPU := int64(specs.CPU * nanoCPUUnit)
 	d.logger.Infof("Specs %+v", specs)
-	return &container.HostConfig{
-		Mounts: []mount.Mount{
-			{
-				Type:   mount.TypeBind,
-				Source: repoSourcePath,
-				Target: defaultContainerVolumePath,
-			},
-			{
-				Type:   mount.TypeBind,
-				Source: r.HostVolumePath,
-				Target: defaultVaultPath,
-			},
+	mounts := []mount.Mount{
+		{
+			Type:   mount.TypeBind,
+			Source: r.HostVolumePath,
+			Target: defaultVaultPath,
 		},
+	}
+	if r.PodType == core.NucleusPod || r.PodType == core.CoveragePod {
+		repoBuildSourcePath := fmt.Sprintf(repoSourcePath, r.Label[synapse.BuildID])
+		if err := utils.CreateDirectory(repoBuildSourcePath); err != nil {
+			d.logger.Errorf("error creating directory: %v", err)
+		}
+		mounts = append(mounts, mount.Mount{
+			Type:   mount.TypeBind,
+			Source: repoBuildSourcePath,
+			Target: defaultContainerVolumePath,
+		})
+	}
+	return &container.HostConfig{
+		Mounts:      mounts,
 		AutoRemove:  true,
 		SecurityOpt: []string{"seccomp=unconfined"},
 		Resources:   container.Resources{Memory: specs.RAM * GB, NanoCPUs: nanoCPU},
