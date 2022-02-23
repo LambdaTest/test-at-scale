@@ -1,8 +1,8 @@
+// Package payloadmanager is used for fetching and validating the nucleus execution payload
 package payloadmanager
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -10,7 +10,6 @@ import (
 
 	"github.com/LambdaTest/synapse/config"
 	"github.com/LambdaTest/synapse/pkg/core"
-	"github.com/LambdaTest/synapse/pkg/errs"
 	"github.com/LambdaTest/synapse/pkg/lumber"
 	"github.com/LambdaTest/synapse/testutils"
 	"github.com/LambdaTest/synapse/testutils/mocks"
@@ -31,7 +30,7 @@ func getPayloadManagerArgs() (core.AzureClient, lumber.Logger, *config.NucleusCo
 	return azureClient, logger, cfg, nil
 }
 
-func TestFetchPayload(t *testing.T) {
+func Test_payloadManager_FetchPayload(t *testing.T) {
 	server := httptest.NewServer( // mock server
 		http.FileServer(http.Dir("../../testutils/testdata")), // mock data stored at testutils/testdata/index.txt
 	)
@@ -56,408 +55,130 @@ func TestFetchPayload(t *testing.T) {
 		func(ctc context.Context, blobPath string, containerType core.ContainerType) error {
 			return nil
 		})
+
 	pm := NewPayloadManger(azureClient, logger, cfg)
 
-	checkFetch := func(t *testing.T, url string) {
-		t.Helper()
-		receivedPayload, err := pm.FetchPayload(context.TODO(), url)
-		expectedError := "invalid payload address"
-		errGot := fmt.Sprintf("%v", err)
-
-		if url == "" && errGot != expectedError {
-			t.Errorf("Unexpected error for empty url, error: %v", err)
-		}
-
-		if err != nil {
-			t.Errorf("Error in fetching payload for URL, received: %v", err)
-		}
-
-		expectedPayload := testutils.PayloadCheck
-		receivedPayloadStr := fmt.Sprintf("%v", receivedPayload) // converting received payload to string for easy comparison
-
-		if receivedPayloadStr != expectedPayload {
-			t.Errorf("\nReceived payload: %v\nexpected payload: %v", receivedPayloadStr, expectedPayload)
-		}
+	type args struct {
+		ctx            context.Context
+		payloadAddress string
 	}
+	tests := []struct {
+		name    string
+		args    args
+		want    string
+		wantErr bool
+	}{
+		{"Test Payload fetch for success", args{ctx: context.TODO(), payloadAddress: server.URL + "/index.txt"}, testutils.PayloadCheck, false},
 
-	checkFetchEmptyURL := func(t *testing.T, url string) {
-		t.Helper()
-		_, err := pm.FetchPayload(context.TODO(), url)
-		expectedError := "invalid payload address"
-		errGot := fmt.Sprintf("%v", err)
-
-		if url == "" && errGot != expectedError {
-			t.Errorf("Unexpected error for empty url, error: %v", err)
-		}
+		{"Test Payload fetch for empty url", args{ctx: context.TODO(), payloadAddress: ""}, "<nil>", true},
 	}
-
-	checkValidation := func(t *testing.T) {
-		t.Helper()
-		_, err := testutils.GetPayload()
-		if err != nil {
-			t.Errorf("error in validating payload, error %v", err.Error())
-		}
-	}
-
-	t.Run("TestPayloadFetch", func(t *testing.T) {
-		url := server.URL
-		checkFetch(t, url+"/index.txt")
-	})
-	t.Run("TestPayloadFetch using empty URL", func(t *testing.T) {
-		checkFetchEmptyURL(t, "")
-	})
-	t.Run("TestPayloadValidation", func(t *testing.T) {
-		checkValidation(t)
-	})
-}
-
-func TestValidatePayloadForEmptyRepoLink(t *testing.T) {
-	azureClient, logger, cfg, err := getPayloadManagerArgs()
-	if err != nil {
-		t.Errorf("Couldn't establish required arguments, error: %v", err)
-		return
-	}
-	pm := NewPayloadManger(azureClient, logger, cfg)
-	payload, err := testutils.GetPayload()
-	if err != nil {
-		t.Errorf("Couldn't get payload, error: %v", err)
-		return
-	}
-	payload.RepoLink = ""
-	err2 := pm.ValidatePayload(context.TODO(), payload)
-	expectedErr := errs.ErrInvalidPayload("Missing repo link")
-
-	if err2 == nil {
-		t.Errorf("Expected error: %v, Received error: %v", expectedErr, err2)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := pm.FetchPayload(tt.args.ctx, tt.args.payloadAddress)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("payloadManager.FetchPayload() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			receivedPayload := fmt.Sprintf("%v", got)
+			if receivedPayload != tt.want {
+				t.Errorf("payloadManager.FetchPayload() = \n%v, want \n%v", receivedPayload, tt.want)
+			}
+		})
 	}
 }
 
-func TestValidatePayloadForEmptyRepoSlug(t *testing.T) {
-	azureClient, logger, cfg, err := getPayloadManagerArgs()
-	if err != nil {
-		t.Errorf("Couldn't establish required arguments, error: %v", err)
-		return
-	}
-	pm := NewPayloadManger(azureClient, logger, cfg)
-	payload, err := testutils.GetPayload()
-	if err != nil {
-		t.Errorf("Couldn't get payload, error: %v", err)
-		return
-	}
-	payload.RepoSlug = ""
-	err2 := pm.ValidatePayload(context.TODO(), payload)
-	expectedErr := errors.New("Missing repo slug")
-
-	if err2 == nil {
-		t.Errorf("Expected error: %v, Received error: %v", expectedErr, err2)
-	}
-}
-
-func TestValidatePayloadForEmptyGitProvider(t *testing.T) {
+func Test_payloadManager_ValidatePayload(t *testing.T) {
 	azureClient, logger, cfg, err := getPayloadManagerArgs()
 	if err != nil {
 		t.Errorf("Couldn't establish required arguments, error: %v", err)
 		return
 	}
 
-	pm := NewPayloadManger(azureClient, logger, cfg)
-	payload, err := testutils.GetPayload()
-	if err != nil {
-		t.Errorf("Couldn't get payload, error: %v", err)
+	type args struct {
+		ctx            context.Context
+		payload        *core.Payload
+		coverageMode   bool
+		parseMode      bool
+		locators       string
+		locatorAddress string
+		targetCommit   string
+		baseCommit     string
+		taskID         string
 	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{"Test validate payload for empty repolink", args{ctx: context.TODO(), payload: &core.Payload{RepoLink: ""}}, true},
 
-	payload.GitProvider = ""
+		{"Test validate payload for empty reposlug", args{ctx: context.TODO(), payload: &core.Payload{RepoLink: "github.com/abc/", RepoSlug: ""}}, true},
 
-	err2 := pm.ValidatePayload(context.TODO(), payload)
-	expectedErr := errs.ErrInvalidPayload("Missing git provider")
-	if err2 == nil {
-		t.Errorf("Expected error: %v, Received error: %v", expectedErr, err2)
+		{"Test validate payload for empty gitprovider", args{ctx: context.TODO(), payload: &core.Payload{RepoLink: "github.com/abc/", RepoSlug: "/slug", GitProvider: ""}}, true},
+
+		{"Test validate payload for empty buildID", args{ctx: context.TODO(), payload: &core.Payload{RepoLink: "github.com/abc/", RepoSlug: "/slug", GitProvider: "fake", BuildID: ""}}, true},
+
+		{"Test validate payload for empty repoID", args{ctx: context.TODO(), payload: &core.Payload{RepoLink: "github.com/abc/", RepoSlug: "/slug", GitProvider: "fake", BuildID: "build", RepoID: ""}}, true},
+
+		{"Test validate payload for empty branchName", args{ctx: context.TODO(), payload: &core.Payload{RepoLink: "github.com/abc/", RepoSlug: "/slug", GitProvider: "fake", BuildID: "build", RepoID: "repo", BranchName: ""}}, true},
+
+		{"Test validate payload for empty orgID", args{ctx: context.TODO(), payload: &core.Payload{RepoLink: "github.com/abc/", RepoSlug: "/slug", GitProvider: "fake", BuildID: "build", RepoID: "repo", BranchName: "branch", OrgID: ""}}, true},
+
+		{"Test validate payload for empty TASFileName", args{ctx: context.TODO(), payload: &core.Payload{RepoLink: "github.com/abc/", RepoSlug: "/slug", GitProvider: "fake", BuildID: "build", RepoID: "repo", BranchName: "branch", OrgID: "org", TasFileName: ""}}, true},
+
+		{"Test validate payload for expected payload.Locator Address & payloadLocator", args{ctx: context.TODO(), payload: &core.Payload{RepoLink: "github.com/abc/", RepoSlug: "/slug", GitProvider: "fake", BuildID: "build", RepoID: "repo", BranchName: "branch", OrgID: "org", TasFileName: "a"}, locators: "/locator", locatorAddress: "/locatorAddr"}, true},
+
+		{"Test validate payload for empty build target commit", args{ctx: context.TODO(), payload: &core.Payload{RepoLink: "github.com/abc/", RepoSlug: "/slug", GitProvider: "fake", BuildID: "build", RepoID: "repo", BranchName: "branch", OrgID: "org", TasFileName: "tas", BuildTargetCommit: ""}}, true},
+
+		{"Test validate payload for empty target commit in config", args{ctx: context.TODO(), payload: &core.Payload{RepoLink: "github.com/abc/", RepoSlug: "/slug", GitProvider: "fake", BuildID: "build", RepoID: "repo", BranchName: "branch", OrgID: "org", TasFileName: "tas", BuildTargetCommit: "btg"}, coverageMode: false, parseMode: false, locators: "../dummy", targetCommit: ""}, true},
+
+		{"Test validate payload for target & base commit in config", args{ctx: context.TODO(), payload: &core.Payload{RepoLink: "github.com/abc/", RepoSlug: "/slug", GitProvider: "fake", BuildID: "build", RepoID: "repo", BranchName: "branch", OrgID: "org", TasFileName: "tas", BuildTargetCommit: "btg"}, coverageMode: false, parseMode: false, locators: "../dummy", targetCommit: "tct", baseCommit: "bct"}, true},
+
+		{"Test validate payload for target, base commit & taskID in config", args{ctx: context.TODO(), payload: &core.Payload{RepoLink: "github.com/abc/", RepoSlug: "/slug", GitProvider: "fake", BuildID: "build", RepoID: "repo", BranchName: "branch", OrgID: "org", TasFileName: "tas", BuildTargetCommit: "btg"}, coverageMode: false, parseMode: false, locators: "../dummy", targetCommit: "tct", baseCommit: "bct", taskID: "tid"}, true},
+
+		{"Test validate payload for non push and pull event", args{ctx: context.TODO(), payload: &core.Payload{RepoLink: "github.com/abc/", RepoSlug: "/slug", GitProvider: "fake", BuildID: "build", RepoID: "repo", BranchName: "branch", OrgID: "org", TasFileName: "tas", BuildTargetCommit: "btg", EventType: "invalid"}, coverageMode: true}, true},
+
+		{"Test validate payload for push event with nil commit", args{ctx: context.TODO(), payload: &core.Payload{RepoLink: "github.com/abc/", RepoSlug: "/slug", GitProvider: "fake", BuildID: "build", RepoID: "repo", BranchName: "branch", OrgID: "org", TasFileName: "tas", BuildTargetCommit: "btg", EventType: "push", Commits: []core.CommitChangeList{}}, coverageMode: true}, true},
+
+		{"Test validate payload for success", args{ctx: context.TODO(), payload: &core.Payload{RepoLink: "github.com/abc/", RepoSlug: "/slug", GitProvider: "fake", BuildID: "build", RepoID: "repo", BranchName: "branch", OrgID: "org", TasFileName: "tas", BuildTargetCommit: "btg", EventType: "push", Commits: []core.CommitChangeList{{Sha: "sha", Message: "msg"}}}, coverageMode: true}, false},
 	}
-}
+	for _, tt := range tests {
+		cfg.CoverageMode = tt.args.coverageMode
+		cfg.ParseMode = tt.args.parseMode
+		cfg.LocatorAddress = tt.args.locatorAddress
+		cfg.TargetCommit = tt.args.targetCommit
+		cfg.Locators = tt.args.locators
+		cfg.BaseCommit = tt.args.baseCommit
+		cfg.TaskID = tt.args.taskID
 
-func TestValidatePayloadForEmptyBuildID(t *testing.T) {
-	azureClient, logger, cfg, err := getPayloadManagerArgs()
-	if err != nil {
-		t.Errorf("Couldn't establish required arguments, error: %v", err)
-		return
-	}
-	pm := NewPayloadManger(azureClient, logger, cfg)
+		pm := NewPayloadManger(azureClient, logger, cfg)
+		t.Run(tt.name, func(t *testing.T) {
+			if err := pm.ValidatePayload(tt.args.ctx, tt.args.payload); (err != nil) != tt.wantErr {
+				t.Errorf("payloadManager.ValidatePayload() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
 
-	payload, err := testutils.GetPayload()
-	if err != nil {
-		t.Errorf("Couldn't get payload, error: %v", err)
-		return
-	}
+			if cfg.Locators != "" {
+				if tt.args.payload.Locators != tt.args.locators {
+					t.Errorf("payloadManager.ValidatePayload() payload.locatorAdress = %v, want: %v", tt.args.payload.LocatorAddress, tt.args.locators)
+					return
+				}
+			}
 
-	payload.BuildID = ""
+			if cfg.LocatorAddress != "" {
+				if tt.args.payload.LocatorAddress != tt.args.locatorAddress {
+					t.Errorf("payloadManager.ValidatePayload() payload.locatorAdress = %v, want: %v", tt.args.payload.LocatorAddress, tt.args.locatorAddress)
+					return
+				}
+			}
+			if !(cfg.CoverageMode || cfg.ParseMode) {
+				if cfg.BaseCommit != "" || cfg.TargetCommit != "" || cfg.TaskID != "" {
+					if tt.args.payload.BaseCommit != tt.args.baseCommit || tt.args.payload.TargetCommit != tt.args.targetCommit || tt.args.payload.TaskID != tt.args.taskID {
+						t.Errorf("got payload.BaseCommit: %v, want: %v\ngot payload.TargetCommit: %v, want: %v\ngot payload.TaskID: %v, want: %v", tt.args.payload.BaseCommit, tt.args.baseCommit, tt.args.payload.TargetCommit, tt.args.targetCommit, tt.args.payload.TaskID, tt.args.taskID)
+					}
+				}
+			}
 
-	err2 := pm.ValidatePayload(context.TODO(), payload)
-	expectedErr := errs.ErrInvalidPayload("Missing BuildID")
-	if err2 == nil {
-		t.Errorf("Expected error: %v, Received error: %v", expectedErr, err2)
-	}
-}
-
-func TestValidatePayloadForEmptyRepoID(t *testing.T) {
-	azureClient, logger, cfg, err := getPayloadManagerArgs()
-	if err != nil {
-		t.Errorf("Couldn't establish required arguments, error: %v", err)
-		return
-	}
-	pm := NewPayloadManger(azureClient, logger, cfg)
-	payload, err := testutils.GetPayload()
-	if err != nil {
-		t.Errorf("Couldn't get payload, error: %v", err)
-		return
-	}
-
-	payload.RepoID = ""
-
-	err2 := pm.ValidatePayload(context.TODO(), payload)
-	expectedErr := errs.ErrInvalidPayload("Missing RepoID")
-	if err2 == nil {
-		t.Errorf("Expected error: %v, Received error: %v", expectedErr, err2)
-	}
-}
-
-func TestValidatePayloadForEmptyBranchName(t *testing.T) {
-	azureClient, logger, cfg, err := getPayloadManagerArgs()
-	if err != nil {
-		t.Errorf("Couldn't establish required arguments, error: %v", err)
-		return
-	}
-	pm := NewPayloadManger(azureClient, logger, cfg)
-	payload, err := testutils.GetPayload()
-	if err != nil {
-		t.Errorf("Couldn't get payload, error: %v", err)
-		return
-	}
-
-	payload.BranchName = ""
-
-	err2 := pm.ValidatePayload(context.TODO(), payload)
-	expectedErr := errs.ErrInvalidPayload("Missing Branch Name")
-	if err2 == nil {
-		t.Errorf("Expected error: %v, Received error: %v", expectedErr, err2)
-	}
-}
-
-func TestValidatePayloadForEmptyOrgID(t *testing.T) {
-	azureClient, logger, cfg, err := getPayloadManagerArgs()
-	if err != nil {
-		t.Errorf("Couldn't establish required arguments, error: %v", err)
-		return
-	}
-	pm := NewPayloadManger(azureClient, logger, cfg)
-	payload, err := testutils.GetPayload()
-	if err != nil {
-		t.Errorf("Couldn't get payload, error: %v", err)
-		return
-	}
-
-	payload.OrgID = ""
-
-	err2 := pm.ValidatePayload(context.TODO(), payload)
-	expectedErr := errs.ErrInvalidPayload("Missing OrgID")
-	if err2 == nil {
-		t.Errorf("Expected error: %v, Received error: %v", expectedErr, err2)
-	}
-}
-
-func TestValidatePayloadForEmptyTASFileName(t *testing.T) {
-	azureClient, logger, cfg, err := getPayloadManagerArgs()
-	if err != nil {
-		t.Errorf("Couldn't establish required arguments, error: %v", err)
-		return
-	}
-	pm := NewPayloadManger(azureClient, logger, cfg)
-	payload, err := testutils.GetPayload()
-	if err != nil {
-		t.Errorf("Couldn't get payload, error: %v", err)
-		return
-	}
-
-	payload.TasFileName = ""
-
-	err2 := pm.ValidatePayload(context.TODO(), payload)
-	expectedErr := errs.ErrInvalidPayload("Missing tas yml filename")
-	if err2 == nil {
-		t.Errorf("Expected error: %v, Received error: %v", expectedErr, err2)
-	}
-}
-
-func TestValidatePayloadForEmptyTaskID(t *testing.T) {
-	azureClient, logger, cfg, err := getPayloadManagerArgs()
-	if err != nil {
-		t.Errorf("Couldn't establish required arguments, error: %v", err)
-		return
-	}
-	cfg.CoverageMode = false
-	cfg.ParseMode = false
-	cfg.Locators = "c/d"
-	cfg.LocatorAddress = "test/s/"
-	cfg.TargetCommit = "reusfffuv"
-	cfg.TaskID = ""
-	pm := NewPayloadManger(azureClient, logger, cfg)
-	payload, err := testutils.GetPayload()
-	if err != nil {
-		t.Errorf("Couldn't get payload, error: %v", err)
-		return
-	}
-
-	payload.TaskID = ""
-
-	err2 := pm.ValidatePayload(context.TODO(), payload)
-	expectedErr := errs.ErrInvalidPayload("Missing taskID in config")
-	if err2 == nil {
-		t.Errorf("Expected error: %v, Received error: %v", expectedErr, err2)
-	}
-}
-
-func TestValidatePayloadForEmptyBuildTargetCommit(t *testing.T) {
-	azureClient, logger, cfg, err := getPayloadManagerArgs()
-	if err != nil {
-		t.Errorf("Couldn't establish required arguments, error: %v", err)
-		return
-	}
-	cfg.CoverageMode = false
-	cfg.ParseMode = false
-	pm := NewPayloadManger(azureClient, logger, cfg)
-	payload, err := testutils.GetPayload()
-	if err != nil {
-		t.Errorf("Couldn't get payload, error: %v", err)
-		return
-	}
-
-	payload.BuildTargetCommit = ""
-
-	err2 := pm.ValidatePayload(context.TODO(), payload)
-	expectedErr := errs.ErrInvalidPayload("Missing build target commit")
-	if err2 == nil {
-		t.Errorf("Expected error: %v, Received error: %v", expectedErr, err2)
-	}
-}
-
-func TestValidatePayloadForEmptyTargetCommitInCfg(t *testing.T) {
-	azureClient, logger, cfg, err := getPayloadManagerArgs()
-	if err != nil {
-		t.Errorf("Couldn't establish required arguments, error: %v", err)
-		return
-	}
-	cfg.CoverageMode = false
-	cfg.ParseMode = false
-	pm := NewPayloadManger(azureClient, logger, cfg)
-	payload, err := testutils.GetPayload()
-	if err != nil {
-		t.Errorf("Couldn't get payload, error: %v", err)
-		return
-	}
-
-	payload.TargetCommit = ""
-
-	err2 := pm.ValidatePayload(context.TODO(), payload)
-	expectedErr := errs.ErrInvalidPayload("Missing targetCommit in config")
-	if err2 == nil {
-		t.Errorf("Expected error: %v, Received error: %v", expectedErr, err2)
-	}
-}
-
-func TestValidatePayloadForTaskIDInCfg(t *testing.T) {
-	azureClient, logger, cfg, err := getPayloadManagerArgs()
-	if err != nil {
-		t.Errorf("Couldn't establish required arguments, error: %v", err)
-		return
-	}
-	cfg.CoverageMode = false
-	cfg.ParseMode = false
-	cfg.TargetCommit = "reusfffuv"
-	cfg.TaskID = "gtuh"
-	pm := NewPayloadManger(azureClient, logger, cfg)
-	payload, err := testutils.GetPayload()
-	if err != nil {
-		t.Errorf("Couldn't get payload, error: %v", err)
-		return
-	}
-
-	err2 := pm.ValidatePayload(context.TODO(), payload)
-	if payload.TaskID != cfg.TaskID {
-		t.Errorf("Payload TaskID is not same as config TaskId, Received error: %v", err2)
-	}
-}
-
-func TestValidatePayloadForInvalidEvent(t *testing.T) {
-	azureClient, logger, cfg, err := getPayloadManagerArgs()
-	if err != nil {
-		t.Errorf("Couldn't establish required arguments, error: %v", err)
-		return
-	}
-	cfg.CoverageMode = true
-	cfg.ParseMode = false
-	pm := NewPayloadManger(azureClient, logger, cfg)
-	payload, err := testutils.GetPayload()
-	if err != nil {
-		t.Errorf("Couldn't get payload, error: %v", err)
-		return
-	}
-
-	payload.Diff = ""
-	payload.EventType = "invalid"
-
-	err2 := pm.ValidatePayload(context.TODO(), payload)
-	expectedErr := errs.ErrInvalidPayload("Invalid event type")
-	if err2 == nil {
-		t.Errorf("Expected error: %v, Received error: %v", expectedErr, err2)
-	}
-}
-
-func TestValidatePayloadForPushEvent(t *testing.T) {
-	azureClient, logger, cfg, err := getPayloadManagerArgs()
-	if err != nil {
-		t.Errorf("Couldn't establish required arguments, error: %v", err)
-		return
-	}
-	cfg.CoverageMode = true
-	cfg.ParseMode = false
-	pm := NewPayloadManger(azureClient, logger, cfg)
-	payload, err := testutils.GetPayload()
-	if err != nil {
-		t.Errorf("Couldn't get payload, error: %v", err)
-		return
-	}
-
-	payload.Diff = ""
-	payload.EventType = "push"
-
-	err2 := pm.ValidatePayload(context.TODO(), payload)
-	expectedErr := errs.ErrInvalidPayload("Missing commits error")
-	if err2 == nil {
-		t.Errorf("Expected error: %v, Received error: %v", expectedErr, err2)
-	}
-}
-
-func TestValidatePayloadForSucess(t *testing.T) {
-	azureClient, logger, cfg, err := getPayloadManagerArgs()
-	if err != nil {
-		t.Errorf("Couldn't establish required arguments, error: %v", err)
-		return
-	}
-	cfg.CoverageMode = true
-	cfg.ParseMode = false
-	pm := NewPayloadManger(azureClient, logger, cfg)
-	payload, err := testutils.GetPayload()
-	if err != nil {
-		t.Errorf("Couldn't get payload, error: %v", err)
-		return
-	}
-
-	payload.Diff = ""
-	payload.EventType = "push"
-	payload.Commits = make([]core.CommitChangeList, 1)
-	payload.Commits = append(payload.Commits, core.CommitChangeList{Sha: "yetr3", Link: "heuf"})
-
-	err2 := pm.ValidatePayload(context.TODO(), payload)
-	expectedErr := errs.ErrInvalidPayload("")
-	if err2 != nil {
-		t.Errorf("Expected error: %v, Received error: %v", expectedErr, err2)
+		})
 	}
 }

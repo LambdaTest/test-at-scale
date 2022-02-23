@@ -120,9 +120,9 @@ func TestClone(t *testing.T) {
 		}
 
 		payload.RepoLink = server.URL
-		payload.TargetCommit = "testRepo"
+		payload.BuildTargetCommit = "testRepo"
 		cloneToken := "dummy"
-		commitID := payload.TargetCommit
+		commitID := payload.BuildTargetCommit
 
 		err = gm.Clone(context.TODO(), payload, cloneToken)
 		global.TestEnv = false

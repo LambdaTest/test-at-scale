@@ -1,100 +1,99 @@
 package secret
 
 import (
-	"errors"
 	"log"
-	"os"
+	"reflect"
 	"testing"
+	"time"
 
+	"github.com/LambdaTest/synapse/pkg/core"
 	"github.com/LambdaTest/synapse/pkg/lumber"
 )
 
-func TestSecret_GetRepoSecret(t *testing.T) {
+func Test_secretParser_GetRepoSecret(t *testing.T) {
 	logger, err := lumber.NewLogger(lumber.LoggingConfig{EnableConsole: true}, true, lumber.InstanceZapLogger)
 	if err != nil {
 		log.Fatalf("Could not instantiate logger %s", err.Error())
 	}
 	secretParser := New(logger)
 
-	checkIncorrectPath := func(t *testing.T) {
-		path := "../../testutils/testdata/secretTestData/PathNotExist/a.json"
-		secret, err := secretParser.GetRepoSecret(path)
-		if secret != nil || err != nil {
-			t.Errorf("Expected nil error and nil secret, received secret: %v, error: %v", secret, err)
-		}
+	type args struct {
+		path string
 	}
+	tests := []struct {
+		name    string
+		args    args
+		want    map[string]string
+		wantErr bool
+	}{
+		{"Test for correct file", args{path: "../../testutils/testdata/secretTestData/secretfile.json"}, map[string]string{"abc": "val", "xyz": "val2"}, false},
 
-	checkInvalidFile := func(t *testing.T) {
-		path := "../../testutils/testdata/secretTestData/invalidsecretfile"
-		secret, err := secretParser.GetRepoSecret(path)
+		{"Test for incorrect path", args{path: "../../testutils/testdata/secretTestData/PathNotExist/a.json"}, map[string]string{}, false},
 
-		if secret != nil {
-			t.Errorf("Expected nil error and nil secret, received secret: %v, error: %v", secret, err)
-		}
+		{"Test for invalid file", args{path: "../../testutils/testdata/secretTestData/invalidsecretfile"}, map[string]string{}, true},
 	}
-
-	checkCorrectFile := func(t *testing.T) {
-		path := "../../testutils/testdata/secretTestData/secretfile.json"
-		secret, err := secretParser.GetRepoSecret(path)
-
-		if err != nil {
-			t.Errorf("Received secret: %v, Received error: %v", secret, err)
-		}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := secretParser.GetRepoSecret(tt.args.path)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("secretParser.GetRepoSecret() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if len(tt.want) == 0 {
+				if len(got) != 0 {
+					t.Errorf("secretParser.GetRepoSecret() = %v, want %v", got, tt.want)
+				}
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("secretParser.GetRepoSecret() = %v, want %v", got, tt.want)
+			}
+		})
 	}
-
-	t.Run("TestSecret_GetRepoSecret for incorrect path", func(t *testing.T) {
-		checkIncorrectPath(t)
-	})
-	t.Run("TestSecret_GetRepoSecret for invalid file", func(t *testing.T) {
-		checkInvalidFile(t)
-	})
-	t.Run("TestSecret_GetRepoSecret for correct file", func(t *testing.T) {
-		checkCorrectFile(t)
-	})
 }
 
-func TestSecret_GetOauthSecret(t *testing.T) {
+func Test_secretParser_GetOauthSecret(t *testing.T) {
 	logger, err := lumber.NewLogger(lumber.LoggingConfig{EnableConsole: true}, true, lumber.InstanceZapLogger)
 	if err != nil {
 		log.Fatalf("Could not instantiate logger %s", err.Error())
 	}
 	secretParser := New(logger)
-
-	checkIncorrectPath := func(t *testing.T) {
-		path := "../../testutils/testdata/secretTestData/PathNotExist/a.json"
-		oauth, err := secretParser.GetOauthSecret(path)
-		if errors.Is(err, os.ErrNotExist) == false {
-			t.Errorf("Expected nil error and nil secret, received secret: %v, error: %s", oauth, err)
-		}
+	type Data struct {
+		AccessToken  string    `json:"access_token"`
+		Expiry       time.Time `json:"expiry"`
+		RefreshToken string    `json:"refresh_token"`
 	}
-
-	checkInvalidFile := func(t *testing.T) {
-		path := "../../testutils/testdata/secretTestData/invalidsecretfile"
-		secret, err := secretParser.GetOauthSecret(path)
-
-		if secret != nil {
-			t.Errorf("Expected nil error and nil secret, received secret: %v, error: %v", secret, err)
-		}
+	time, err := time.Parse("Mon, 02 Jan 2006 15:04:05 MST", "Tue, 22 Feb 2022 16:22:01 IST")
+	if err != nil {
+		log.Fatalf("Could not parse time, error: %v", err)
 	}
-
-	checkCorrectFile := func(t *testing.T) {
-		path := "../../testutils/testdata/secretTestData/secretfile.json"
-		oauth, err := secretParser.GetOauthSecret(path)
-
-		if err != nil {
-			t.Errorf("Received secret: %v, Received error: %v", oauth, err)
-		}
+	type args struct {
+		path string
 	}
+	tests := []struct {
+		name    string
+		args    args
+		want    *core.Oauth
+		wantErr bool
+	}{
+		{"Test for correct file", args{path: "../../testutils/testdata/secretTestData/secretOauthFile.json"}, &core.Oauth{Data: Data{AccessToken: "token", Expiry: time, RefreshToken: "refresh"}}, false},
 
-	t.Run("TestSecret_GetOauthSecret for incorrect path", func(t *testing.T) {
-		checkIncorrectPath(t)
-	})
-	t.Run("TestSecret_GetOauthSecret for invalid file", func(t *testing.T) {
-		checkInvalidFile(t)
-	})
-	t.Run("TestSecret_GetOauthSecret for correct file", func(t *testing.T) {
-		checkCorrectFile(t)
-	})
+		{"Test for incorrect path", args{path: "../../testutils/testdata/secretTestData/PathNotExist/a.json"}, nil, true},
+
+		{"Test for invalid file", args{path: "../../testutils/testdata/secretTestData/invalidsecretfile"}, nil, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := secretParser.GetOauthSecret(tt.args.path)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("secretParser.GetOauthSecret() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("secretParser.GetOauthSecret() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
 
 func TestSubstituteSecret(t *testing.T) {

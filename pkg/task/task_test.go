@@ -57,7 +57,7 @@ func TestTask_UpdateStatus(t *testing.T) {
 
 		if st != 200 {
 			expectedErr := "non 200 status code"
-			if expectedErr != updateStatusErr.Error() {
+			if updateStatusErr == nil {
 				t.Errorf("Expected: %s, Received: %s", expectedErr, updateStatusErr)
 			}
 			return
