@@ -23,8 +23,6 @@ type TASConfigManager interface {
 type GitManager interface {
 	// Clone repository from TAS config
 	Clone(ctx context.Context, payload *Payload, cloneToken string) error
-	// CloneYML  clones all .tas.yml for all  the commits
-	CloneYML(ctx context.Context, payload *Payload, cloneToken string) error
 }
 
 // DiffManager manages the diff findings for the given payload
@@ -54,9 +52,10 @@ type CoverageService interface {
 	MergeAndUpload(ctx context.Context, payload *Payload) error
 }
 
-// YMLParserService services parsing of tas.yml
+// YMLParserService parses the .tas.yml files
 type YMLParserService interface {
-	PerformParsing(payload *Payload) error
+	// ParseAndValidate the YML file and validades it
+	ParseAndValidate(ctx context.Context, payload *Payload) error
 }
 
 // TestStats is used for servicing stat collection

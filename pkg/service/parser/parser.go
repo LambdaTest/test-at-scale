@@ -7,18 +7,16 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/LambdaTest/synapse/pkg/core"
 	"github.com/LambdaTest/synapse/pkg/global"
 	"github.com/LambdaTest/synapse/pkg/lumber"
 )
 
-// Parser represents the code parser object
-type Parser struct {
-	ctx              context.Context
+// parserService represents the yml parser object
+type parserService struct {
 	logger           lumber.Logger
-	TASConfigManager core.TASConfigManager
+	tasConfigManager core.TASConfigManager
 	httpClient       http.Client
 	endpoint         string
 }
@@ -31,22 +29,19 @@ var tierEnumMapping = map[core.Tier]int{
 	core.XLarge: 5,
 }
 
-//New returns a new instance of Parser
-func New(ctx context.Context, TASConfigManager core.TASConfigManager,
-	logger lumber.Logger) (*Parser, error) {
-	return &Parser{
+//New returns a new  YMLParserService
+func New(tasConfigManager core.TASConfigManager, logger lumber.Logger) core.YMLParserService {
+	return &parserService{
 		logger:           logger,
-		ctx:              ctx,
-		TASConfigManager: TASConfigManager,
+		tasConfigManager: tasConfigManager,
 		endpoint:         global.NeuronHost + "/ymlparser",
 		httpClient: http.Client{
-			Timeout: 30 * time.Second,
-		}}, nil
-
+			Timeout: global.DefaultHTTPTimeout,
+		},
+	}
 }
 
-// PerformParsing parses the YML file and returns error if there are any
-func (p *Parser) PerformParsing(payload *core.Payload) error {
+func (p *parserService) ParseAndValidate(ctx context.Context, payload *core.Payload) error {
 	targetCommit := payload.BuildTargetCommit
 	parserPayloadStatus := &core.ParserStatus{
 		TargetCommitID: targetCommit,
@@ -54,16 +49,14 @@ func (p *Parser) PerformParsing(payload *core.Payload) error {
 		Status:         core.Passed,
 	}
 
-	if tasConfig, err := p.TASConfigManager.LoadConfig(p.ctx,
-		targetCommit+payload.TasFileName, payload.EventType, true); err != nil {
+	if tasConfig, err := p.tasConfigManager.LoadConfig(ctx, payload.TasFileName, payload.EventType, true); err != nil {
 		p.logger.Infof("Parsing failed for commitID: %s, buildID: %s, error: %v", targetCommit, payload.BuildID, err)
 		parserPayloadStatus.Status = core.Error
 		parserPayloadStatus.Message = err.Error()
 	} else {
 		parserPayloadStatus.Tier = tasConfig.Tier
-		parserPayloadStatus.ContainerImage = tasConfig.ContainerImage
 		if _, err := isValidLicenseTier(tasConfig.Tier, payload.LicenseTier); err != nil {
-			p.logger.Errorf("LicenseTier validation failed error:%v", err)
+			p.logger.Errorf("LicenseTier validation failed for commitID: %s, buildID: %s, error: %v", targetCommit, payload.BuildID, err)
 			parserPayloadStatus.Status = core.Error
 			parserPayloadStatus.Message = err.Error()
 		}
@@ -78,14 +71,13 @@ func (p *Parser) PerformParsing(payload *core.Payload) error {
 	}
 
 	if err := p.sendParserResponse(parserResult); err != nil {
-		p.logger.Errorf("Parsing API failed to send data, error: %v", err)
+		p.logger.Errorf("Parsing API failed to send data, for commitID: %s, buildID: %s, error: %v", targetCommit, payload.BuildID, err)
 		return err
 	}
 	return nil
 }
 
-func (p *Parser) sendParserResponse(payload *core.ParserResponse) error {
-
+func (p *parserService) sendParserResponse(payload *core.ParserResponse) error {
 	reqBody, err := json.Marshal(payload)
 	if err != nil {
 		p.logger.Errorf("failed to marshal request body %v", err)
@@ -116,8 +108,7 @@ func (p *Parser) sendParserResponse(payload *core.ParserResponse) error {
 
 func isValidLicenseTier(yamlLicense, currentLicense core.Tier) (bool, error) {
 	if tierEnumMapping[yamlLicense] > tierEnumMapping[currentLicense] {
-		errorMsg := fmt.Sprintf("Tier must not exceed max tier in license %v", currentLicense)
-		return false, errors.New(errorMsg)
+		return false, fmt.Errorf("Tier must not exceed max tier in license %v", currentLicense)
 	}
 	return true, nil
 }

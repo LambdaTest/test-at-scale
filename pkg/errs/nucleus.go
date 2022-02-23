@@ -4,17 +4,13 @@ import (
 	"fmt"
 )
 
-// GenericUserFacingBEErrRemark returns a generic error message for user facing errors.
-const GenericUserFacingBEErrRemark = "Unexpected error"
-
-// Err repersent structure of error
+// Err represents structure of a custom error
 type Err struct {
 	Code    string
 	Message string
 	URL     string
 }
 
-// TODO: Print err url
 func (e Err) Error() string {
 	return fmt.Sprintf("%s : %s ", e.Code, e.Message)
 }
@@ -63,4 +59,6 @@ var (
 	ErrUnsupportedGitProvider = New("unsupported gitprovider")
 	// ErrGitDiffNotFound is returned when basecommit is null or git provider returns empty diff
 	ErrGitDiffNotFound = New("diff not found")
+	// GenericErrRemark returns a generic error message for user facing errors.
+	GenericErrRemark = New("Unexpected error")
 )

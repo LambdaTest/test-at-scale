@@ -5,7 +5,9 @@ go 1.17
 require (
 	github.com/Azure/azure-pipeline-go v0.2.3
 	github.com/Azure/azure-storage-blob-go v0.14.0
+	github.com/bmatcuk/doublestar/v4 v4.0.2
 	github.com/coreos/go-semver v0.3.0
+	github.com/denisbrodbeck/machineid v1.0.1
 	github.com/docker/docker v20.10.12+incompatible
 	github.com/gin-gonic/gin v1.7.7
 	github.com/go-playground/locales v0.14.0
@@ -32,7 +34,6 @@ require (
 	github.com/andybalholm/brotli v1.0.1 // indirect
 	github.com/containerd/containerd v1.5.9 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/denisbrodbeck/machineid v1.0.1
 	github.com/docker/distribution v2.7.1+incompatible // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.4.0 // indirect
