@@ -122,7 +122,6 @@ docker run --name synapse --restart always \
 - Click the 'Test Connection' button to ensure `test-at-scale` self hosted environment is connected and ready.
 - Hit `Proceed` to move forward to [Step 4](#step-4---importing-your-repo)
 
-
 <br>
 
 ### Step 4 - Importing your repo
@@ -132,6 +131,8 @@ docker run --name synapse --restart always \
 - You will be asked to setup a `post-merge` here. We recommend to proceed ahead with default settings. (You can change these later.) 
 
   ![N|Solid](https://www.lambdatest.com/support/assets/images/import-postmerge-c1b26a9e78a1b63dc23dd2129b16f9d6.gif)
+
+<br>
 
 ### Step 5 - Configuring TAS yml
 A `.tas.yml` file is a basic yaml configuration file that contains steps required for installing necessary dependencies and executing the tests present in your repository.
