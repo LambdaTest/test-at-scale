@@ -29,7 +29,7 @@ type ContainerStatus struct {
 	Error errs.Err
 }
 
-// ContainerImageConfig contains config which contian registery for docker
+// ContainerImageConfig contains config which contains the registry for docker
 type ContainerImageConfig struct {
 	AuthRegistry string
 	Image        string

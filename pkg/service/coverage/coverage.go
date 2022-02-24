@@ -29,7 +29,7 @@ const (
 	coverageJSONFileName = "coverage-final.json"
 	mergedcoverageJSON   = "coverage-merged.json"
 	compressedFileName   = "coverage-files.tzst"
-	mainfestJSONFileName = "manifest.json"
+	manifestJSONFileName = "manifest.json"
 	coverageFilePath     = "/scripts/mapCoverage.js"
 )
 
@@ -129,7 +129,7 @@ func (c *codeCoverageService) MergeAndUpload(ctx context.Context, payload *core.
 			c.logger.Errorf("code coverage directory not found commit id %s", commit.Sha)
 			return err
 		}
-		coverageManifestPath := filepath.Join(commitDir, mainfestJSONFileName)
+		coverageManifestPath := filepath.Join(commitDir, manifestJSONFileName)
 
 		manifestPayload, err := c.parseManifestFile(coverageManifestPath)
 		if err != nil {
@@ -159,28 +159,19 @@ func (c *codeCoverageService) MergeAndUpload(ctx context.Context, payload *core.
 				return err
 			}
 			_, err := c.uploadFile(ctx, repoBlobPath, compressedFileName, commit.Sha)
-			if err != nil {
-				return err
-			}
-			return nil
+			return err
 		})
 
 		var blobURL string
 		g.Go(func() error {
 			blobURL, err = c.uploadFile(ctx, repoBlobPath, filepath.Join(commitDir, mergedcoverageJSON), commit.Sha)
-			if err != nil {
-				return err
-			}
-			return nil
+			return err
 		})
 
 		var totalCoverage json.RawMessage
 		g.Go(func() error {
 			totalCoverage, err = c.getTotalCoverage(filepath.Join(commitDir, mergedcoverageJSON))
-			if err != nil {
-				return err
-			}
-			return nil
+			return err
 		})
 		if err = g.Wait(); err != nil {
 			c.logger.Errorf("failed to upload files to azure blob %v", err)
@@ -209,8 +200,8 @@ func (c *codeCoverageService) uploadFile(ctx context.Context, blobPath, filename
 	return
 }
 
-func (c *codeCoverageService) parseManifestFile(filepath string) (core.CoverageMainfest, error) {
-	manifestPayload := core.CoverageMainfest{}
+func (c *codeCoverageService) parseManifestFile(filepath string) (core.CoverageManifest, error) {
+	manifestPayload := core.CoverageManifest{}
 	if _, err := os.Stat(filepath); os.IsNotExist(err) {
 		c.logger.Errorf("manifest file not found in path %s", filepath)
 		return manifestPayload, err

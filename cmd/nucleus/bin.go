@@ -139,10 +139,8 @@ func run(cmd *cobra.Command, args []string) {
 		logger.Fatalf("failed to initialize cache manager: %v", err)
 	}
 
-	parserService, err := parser.New(ctx, tcm, logger)
-	if err != nil {
-		logger.Fatalf("failed to initialize parser service: %v", err)
-	}
+	parserService := parser.New(tcm, logger)
+
 	coverageService, err := coverage.New(execManager, azureClient, zstd, cfg, logger)
 	if err != nil {
 		logger.Fatalf("failed to initialize coverage service: %v", err)

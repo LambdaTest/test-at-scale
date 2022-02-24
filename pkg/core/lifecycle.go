@@ -78,11 +78,11 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	// set payload on pipeline object
 	pl.Payload = payload
 	if pl.Cfg.ParseMode {
-		err = pl.GitManager.CloneYML(ctx, payload, oauth.Data.AccessToken)
+		err = pl.GitManager.Clone(ctx, payload, oauth.Data.AccessToken)
 		if err != nil {
 			pl.Logger.Fatalf("failed to clone YML for build ID: %s, error: %v", payload.BuildID, err)
 		}
-		if err = pl.ParserService.PerformParsing(payload); err != nil {
+		if err = pl.ParserService.ParseAndValidate(ctx, payload); err != nil {
 			pl.Logger.Fatalf("error while parsing YML for build ID: %s, error: %v", payload.BuildID, err)
 		}
 		os.Exit(0)
@@ -117,7 +117,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 		if p := recover(); p != nil {
 			pl.Logger.Errorf("panic stack trace: %v", p)
 			taskPayload.Status = Error
-			taskPayload.Remark = errs.GenericUserFacingBEErrRemark
+			taskPayload.Remark = errs.GenericErrRemark.Error()
 		} else if err != nil {
 			if err == context.Canceled {
 				taskPayload.Status = Aborted
@@ -180,7 +180,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 		err = pl.ExecutionManager.ExecuteInternalCommands(ctx, InstallNodeVer, command, "", nil, nil)
 		if err != nil {
 			pl.Logger.Errorf("Unable to install user-defined nodeversion %v", err)
-			errRemark = errs.GenericUserFacingBEErrRemark
+			errRemark = errs.GenericErrRemark.Error()
 			return err
 		}
 		origPath := os.Getenv("PATH")
@@ -190,7 +190,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	if payload.CollectCoverage {
 		if err = fileutils.CreateIfNotExists(coverageDir, true); err != nil {
 			pl.Logger.Errorf("failed to create coverage directory %v", err)
-			errRemark = errs.GenericUserFacingBEErrRemark
+			errRemark = errs.GenericErrRemark.Error()
 			return err
 		}
 	}
@@ -198,7 +198,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	err = pl.TestBlockListService.GetBlockListedTests(ctx, tasConfig, payload.RepoID)
 	if err != nil {
 		pl.Logger.Errorf("Unable to fetch blocklisted tests: %v", err)
-		errRemark = errs.GenericUserFacingBEErrRemark
+		errRemark = errs.GenericErrRemark.Error()
 		return err
 	}
 
@@ -206,7 +206,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	secretMap, err := pl.SecretParser.GetRepoSecret(global.RepoSecretPath)
 	if err != nil {
 		pl.Logger.Errorf("Error in fetching Repo secrets %v", err)
-		errRemark = errs.GenericUserFacingBEErrRemark
+		errRemark = errs.GenericErrRemark.Error()
 		return err
 	}
 
@@ -214,7 +214,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	// TODO:  download from cdn
 	if err = pl.CacheStore.Download(ctx, cacheKey); err != nil {
 		pl.Logger.Errorf("Unable to download cache: %v", err)
-		errRemark = errs.GenericUserFacingBEErrRemark
+		errRemark = errs.GenericErrRemark.Error()
 		return err
 	}
 
@@ -230,7 +230,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	err = pl.ExecutionManager.ExecuteInternalCommands(ctx, InstallRunners, global.InstallRunnerCmd, global.RepoDir, nil, nil)
 	if err != nil {
 		pl.Logger.Errorf("Unable to install custom runners %v", err)
-		errRemark = errs.GenericUserFacingBEErrRemark
+		errRemark = errs.GenericErrRemark.Error()
 		return err
 	}
 
@@ -266,7 +266,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 
 		if err = pl.sendStats(*executionResult); err != nil {
 			pl.Logger.Errorf("error while sending test reports %v", err)
-			errRemark = errs.GenericUserFacingBEErrRemark
+			errRemark = errs.GenericErrRemark.Error()
 			return err
 		}
 		taskPayload.Status = Passed
@@ -290,7 +290,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	}
 	if err = pl.CacheStore.Upload(ctx, cacheKey, tasConfig.Cache.Paths...); err != nil {
 		pl.Logger.Errorf("Unable to upload cache: %v", err)
-		errRemark = errs.GenericUserFacingBEErrRemark
+		errRemark = errs.GenericErrRemark.Error()
 		return err
 	}
 	pl.Logger.Debugf("Cache uploaded successfully")

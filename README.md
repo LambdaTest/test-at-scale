@@ -97,10 +97,10 @@ To get up and running quickly, you can use the following instructions to setup T
 
 ```bash
 docker network create --internal test-at-scale
-docker run —name synapse —-restart always \
+docker run --name synapse --restart always \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v /tmp/synapse:/tmp/synapse \
-    -v .synapse.json:/home/synapse/.synapse.json \
+    -v ${PWD}/.synapse.json:/home/synapse/.synapse.json \
     -v /etc/machine-id:/etc/machine-id \
     --network=test-at-scale \
     lambdatest/synapse:latest

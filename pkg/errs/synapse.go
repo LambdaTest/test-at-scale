@@ -227,7 +227,7 @@ var ERR_SNK_RD_WRT_MSM = Err{
 	Code:    "ERR::SNK::RD::WRT::MSM",
 	Message: "Read write mismatch in sink proxy "}
 
-// CR_AUTH_NF should be raise when contianer registry auth are not present for private repo
+// CR_AUTH_NF should be raise when container registry auth are not present for private repo
 var CR_AUTH_NF = Err{
 	Code:    "CR::AUTH:NF",
-	Message: "Contianer registry auth are not present for private repo"}
+	Message: "Container registry auth are not present for private repo"}
