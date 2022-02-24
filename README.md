@@ -131,14 +131,16 @@ docker run --name synapse --restart always \
 - Once Imported successfully, click on `Go to Project` to proceed further.
 - You will be asked to setup a `post-merge` here. We recommend to proceed ahead with default settings. (You can change these later.) 
 
-  ![N|Solid](https://www.lambdatest.com/support/assets/images/import-postmerge-b6f7146b6b43d5f8876ec9bb73a478a1.gif)
+  ![N|Solid](https://www.lambdatest.com/support/assets/images/import-postmerge-c1b26a9e78a1b63dc23dd2129b16f9d6.gif)
 
 ### Step 5 - Configuring TAS yml
 A `.tas.yml` file is a basic yaml configuration file that contains steps required for installing necessary dependencies and executing the tests present in your repository.
 - In order to configure your imported repository, follow the steps given on the `.tas.yml`  configuration page. 
 - You can also know more about `.tas.yml` configuration parameters [here](https://www.lambdatest.com/support/docs/tas-configuring-tas-yml).
 
-  ![N|Solid](https://www.lambdatest.com/support/assets/images/yml-download-375c25fabbe3fe533782b94adecd2f95.gif)
+  ![N|Solid](https://www.lambdatest.com/support/assets/images/yml-download-6e7366b290de36ef8cb74f3d564850af.gif)
+  
+  ![N|Solid](https://www.lambdatest.com/support/assets/images/yml_placing-72cd952b403e499a938151c955540e18.gif)
 
 ## **Language & Framework Support** 
 Currently we support Mocha, Jest and Jasmine for testing Javascript codebases.
