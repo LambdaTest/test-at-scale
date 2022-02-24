@@ -140,7 +140,10 @@ A `.tas.yml` file is a basic yaml configuration file that contains steps require
 
   ![N|Solid](https://www.lambdatest.com/support/assets/images/yml-download-6e7366b290de36ef8cb74f3d564850af.gif)
   
-- Place the `.tas.yml` at root of your project.
+- Placing the `.tas.yml` configuration file.
+  - Create a new file as **.tas.yml** at the root level of your repository .
+  - **Copy** the configuration from the TAS yml configuration page and **paste** them in the **.tas.yml** file you just created.
+  - **Commit and Push** the changes to your repo.   
   
   ![N|Solid](https://www.lambdatest.com/support/assets/images/yml_placing-72cd952b403e499a938151c955540e18.gif)
 
