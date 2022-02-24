@@ -140,6 +140,8 @@ A `.tas.yml` file is a basic yaml configuration file that contains steps require
 
   ![N|Solid](https://www.lambdatest.com/support/assets/images/yml-download-6e7366b290de36ef8cb74f3d564850af.gif)
   
+- Place the `.tas.yml` at root of your project.
+  
   ![N|Solid](https://www.lambdatest.com/support/assets/images/yml_placing-72cd952b403e499a938151c955540e18.gif)
 
 ## **Language & Framework Support** 
