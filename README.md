@@ -27,6 +27,7 @@
 ## Getting Started
 
 ### Step 1 - Setting up a New Account
+
 In order to create an account, visit [TAS Login Page](https://tas.lambdatest.com/login/). (Or [TAS Home Page](https://tas.lambdatest.com/))
 - Login using a suitable git provider and select your organization you want to continue with.
 - Tell us your specialization, team size. 
