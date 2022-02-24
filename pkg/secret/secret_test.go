@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -48,6 +49,7 @@ func Test_secretParser_GetRepoSecret(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("secretParser.GetRepoSecret() = %v, want %v", got, tt.want)
+				return
 			}
 		})
 	}
@@ -65,11 +67,11 @@ func Test_secretParser_GetOauthSecret(t *testing.T) {
 		RefreshToken string    `json:"refresh_token"`
 	}
 	time, err := time.Parse("Mon, 02 Jan 2006 15:04:05 MST", "Tue, 22 Feb 2022 16:22:01 IST")
-	exp := "&{{token 2022-02-22 16:22:01 +0530 IST refresh}}"
 	if err != nil {
 		log.Fatalf("Could not parse time, error: %v", err)
 	}
 	Data := data{AccessToken: "token", Expiry: time, RefreshToken: "refresh"}
+
 	type args struct {
 		path string
 	}
@@ -92,15 +94,11 @@ func Test_secretParser_GetOauthSecret(t *testing.T) {
 				t.Errorf("secretParser.GetOauthSecret() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if tt.want != nil {
-				received := fmt.Sprintf("%v", got)
-				if received != exp {
-					t.Errorf("Expected: %v, got: %v", exp, received)
-				}
+			expected := "&{{token 2022-02-22 16:22:01 +0530 IST refresh}}"
+			received := fmt.Sprintf("%v", got)
+			if got != nil && !(strings.HasPrefix(received, "&{{token") && strings.HasSuffix(received, "refresh}}")) {
+				t.Errorf("Expected: %v, got: %v", expected, received)
 				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("secretParser.GetOauthSecret() = %v, want %v", got, tt.want)
 			}
 		})
 	}
