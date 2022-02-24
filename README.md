@@ -27,16 +27,17 @@
 ## Getting Started
 
 ### Step 1 - Setting up a New Account
+
 In order to create an account, visit [TAS Login Page](https://tas.lambdatest.com/login/). (Or [TAS Home Page](https://tas.lambdatest.com/))
 - Login using a suitable git provider and select your organization you want to continue with.
 - Tell us your specialization, team size. 
 
-  ![N|Solid](https://www.lambdatest.com/support/assets/images/signup_gi-c46290845329881e7893705add21d7cd.gif)
+  ![N|Solid](https://www.lambdatest.com/support/assets/images/signup_gi-f776f9b5a6ad4d877e6c427094969e1e.gif)
   
 - Select **TAS Self Hosted** and click on Proceed.
 - You will find your **LambdaTest Secret Key** on this page which will be required in the next steps.
 
-  ![N|Solid](https://www.lambdatest.com/support/assets/images/synapse-b3e8b6b475967d82bbee0d56339daf5a.gif)
+  ![N|Solid](https://www.lambdatest.com/support/assets/images/synapse-e3e691d8f3d08ff6b3b2ced1a9ef61ed.gif)
 
 <br>
 
@@ -122,7 +123,6 @@ docker run --name synapse --restart always \
 - Click the 'Test Connection' button to ensure `test-at-scale` self hosted environment is connected and ready.
 - Hit `Proceed` to move forward to [Step 4](#step-4---importing-your-repo)
 
-
 <br>
 
 ### Step 4 - Importing your repo
@@ -131,14 +131,23 @@ docker run --name synapse --restart always \
 - Once Imported successfully, click on `Go to Project` to proceed further.
 - You will be asked to setup a `post-merge` here. We recommend to proceed ahead with default settings. (You can change these later.) 
 
-  ![N|Solid](https://www.lambdatest.com/support/assets/images/import-postmerge-b6f7146b6b43d5f8876ec9bb73a478a1.gif)
+  ![N|Solid](https://www.lambdatest.com/support/assets/images/import-postmerge-c1b26a9e78a1b63dc23dd2129b16f9d6.gif)
+
+<br>
 
 ### Step 5 - Configuring TAS yml
 A `.tas.yml` file is a basic yaml configuration file that contains steps required for installing necessary dependencies and executing the tests present in your repository.
 - In order to configure your imported repository, follow the steps given on the `.tas.yml`  configuration page. 
 - You can also know more about `.tas.yml` configuration parameters [here](https://www.lambdatest.com/support/docs/tas-configuring-tas-yml).
 
-  ![N|Solid](https://www.lambdatest.com/support/assets/images/yml-download-375c25fabbe3fe533782b94adecd2f95.gif)
+  ![N|Solid](https://www.lambdatest.com/support/assets/images/yml-download-6e7366b290de36ef8cb74f3d564850af.gif)
+  
+- Placing the `.tas.yml` configuration file.
+  - Create a new file as **.tas.yml** at the root level of your repository .
+  - **Copy** the configuration from the TAS yml configuration page and **paste** them in the **.tas.yml** file you just created.
+  - **Commit and Push** the changes to your repo.   
+  
+  ![N|Solid](https://www.lambdatest.com/support/assets/images/yml_placing-72cd952b403e499a938151c955540e18.gif)
 
 ## **Language & Framework Support** 
 Currently we support Mocha, Jest and Jasmine for testing Javascript codebases.
