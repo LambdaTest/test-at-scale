@@ -18,6 +18,12 @@
 
 </p>
 
+## Test at scale - TAS
+TAS helps you accelerate your testing, shorten job times and get faster feedback on code changes, manage flaky tests and keep master green at all times.
+<br/>
+
+To learn more about TAS features and capabilities, see our [product page](https://www.lambdatest.com/test-at-scale). 
+
 ## Features
 - Smart test selection to run only the subset of tests which get impacted by a commit ⚡
 - Smart auto grouping of test to evenly distribute test execution across multiple containers based on previous execution times
@@ -183,7 +189,10 @@ We love our contributors! If you'd like to contribute anything from a bug fix to
 - 👾 Explore some good first issues [good first issues](https://github.com/LambdaTest/test-at-scale/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22).
 
 ### **Join our community**
-Engage with Developers, SDETs, and Testers around the world. Get the latest product updates. Discuss testing philosophies and more. Join the Test-at-scale Community on [Discord](https://discord.gg/Wyf8srhf6K).
+Engage with Developers, SDETs, and Testers around the world. 
+- Get the latest product updates. 
+- Discuss testing philosophies and more. 
+Join the Test-at-scale Community on [Discord](https://discord.gg/Wyf8srhf6K). Click [here](https://discord.com/channels/940635450509504523/941297958954102846) if you are already an existing member.
 
 ### **Support & Troubleshooting** 
 The documentation and community will help you troubleshoot most issues. If you have encountered a bug, you can contact us using one of the following channels:
