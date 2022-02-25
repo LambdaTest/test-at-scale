@@ -18,6 +18,23 @@
 
 </p>
 
+## Features
+- Smart test selection to run only the subset of tests which get impacted by a commit ⚡
+- Smart auto grouping of test to evenly distribute test execution across multiple containers based on previous execution times
+- Deep insights about test runs and execution metrics
+- Support status checks for pull requests
+- Advanced analytics to surface test performance and quality data
+- YAML driven declarative workflow management
+- Natively integrates with Github and Gitlab
+- Flexible workflow to run pre-merge and post-merge tests
+- Allows blocking and unblocking tests directly from the UI or YAML directive. No more WIP commits!
+- Support for customizing testing environment using raw commands in pre and poststeps
+- Supports Javascript monorepos
+- Smart depdency caching to speedup subsequent test runs
+- Easily customizable to support all major language and frameworks
+- Available as (https://lambdatest.com/test-at-scale)[hosted solution] as well as self-hosted opensource runner
+- [Upcoming] Smart flaky test management 🪄
+
 ## Table of contents 
 - 🚀 [Getting Started](#getting-started)
 - 💡 [Tutorials](#tutorials)
