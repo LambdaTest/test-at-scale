@@ -20,6 +20,8 @@
 
 ## Test at scale - TAS
 TAS helps you accelerate your testing, shorten job times and get faster feedback on code changes, manage flaky tests and keep master green at all times.
+<br/>
+
 To learn more about TAS features and capabilities, see our [product page](https://www.lambdatest.com/test-at-scale). 
 
 ## Features
