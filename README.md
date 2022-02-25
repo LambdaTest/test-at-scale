@@ -18,6 +18,10 @@
 
 </p>
 
+## Test at scale - TAS
+TAS helps you accelerate your testing, shorten job times and get faster feedback on code changes, manage flaky tests and keep master green at all times.
+To learn more about TAS features and capabilities, see our [product page](https://www.lambdatest.com/test-at-scale). 
+
 ## Features
 - Smart test selection to run only the subset of tests which get impacted by a commit ⚡
 - Smart auto grouping of test to evenly distribute test execution across multiple containers based on previous execution times
