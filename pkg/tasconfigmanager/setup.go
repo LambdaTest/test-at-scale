@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"reflect"
 	"strings"
 
@@ -17,7 +16,6 @@ import (
 	"github.com/LambdaTest/synapse/pkg/core"
 	"github.com/LambdaTest/synapse/pkg/lumber"
 	"github.com/LambdaTest/synapse/pkg/utils"
-	"github.com/bmatcuk/doublestar/v4"
 	"github.com/go-playground/locales/en"
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
@@ -60,17 +58,9 @@ func (tc *tasConfigManager) LoadConfig(ctx context.Context,
 	eventType core.EventType,
 	parseMode bool) (*core.TASConfig, error) {
 
-	fullFileName := path
-	ext := filepath.Ext(fullFileName)
-
-	// Add support for both yaml extensions
-	if ext == ".yaml" || ext == ".yml" {
-		matches, _ := doublestar.Glob(os.DirFS(global.RepoDir), strings.TrimSuffix(fullFileName, ext)+".{yml,yaml}")
-		if len(matches) == 0 {
-			return nil, errs.New(fmt.Sprintf("Configuration file not found at path: %s", path))
-		}
-		// If there are files with the both extensions, pick the first match
-		path = matches[0]
+	path, err := utils.GetConfigFileName(path)
+	if err != nil {
+		return nil, err
 	}
 
 	yamlFile, err := ioutil.ReadFile(fmt.Sprintf("%s/%s", global.RepoDir, path))
@@ -133,7 +123,6 @@ func (tc *tasConfigManager) LoadConfig(ctx context.Context,
 		}
 	}
 	return tasConfig, nil
-
 }
 
 // configureValidator configure the struct validator

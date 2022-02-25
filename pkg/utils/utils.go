@@ -5,9 +5,12 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/LambdaTest/synapse/pkg/errs"
 	"github.com/LambdaTest/synapse/pkg/global"
+	"github.com/bmatcuk/doublestar/v4"
 )
 
 // Min returns the smaller of x or y.
@@ -69,4 +72,19 @@ func WriteFileToDirectory(path string, filename string, data []byte) error {
 // GetOutboundIP returns preferred outbound ip of this container
 func GetOutboundIP() string {
 	return global.SynapseContainerURL
+}
+
+// GetConfigFileName returns the name of the configuration file
+func GetConfigFileName(path string) (string, error) {
+	ext := filepath.Ext(path)
+	// Add support for both yaml extensions
+	if ext == ".yaml" || ext == ".yml" {
+		matches, _ := doublestar.Glob(os.DirFS(global.RepoDir), strings.TrimSuffix(path, ext)+".{yml,yaml}")
+		if len(matches) == 0 {
+			return "", errs.New(fmt.Sprintf("Configuration file not found at path: %s", path))
+		}
+		// If there are files with the both extensions, pick the first match
+		path = matches[0]
+	}
+	return path, nil
 }
