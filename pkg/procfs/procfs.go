@@ -29,7 +29,7 @@ type Stats struct {
 	RecordTime    time.Time
 }
 
-//New  Returns new Proc struct
+// New returns new Proc struct
 func New(pid int32, samplingInterval time.Duration, usePss bool) (*Proc, error) {
 	p, err := process.NewProcess(pid)
 	if err != nil {
@@ -57,7 +57,6 @@ func (ps *Proc) GetStats() (stat *Stats, err error) {
 	if err != nil {
 		return nil, err
 	}
-
 	if !ps.usePss {
 		s.MemConsumed = memInfo.RSS
 		s.MemSwapped = memInfo.Swap
@@ -65,22 +64,18 @@ func (ps *Proc) GetStats() (stat *Stats, err error) {
 		return &s, nil
 	}
 
-	//NOTE: parsing maps is inefficient, can use smaps_rollup instead to find Pss, Ref #https://www.kernel.org/doc/Documentation/ABI/testing/procfs-smaps_rollup
-	// TODO: smaps_rollup parser
-
-	//why use pss instead of rss, Ref #https://stackoverflow.com/questions/1420426/how-to-calculate-the-cpu-usage-of-a-process-by-pid-in-linux-from-c/1424556
-	maps, err := ps.process.MemoryMaps(false)
+	// why use pss instead of rss, Ref #https://stackoverflow.com/questions/1420426/how-to-calculate-the-cpu-usage-of-a-process-by-pid-in-linux-from-c/1424556
+	maps, err := ps.process.MemoryMaps(true)
 	if err != nil {
 		return nil, err
 	}
-
-	var pss float64
+	var pss uint64
 	for _, m := range *maps {
-		// add 0.5KiB as this avg error due to truncation, Ref #https://github.com/pixelb/ps_mem
-		pss += float64(m.Pss) + 0.5
+		pss += m.Pss
 		s.MemSwapped += m.Swap
 	}
-	s.MemConsumed = uint64(pss)
+
+	s.MemConsumed = pss * 1024 // PSS is in kB
 	s.MemPercentage = (100 * float64(s.MemConsumed) / float64(ps.totalMem))
 	return &s, nil
 
