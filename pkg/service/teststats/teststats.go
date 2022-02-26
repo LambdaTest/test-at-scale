@@ -28,7 +28,7 @@ func New(cfg *config.NucleusConfig, logger lumber.Logger) (*ProcStats, error) {
 		logger:                      logger,
 		ExecutionResultInputChannel: make(chan core.ExecutionResult),
 		httpClient: http.Client{
-			Timeout: 45 * time.Second,
+			Timeout: global.DefaultHTTPTimeout,
 		},
 		ExecutionResultOutputChannel: make(chan core.ExecutionResult),
 	}, nil
