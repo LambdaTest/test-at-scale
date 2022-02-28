@@ -87,8 +87,6 @@ type Payload struct {
 	RepoLink                   string             `json:"repo_link"`
 	BuildTargetCommit          string             `json:"build_target_commit"`
 	BuildBaseCommit            string             `json:"build_base_commit"`
-	TargetCommit               string             `json:"-"`
-	BaseCommit                 string             `json:"-"`
 	TaskID                     string             `json:"task_id"`
 	BranchName                 string             `json:"branch_name"`
 	BuildID                    string             `json:"build_id"`

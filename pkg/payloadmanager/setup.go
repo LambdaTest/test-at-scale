@@ -120,12 +120,6 @@ func (pm *payloadManager) ValidatePayload(ctx context.Context, payload *core.Pay
 	}
 	// some checks are removed in case of coverage mode or parsing mode
 	if !(pm.cfg.CoverageMode || pm.cfg.ParseMode) {
-		if pm.cfg.TargetCommit == "" {
-			return errs.ErrInvalidPayload("Missing targetCommit in config")
-		}
-		payload.TargetCommit = pm.cfg.TargetCommit
-
-		payload.BaseCommit = pm.cfg.BaseCommit
 		if pm.cfg.TaskID == "" {
 			return errs.ErrInvalidPayload("Missing taskID in config")
 		}

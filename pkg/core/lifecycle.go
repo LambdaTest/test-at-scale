@@ -95,7 +95,6 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 		RepoLink:    payload.RepoLink,
 		OrgID:       payload.OrgID,
 		RepoID:      payload.RepoID,
-		CommitID:    payload.TargetCommit,
 		GitProvider: payload.GitProvider,
 		StartTime:   startTime,
 		Status:      Running,
@@ -132,7 +131,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 		}
 	}()
 
-	coverageDir := filepath.Join(global.CodeCoveragParentDir, payload.OrgID, payload.RepoID, payload.TargetCommit)
+	coverageDir := filepath.Join(global.CodeCoveragParentDir, payload.OrgID, payload.RepoID, payload.BuildTargetCommit)
 	pl.Logger.Infof("Cloning repo ...")
 	err = pl.GitManager.Clone(ctx, pl.Payload, oauth.Data.AccessToken)
 	if err != nil {
@@ -155,8 +154,8 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	os.Setenv("TASK_ID", payload.TaskID)
 	os.Setenv("ORG_ID", payload.OrgID)
 	os.Setenv("BUILD_ID", payload.BuildID)
-	//set commit_id as environment variable
-	os.Setenv("COMMIT_ID", payload.TargetCommit)
+	//set target commit_id as environment variable
+	os.Setenv("COMMIT_ID", payload.BuildTargetCommit)
 	//set repo_id as environment variable
 	os.Setenv("REPO_ID", payload.RepoID)
 	//set coverage_dir as environment variable

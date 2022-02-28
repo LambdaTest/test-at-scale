@@ -210,7 +210,7 @@ func (dm *diffManager) GetChangedFiles(ctx context.Context, payload *core.Payloa
 			return nil, err
 		}
 	} else {
-		diff, err = dm.getCommitDiff(payload.GitProvider, payload.RepoLink, cloneToken, payload.BaseCommit, payload.TargetCommit)
+		diff, err = dm.getCommitDiff(payload.GitProvider, payload.RepoLink, cloneToken, payload.BuildBaseCommit, payload.BuildTargetCommit)
 		if err != nil {
 			if errors.Is(err, errs.ErrGitDiffNotFound) {
 				dm.logger.Debugf("failed to get commit diff for gitprovider: %s error: %v", payload.GitProvider, err)
