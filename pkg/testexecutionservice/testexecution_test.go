@@ -50,49 +50,6 @@ func TestNewTestExecutionService(t *testing.T) {
 	}
 }
 
-func Test_testExecutionService_Run(t *testing.T) {
-	type fields struct {
-		logger      lumber.Logger
-		azureClient core.AzureClient
-		ts          *teststats.ProcStats
-		execManager core.ExecutionManager
-	}
-	type args struct {
-		ctx         context.Context
-		tasConfig   *core.TASConfig
-		payload     *core.Payload
-		coverageDir string
-		secretData  map[string]string
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    *core.ExecutionResult
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tes := &testExecutionService{
-				logger:      tt.fields.logger,
-				azureClient: tt.fields.azureClient,
-				ts:          tt.fields.ts,
-				execManager: tt.fields.execManager,
-			}
-			got, err := tes.Run(tt.args.ctx, tt.args.tasConfig, tt.args.payload, tt.args.coverageDir, tt.args.secretData)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("testExecutionService.Run() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("testExecutionService.Run() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func Test_testExecutionService_GetLocatorsFile(t *testing.T) {
 	logger, err := testutils.GetLogger()
 	if err != nil {

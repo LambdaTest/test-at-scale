@@ -54,67 +54,6 @@ func removeCreatedFile(path string) {
 	}
 }
 
-// TestNew should be run inside docker container
-// func TestNew(t *testing.T) {
-// 	azureClient := new(mocks.AzureClient)
-// 	execManager := new(mocks.ExecutionManager)
-// 	zstdCompressor := new(mocks.ZstdCompressor)
-
-// 	logger, err := testutils.GetLogger()
-// 	if err != nil {
-// 		t.Errorf("Couldn't initialise logger, error: %v", err)
-// 	}
-
-// 	type args struct {
-// 	execManager core.ExecutionManager
-// 	azureClient core.AzureClient
-// 	zstd        core.ZstdCompressor
-// 	cfg         *config.NucleusConfig
-// 	logger      lumber.Logger
-// }
-// tests := []struct {
-// 	name    string
-// 	args    args
-// 	want    core.CoverageService
-// 	wantErr bool
-// }{
-// 	{"Test initialising function",
-// 		args{
-// 			execManager: execManager,
-// 			azureClient: azureClient,
-// 			zstd:        zstdCompressor,
-// 			cfg: &config.NucleusConfig{
-// 				CoverageMode: true,
-// 			},
-// 			logger: logger,
-// 		},
-// 		&codeCoverageService{
-// 				logger:               logger,
-// 				execManager:          execManager,
-// 				codeCoveragParentDir: global.CodeCoveragParentDir,
-// 				azureClient:          azureClient,
-// 				zstd:                 zstdCompressor,
-// 				endpoint:             global.NeuronHost + "/coverage",
-// 				httpClient: http.Client{
-// 					Timeout: global.DefaultHTTPTimeout,
-// 				}},
-// 			false,
-// 		},
-// 	}
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			got, err := New(tt.args.execManager, tt.args.azureClient, tt.args.zstd, tt.args.cfg, tt.args.logger)
-// 			if (err != nil) != tt.wantErr {
-// 				t.Errorf("New() error = %v, wantErr %v", err, tt.wantErr)
-// 				return
-// 			}
-// 			if !reflect.DeepEqual(got, tt.want) {
-// 				t.Errorf("New() = %v, want %v", got, tt.want)
-// 			}
-// 		})
-// 	}
-// }
-
 func Test_codeCoverageService_mergeCodeCoverageFiles(t *testing.T) {
 	logger, execManager, azureClient, zstdCompressor := initialiseArgs()
 
