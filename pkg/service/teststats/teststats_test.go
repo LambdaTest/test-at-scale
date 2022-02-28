@@ -15,18 +15,16 @@ import (
 	"github.com/LambdaTest/synapse/testutils"
 )
 
-// These tests are meant to be run on a Linux machine
-
 func getDummyTimeMap() map[string]time.Time {
-	tpresent, err := time.Parse("Mon, 02 Jan 2006 15:04:05 MST", "Tue, 28 Feb 2022 16:22:01 IST")
+	tpresent, err := time.Parse("Mon, 02 Jan 2006 15:04:05 MST", "Tue, 28 Feb 2022 16:22:01 UTC")
 	if err != nil {
 		fmt.Printf("Error parsing time: %v", err)
 	}
-	t2025, _ := time.Parse("Mon, 02 Jan 2006 15:04:05 MST", "Tue, 22 Feb 2025 16:22:01 IST")
-	tpast1, _ := time.Parse("Mon, 02 Jan 2006 15:04:05 MST", "Tue, 22 Feb 2021 16:23:01 IST")
-	tpast2, _ := time.Parse("Mon, 02 Jan 2006 15:04:05 MST", "Tue, 22 Feb 2021 16:22:05 IST")
-	tfuture1, _ := time.Parse("Mon, 02 Jan 2006 15:04:05 MST", "Tue, 22 Feb 2023 16:14:01 IST")
-	tfuture2, _ := time.Parse("Mon, 02 Jan 2006 15:04:05 MST", "Tue, 22 Feb 2023 16:25:01 IST")
+	t2025, _ := time.Parse("Mon, 02 Jan 2006 15:04:05 MST", "Tue, 22 Feb 2025 16:22:01 UTC")
+	tpast1, _ := time.Parse("Mon, 02 Jan 2006 15:04:05 MST", "Tue, 22 Feb 2021 16:23:01 UTC")
+	tpast2, _ := time.Parse("Mon, 02 Jan 2006 15:04:05 MST", "Tue, 22 Feb 2021 16:22:05 UTC")
+	tfuture1, _ := time.Parse("Mon, 02 Jan 2006 15:04:05 MST", "Tue, 22 Feb 2023 16:14:01 UTC")
+	tfuture2, _ := time.Parse("Mon, 02 Jan 2006 15:04:05 MST", "Tue, 22 Feb 2023 16:25:01 UTC")
 
 	return map[string]time.Time{"tpresent": tpresent, "t2025": t2025, "tpast1": tpast1, "tpast2": tpast2, "tfuture1": tfuture1, "tfuture2": tfuture2}
 
@@ -165,7 +163,7 @@ func TestProcStats_appendStatsToTests(t *testing.T) {
 				{Name: "test 1", StartTime: timeMap["tpast1"], EndTime: timeMap["tfuture1"]},
 			},
 				[]*procfs.Stats{}},
-			"[{TestID: Detail: SuiteID: Suites:[] Title: FullTitle: Name:test 1 Duration:0 FilePath: Line: Col: CurrentRetry:0 Status: CommitID: DAG:[] Filelocator: BlocklistSource: Blocklisted:false StartTime:2021-02-22 16:23:01 +0530 IST EndTime:2021-02-22 16:23:01 +0530 IST Stats:[]}]",
+			"[{TestID: Detail: SuiteID: Suites:[] Title: FullTitle: Name:test 1 Duration:0 FilePath: Line: Col: CurrentRetry:0 Status: CommitID: DAG:[] Filelocator: BlocklistSource: Blocklisted:false StartTime:2021-02-22 16:23:01 +0000 UTC EndTime:2021-02-22 16:23:01 +0000 UTC Stats:[]}]",
 		},
 
 		{"Test appendStatsToTests",
@@ -212,7 +210,7 @@ func TestProcStats_appendStatsToTests(t *testing.T) {
 					},
 				},
 			},
-			"[{TestID: Detail: SuiteID: Suites:[] Title: FullTitle: Name:test 1 Duration:100 FilePath: Line: Col: CurrentRetry:0 Status: CommitID: DAG:[] Filelocator: BlocklistSource: Blocklisted:false StartTime:2021-02-22 16:23:01 +0530 IST EndTime:2021-02-22 16:23:01.1 +0530 IST Stats:[{Memory:131 CPU:1.2 Storage:0 RecordTime:2021-02-22 16:23:01 +0530 IST}]} {TestID: Detail: SuiteID: Suites:[] Title: FullTitle: Name:test 2 Duration:200 FilePath: Line: Col: CurrentRetry:0 Status: CommitID: DAG:[] Filelocator: BlocklistSource: Blocklisted:false StartTime:2021-02-22 16:22:05 +0530 IST EndTime:2021-02-22 16:22:05.2 +0530 IST Stats:[{Memory:100 CPU:25.4 Storage:250 RecordTime:2021-02-22 16:22:05 +0530 IST}]}]",
+			"[{TestID: Detail: SuiteID: Suites:[] Title: FullTitle: Name:test 1 Duration:100 FilePath: Line: Col: CurrentRetry:0 Status: CommitID: DAG:[] Filelocator: BlocklistSource: Blocklisted:false StartTime:2021-02-22 16:23:01 +0000 UTC EndTime:2021-02-22 16:23:01.1 +0000 UTC Stats:[{Memory:131 CPU:1.2 Storage:0 RecordTime:2021-02-22 16:23:01 +0000 UTC}]} {TestID: Detail: SuiteID: Suites:[] Title: FullTitle: Name:test 2 Duration:200 FilePath: Line: Col: CurrentRetry:0 Status: CommitID: DAG:[] Filelocator: BlocklistSource: Blocklisted:false StartTime:2021-02-22 16:22:05 +0000 UTC EndTime:2021-02-22 16:22:05.2 +0000 UTC Stats:[{Memory:100 CPU:25.4 Storage:250 RecordTime:2021-02-22 16:22:05 +0000 UTC}]}]",
 		},
 	}
 	for _, tt := range tests {
@@ -249,7 +247,7 @@ func TestProcStats_appendStatsToTestSuites(t *testing.T) {
 				{SuiteID: "testSuite1", StartTime: timeMap["tpast1"], EndTime: timeMap["tfuture1"]},
 			},
 				[]*procfs.Stats{}},
-			"[{SuiteID:testSuite1 SuiteName: ParentSuiteID: BlacklistSource: Blacklisted:false StartTime:2021-02-22 16:23:01 +0530 IST EndTime:2021-02-22 16:23:01 +0530 IST Duration:0 Status: Stats:[]}]",
+			"[{SuiteID:testSuite1 SuiteName: ParentSuiteID: BlacklistSource: Blacklisted:false StartTime:2021-02-22 16:23:01 +0000 UTC EndTime:2021-02-22 16:23:01 +0000 UTC Duration:0 Status: Stats:[]}]",
 		},
 
 		{"Test appendStatsToTests",
@@ -296,7 +294,7 @@ func TestProcStats_appendStatsToTestSuites(t *testing.T) {
 					},
 				},
 			},
-			"[{SuiteID:testSuite2 SuiteName: ParentSuiteID: BlacklistSource: Blacklisted:false StartTime:2021-02-22 16:23:01 +0530 IST EndTime:2021-02-22 16:23:01.1 +0530 IST Duration:100 Status: Stats:[{Memory:131 CPU:1.2 Storage:0 RecordTime:2021-02-22 16:23:01 +0530 IST}]} {SuiteID:testSuite3 SuiteName: ParentSuiteID: BlacklistSource: Blacklisted:false StartTime:2021-02-22 16:22:05 +0530 IST EndTime:2021-02-22 16:22:05.2 +0530 IST Duration:200 Status: Stats:[{Memory:100 CPU:25.4 Storage:250 RecordTime:2021-02-22 16:22:05 +0530 IST}]}]",
+			"[{SuiteID:testSuite2 SuiteName: ParentSuiteID: BlacklistSource: Blacklisted:false StartTime:2021-02-22 16:23:01 +0000 UTC EndTime:2021-02-22 16:23:01.1 +0000 UTC Duration:100 Status: Stats:[{Memory:131 CPU:1.2 Storage:0 RecordTime:2021-02-22 16:23:01 +0000 UTC}]} {SuiteID:testSuite3 SuiteName: ParentSuiteID: BlacklistSource: Blacklisted:false StartTime:2021-02-22 16:22:05 +0000 UTC EndTime:2021-02-22 16:22:05.2 +0000 UTC Duration:200 Status: Stats:[{Memory:100 CPU:25.4 Storage:250 RecordTime:2021-02-22 16:22:05 +0000 UTC}]}]",
 		},
 	}
 	for _, tt := range tests {
