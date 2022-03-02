@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/LambdaTest/synapse/pkg/core"
 	"github.com/LambdaTest/synapse/pkg/global"
@@ -12,6 +13,7 @@ import (
 	"github.com/LambdaTest/synapse/pkg/utils"
 	"github.com/denisbrodbeck/machineid"
 	"github.com/gorilla/websocket"
+	"github.com/lestrrat-go/backoff"
 	"github.com/spf13/viper"
 )
 
@@ -25,10 +27,13 @@ const (
 )
 
 type synapse struct {
-	conn           *websocket.Conn
-	runner         core.DockerRunner
-	secretsManager core.SecretsManager
-	logger         lumber.Logger
+	conn              *websocket.Conn
+	runner            core.DockerRunner
+	secretsManager    core.SecretsManager
+	logger            lumber.Logger
+	MsgErrChan        chan struct{}
+	MsgChan           chan []byte
+	ConnectionAborted chan struct{}
 }
 
 // New returns new instance of synapse
@@ -37,10 +42,12 @@ func New(
 	logger lumber.Logger,
 	secretsManager core.SecretsManager,
 ) core.SynapseManager {
+
 	return &synapse{
 		runner:         runner,
 		logger:         logger,
 		secretsManager: secretsManager,
+		MsgChan:        make(chan []byte, 1024),
 	}
 }
 
@@ -49,18 +56,7 @@ func (s *synapse) InitiateConnection(
 	wg *sync.WaitGroup,
 ) {
 	defer wg.Done()
-
-	s.logger.Debugf("starting socket connection")
-	s.logger.Errorf("starting socket connection at URL %s", global.SocketURL[viper.GetString("env")])
-	conn, _, err := websocket.DefaultDialer.Dial(global.SocketURL[viper.GetString("env")], nil)
-	if err != nil {
-		s.logger.Fatalf("error connecting synapse to lambdatest %+v", err)
-	}
-	s.conn = conn
-	defer conn.Close()
-
-	s.logger.Debugf("synapse connected to lambdatest server")
-	go s.handleIncomingMessage()
+	go s.openAndMaintainConnection(ctx)
 	s.login()
 	<-ctx.Done()
 	s.logout()
@@ -68,13 +64,68 @@ func (s *synapse) InitiateConnection(
 	s.logger.Debugf("exiting synapse")
 }
 
-func (s *synapse) handleIncomingMessage() {
+func (s *synapse) openAndMaintainConnection(ctx context.Context) {
+	// setup exponential backoff for retrying control websocket connection
+	var policy = backoff.NewExponential(
+		backoff.WithInterval(500*time.Millisecond),           // base interval
+		backoff.WithJitterFactor(0.05),                       // 5% jitter
+		backoff.WithMaxRetries(global.MaxConnectionAttempts), // If not specified, default number of retries is 10
+	)
+
+	normalCloser := make(chan struct{})
+
+	b, cancel := policy.Start(context.Background())
+	defer cancel()
+	s.logger.Debugf("starting socket connection")
+	s.logger.Errorf("starting socket connection at URL %s", global.SocketURL[viper.GetString("env")])
+	for backoff.Continue(b) {
+
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			conn, _, err := websocket.DefaultDialer.Dial(global.SocketURL[viper.GetString("env")], nil)
+			if err != nil {
+				s.logger.Errorf("error connecting synapse to lambdatest %+v", err)
+				s.logger.Warnf("Retrying ...")
+				s.ConnectionAborted <- struct{}{}
+				continue
+
+			}
+			s.conn = conn
+			s.logger.Debugf("synapse connected to lambdatest server")
+			go s.handleIncomingMessage(normalCloser)
+			go s.WriteMessage()
+			select {
+			case <-ctx.Done():
+				conn.Close()
+				s.ConnectionAborted <- struct{}{}
+				return
+			case <-normalCloser:
+				conn.Close()
+				s.ConnectionAborted <- struct{}{}
+				return
+			case <-s.MsgErrChan:
+				s.logger.Errorf("Connection between synpase and lambdatest break")
+				s.logger.Warnf("Retrying ...")
+				s.ConnectionAborted <- struct{}{}
+				conn.Close()
+
+			}
+
+		}
+	}
+
+}
+
+func (s *synapse) handleIncomingMessage(normalCloser chan struct{}) {
 
 	// s.conn.SetReadLimit(maxMessageSize)
 	// s.conn.SetReadDeadline(time.Now().Add(pingWait))
 	s.conn.SetPingHandler(func(string) error {
 		if err := s.conn.WriteMessage(websocket.PongMessage, nil); err != nil {
 			s.logger.Errorf("Error in writing pong msg %s", err.Error())
+			s.MsgErrChan <- struct{}{}
 			return err
 		}
 		return nil
@@ -83,7 +134,13 @@ func (s *synapse) handleIncomingMessage() {
 	for {
 		_, msg, err := s.conn.ReadMessage()
 		if err != nil {
+			if websocket.IsCloseError(err, websocket.CloseNormalClosure) {
+				s.logger.Debugf("Normal closure occurred...........")
+				normalCloser <- struct{}{}
+				return
+			}
 			s.logger.Errorf("disconnecting from lambdatest server. error in reading message %v", err)
+			s.MsgErrChan <- struct{}{}
 			return
 		}
 		s.processMessage(msg)
@@ -207,9 +264,21 @@ func (s *synapse) SendMessage(message *core.Message) {
 		s.logger.Errorf("error marshaling message")
 		return
 	}
-	err = s.conn.WriteMessage(websocket.TextMessage, messageJson)
-	if err != nil {
-		s.logger.Errorf("error sending message to the server")
-		return
+	s.MsgChan <- messageJson
+}
+
+func (s *synapse) WriteMessage() {
+	for {
+		select {
+		case <-s.ConnectionAborted:
+			return
+		case messageJson := <-s.MsgChan:
+			if err := s.conn.WriteMessage(websocket.TextMessage, messageJson); err != nil {
+				s.logger.Errorf("error sending message to the server")
+				s.MsgChan <- messageJson
+				s.MsgErrChan <- struct{}{}
+				return
+			}
+		}
 	}
 }
