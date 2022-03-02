@@ -76,7 +76,7 @@ func CopyDir(src, dst string, changeMode bool) (err error) {
 		return
 	}
 	if err == nil {
-		return fmt.Errorf("destination already exists")
+		return fmt.Errorf("destination %+v already exists", dst)
 	}
 
 	err = os.MkdirAll(dst, si.Mode())

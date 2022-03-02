@@ -140,6 +140,14 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 			errRemark = fmt.Sprintf("Unable to clone repo: %s", payload.RepoLink)
 			return err
 		}
+	} else {
+		pl.Logger.Debugf("Extracting workspace")
+		// Replicate workspace
+		if err = pl.CacheStore.ExtractWorkspace(ctx); err != nil {
+			pl.Logger.Errorf("Error replicating workspace: %+v", err)
+			errRemark = errs.GenericErrRemark.Error()
+			return err
+		}
 	}
 
 	// load tas yaml file
@@ -255,6 +263,14 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 		}
 		// mark status as passed
 		taskPayload.Status = Passed
+
+		pl.Logger.Debugf("Caching workspace")
+		// Persist workspace
+		if err = pl.CacheStore.CacheWorkspace(ctx); err != nil {
+			pl.Logger.Errorf("Error caching workspace: %+v", err)
+			errRemark = errs.GenericErrRemark.Error()
+			return err
+		}
 
 		// Upload cache once for other builds
 		if err = pl.CacheStore.Upload(ctx, cacheKey, tasConfig.Cache.Paths...); err != nil {
