@@ -51,10 +51,15 @@ func (tds *testDiscoveryService) Discover(ctx context.Context,
 
 	args := []string{"--command", "discover"}
 	if !discoverAll {
-		for k, v := range diff {
-			// in changed files we only have added or modified files.
-			if v != core.FileRemoved {
-				args = append(args, "--diff", k)
+		if len(diff) == 0 {
+			// empty diff; in PR, a commit added and then reverted to cause an overall empty PR diff
+			args = append(args, "--diff")
+		} else {
+			for k, v := range diff {
+				// in changed files we only have added or modified files.
+				if v != core.FileRemoved {
+					args = append(args, "--diff", k)
+				}
 			}
 		}
 	}
