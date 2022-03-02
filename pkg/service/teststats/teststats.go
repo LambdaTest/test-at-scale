@@ -17,26 +17,26 @@ import (
 type ProcStats struct {
 	logger                       lumber.Logger
 	httpClient                   http.Client
-	ExecutionResultInputChannel  chan core.ExecutionResult
+	ExecutionResultInputChannel  chan core.ExecutionResults
 	wg                           sync.WaitGroup
-	ExecutionResultOutputChannel chan core.ExecutionResult
+	ExecutionResultOutputChannel chan core.ExecutionResults
 }
 
 // New returns instance of ProcStats
 func New(cfg *config.NucleusConfig, logger lumber.Logger) (*ProcStats, error) {
 	return &ProcStats{
 		logger:                      logger,
-		ExecutionResultInputChannel: make(chan core.ExecutionResult),
+		ExecutionResultInputChannel: make(chan core.ExecutionResults),
 		httpClient: http.Client{
 			Timeout: global.DefaultHTTPTimeout,
 		},
-		ExecutionResultOutputChannel: make(chan core.ExecutionResult),
+		ExecutionResultOutputChannel: make(chan core.ExecutionResults),
 	}, nil
 
 }
 
 // CaptureTestStats combines the ps stats for each test
-func (s *ProcStats) CaptureTestStats(pid int32) error {
+func (s *ProcStats) CaptureTestStats(pid int32, CollectTestStats bool) error {
 	ps, err := procfs.New(pid, global.SamplingTime, false)
 	if err != nil {
 		s.logger.Errorf("failed to find process stats with pid %d %v", pid, err)
@@ -51,13 +51,16 @@ func (s *ProcStats) CaptureTestStats(pid int32) error {
 			s.logger.Errorf("no process stats found with pid %d", pid)
 		}
 		select {
-		case executionResult := <-s.ExecutionResultInputChannel:
+		case executionResults := <-s.ExecutionResultInputChannel:
 			// Refactor the impl of below 2 functions using generics when Go 1.18 arrives
 			// https://www.freecodecamp.org/news/generics-in-golang/
-			s.appendStatsToTests(executionResult.TestPayload, processStats)
-			s.appendStatsToTestSuites(executionResult.TestSuitePayload, processStats)
-
-			s.ExecutionResultOutputChannel <- executionResult
+			if CollectTestStats {
+				for ind := range executionResults.Results {
+					s.appendStatsToTests(executionResults.Results[ind].TestPayload, processStats)
+					s.appendStatsToTestSuites(executionResults.Results[ind].TestSuitePayload, processStats)
+				}
+			}
+			s.ExecutionResultOutputChannel <- executionResults
 		default:
 			// Can reach here in 2 cases (ie `/results` API wasn't called):
 			// 1. runner process exited with zero exit exitCode but no testFiles were run (changes in Readme.md etc)
@@ -65,7 +68,7 @@ func (s *ProcStats) CaptureTestStats(pid int32) error {
 			// In second case, non-zero exitCodes are already captured and sent as
 			// "Task error" when updating task status to neuron in lifeycle.go
 			s.logger.Warnf("No test results found, pid %d", pid)
-			s.ExecutionResultOutputChannel <- core.ExecutionResult{}
+			s.ExecutionResultOutputChannel <- core.ExecutionResults{}
 		}
 	}()
 

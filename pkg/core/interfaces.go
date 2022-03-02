@@ -44,7 +44,7 @@ type TestBlockListService interface {
 // TestExecutionService services execution of tests
 type TestExecutionService interface {
 	// Run executes the test execution scripts.
-	Run(ctx context.Context, tasConfig *TASConfig, payload *Payload, coverageDirectory string, secretMap map[string]string) (*ExecutionResult, error)
+	Run(ctx context.Context, tasConfig *TASConfig, payload *Payload, coverageDirectory string, secretMap map[string]string) (*ExecutionResults, error)
 }
 
 // CoverageService services coverage of tests
@@ -60,7 +60,7 @@ type YMLParserService interface {
 
 // TestStats is used for servicing stat collection
 type TestStats interface {
-	CaptureTestStats(pid int32) error
+	CaptureTestStats(pid int32, CollectTestStats bool) error
 }
 
 // Task is a service to update task status at neuron

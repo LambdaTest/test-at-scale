@@ -104,6 +104,7 @@ type Payload struct {
 	ParentCommitCoverageExists bool               `json:"parent_commit_coverage_exists"`
 	LicenseTier                Tier               `json:"license_tier"`
 	CollectCoverage            bool               `json:"collect_coverage"`
+	CollectTestStats           bool               `json:"collect_test_stats"`
 }
 
 // Pipeline defines all attributes of Pipeline
@@ -130,13 +131,18 @@ type Pipeline struct {
 
 // ExecutionResult represents the request body for test and test suite execution
 type ExecutionResult struct {
-	TaskID           string             `json:"taskID"`
-	BuildID          string             `json:"buildID"`
-	RepoID           string             `json:"repoID"`
-	OrgID            string             `json:"orgID"`
-	CommitID         string             `json:"commitID"`
 	TestPayload      []TestPayload      `json:"testResults"`
 	TestSuitePayload []TestSuitePayload `json:"testSuiteResults"`
+}
+
+// ExecutionResults represents collection of execution results
+type ExecutionResults struct {
+	TaskID   string            `json:"taskID"`
+	BuildID  string            `json:"buildID"`
+	RepoID   string            `json:"repoID"`
+	OrgID    string            `json:"orgID"`
+	CommitID string            `json:"commitID"`
+	Results  []ExecutionResult `json:"results"`
 }
 
 // TestPayload represents the request body for test execution

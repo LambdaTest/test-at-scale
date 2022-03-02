@@ -285,23 +285,32 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	}
 
 	if pl.Cfg.ExecuteMode {
+
+		pl.Logger.Debugf("execute Mode")
 		// execute test cases
-		executionResult, err := pl.TestExecutionService.Run(ctx, tasConfig, pl.Payload, coverageDir, secretMap)
+		executionResults, err := pl.TestExecutionService.Run(ctx, tasConfig, pl.Payload, coverageDir, secretMap)
 		if err != nil {
 			pl.Logger.Infof("Unable to perform test execution: %v", err)
 			errRemark = "Error occurred in executing tests"
 			return err
 		}
 
-		if err = pl.sendStats(*executionResult); err != nil {
+		if err = pl.sendStats(*executionResults); err != nil {
 			pl.Logger.Errorf("error while sending test reports %v", err)
 			errRemark = errs.GenericErrRemark.Error()
 			return err
 		}
+
 		taskPayload.Status = Passed
-		for i := 0; i < len(executionResult.TestPayload); i++ {
-			testResult := &executionResult.TestPayload[i]
-			if testResult.Status == "failed" {
+		for _, result := range executionResults.Results {
+			for i := 0; i < len(result.TestPayload); i++ {
+				testResult := &result.TestPayload[i]
+				if testResult.Status == "failed" {
+					taskPayload.Status = Failed
+					break
+				}
+			}
+			if taskPayload.Status == "failed" {
 				taskPayload.Status = Failed
 				break
 			}
@@ -322,7 +331,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	return nil
 }
 
-func (pl *Pipeline) sendStats(payload ExecutionResult) error {
+func (pl *Pipeline) sendStats(payload ExecutionResults) error {
 	reqBody, err := json.Marshal(payload)
 	if err != nil {
 		pl.Logger.Errorf("failed to marshal request body %v", err)

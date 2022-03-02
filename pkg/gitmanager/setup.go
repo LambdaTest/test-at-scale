@@ -88,6 +88,7 @@ func (gm *gitManager) downloadFile(ctx context.Context, archiveURL, fileName, cl
 func (gm *gitManager) copyAndExtractFile(resp *http.Response, path string) error {
 	out, err := os.Create(path)
 	if err != nil {
+		gm.logger.Errorf("failed to create file err %v", err)
 		return err
 	}
 	_, err = io.Copy(out, resp.Body)
