@@ -197,12 +197,14 @@ type Status string
 
 // Const related to task status
 const (
-	Initiating Status = "initiating"
-	Running    Status = "running"
-	Failed     Status = "failed"
-	Aborted    Status = "aborted"
-	Passed     Status = "passed"
-	Error      Status = "error"
+	Initiating  Status = "initiating"
+	Running     Status = "running"
+	Failed      Status = "failed"
+	Aborted     Status = "aborted"
+	Passed      Status = "passed"
+	Error       Status = "error"
+	Blocklisted Status = "blocklisted"
+	Quarantined Status = "quarantined"
 )
 
 // ParserStatus repersent information related to each parsing

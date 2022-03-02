@@ -22,24 +22,25 @@ const (
 	delimiter = "##"
 )
 
-// blocktest represents the blocklisted test suites and test cases.
+//blocktest represents the blocklisted test suites and test cases.
 type blocktest struct {
 	Source  string `json:"source"`
 	Locator string `json:"locator"`
-	Status  string `json:"status"`
+	Type    string `json:"type"`
 }
 
 // blocktestAPIResponse fetch blocked test cases from neuron API
 type blocktestAPIResponse struct {
-	Name        string `json:"test_name"`
+	Name        string `json:"name"`
+	Repo        string `json:"repo"`
 	TestLocator string `json:"test_locator"`
-	Status      string `json:"status"`
+	Type        string `json:"type"`
 }
 
-// blocktestLocator stores locator and its status info
+// blocktestLocator stores locator and its type info
 type blocktestLocator struct {
 	Locator string `json:"locator"`
-	Status  string `json:"status"`
+	Type    string `json:"type"`
 }
 
 // TestBlockListService represents an instance of ConfManager instance
