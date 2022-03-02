@@ -198,7 +198,7 @@ Join the Test-at-scale Community on [Discord](https://discord.gg/Wyf8srhf6K). Cl
 
 ### **Support & Troubleshooting** 
 The documentation and community will help you troubleshoot most issues. If you have encountered a bug, you can contact us using one of the following channels:
-- Help yourself with our [Documentation](https://www.lambdatest.com/support/docs/tas-overview)📚.
+- Help yourself with our [Documentation](https://www.lambdatest.com/support/docs/tas-overview)📚, and [FAQs](https://www.lambdatest.com/support/docs/tas-faq/).
 - In case of Issue & bugs go to [GitHub issues](https://github.com/LambdaTest/test-at-scale/issues)🐛.
 - For support & feedback join our [Discord](https://discord.gg/Wyf8srhf6K) or reach out to us on our [email](mailto:hello.tas@lambdatest.com)💬. 
 
