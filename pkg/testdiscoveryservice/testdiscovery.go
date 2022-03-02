@@ -46,8 +46,8 @@ func (tds *testDiscoveryService) Discover(ctx context.Context,
 		tasYmlModified = true
 	}
 
-	// discover all tests if tas.yml modified or if parent commit does not exists or smart run feature is set to false
-	discoverAll := tasYmlModified || !payload.ParentCommitCoverageExists || !tasConfig.SmartRun
+	// discover all tests if tas.yml modified or smart run feature is set to false
+	discoverAll := tasYmlModified || !tasConfig.SmartRun
 
 	args := []string{"--command", "discover"}
 	if !discoverAll {
