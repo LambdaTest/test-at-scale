@@ -105,6 +105,7 @@ curl https://raw.githubusercontent.com/LambdaTest/test-at-scale/master/.sample.s
 - Download and run the docker compose file using the following command.
   
   ```bash
+  cd ~/test-at-scale
   curl -L https://raw.githubusercontent.com/LambdaTest/test-at-scale/master/docker-compose.yml -o docker-compose.yml
   docker-compose up -d
   ```
@@ -120,6 +121,7 @@ To get up and running quickly, you can use the following instructions to setup T
 - Execute the following command to run Test at Scale docker container
 
 ```bash
+cd ~/test-at-scale
 docker network create --internal test-at-scale
 docker run --name synapse --restart always \
     -v /var/run/docker.sock:/var/run/docker.sock \
