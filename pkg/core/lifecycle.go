@@ -247,15 +247,20 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 		}
 
 		pl.Logger.Infof("Identifying changed files ...")
+		diffExists := true
 		diff, err := pl.DiffManager.GetChangedFiles(ctx, payload, oauth.Data.AccessToken)
 		if err != nil {
-			pl.Logger.Errorf("Unable to identify changed files %s", err)
-			errRemark = "Error occurred in fetching diff from GitHub"
-			return err
+			if errors.Is(err, errs.ErrGitDiffNotFound) {
+				diffExists = false
+			} else {
+				pl.Logger.Errorf("Unable to identify changed files %s", err)
+				errRemark = "Error occurred in fetching diff from GitHub"
+				return err
+			}
 		}
 
 		// discover test cases
-		err = pl.TestDiscoveryService.Discover(ctx, tasConfig, pl.Payload, secretMap, diff)
+		err = pl.TestDiscoveryService.Discover(ctx, tasConfig, pl.Payload, secretMap, diff, diffExists)
 		if err != nil {
 			pl.Logger.Errorf("Unable to perform test discovery: %+v", err)
 			errRemark = "Error occurred in discovering tests"
