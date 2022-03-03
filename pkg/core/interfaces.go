@@ -99,6 +99,10 @@ type CacheStore interface {
 	Download(ctx context.Context, cacheKey string) error
 	// Upload creates, compresses and uploads cache at cacheKey
 	Upload(ctx context.Context, cacheKey string, itemsToCompress ...string) error
+	// CacheWorkspace caches the workspace onto a mounted volume
+	CacheWorkspace(ctx context.Context) error
+	// ExtractWorkspace extracts the workspace cache from mounted volume
+	ExtractWorkspace(ctx context.Context) error
 }
 
 // SecretParser defines operation for parsing the vault secrets in given path
