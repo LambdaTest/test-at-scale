@@ -8,6 +8,7 @@ import (
 
 	"github.com/LambdaTest/synapse/config"
 	"github.com/LambdaTest/synapse/pkg/core"
+	"github.com/LambdaTest/synapse/pkg/global"
 	"github.com/LambdaTest/synapse/pkg/synapse"
 	"github.com/LambdaTest/synapse/pkg/utils"
 	"github.com/docker/docker/api/types"
@@ -18,11 +19,10 @@ import (
 )
 
 const (
-	networkName                = "test-at-scale"
-	defaultContainerVolumePath = "/home/nucleus"
-	defaultVaultPath           = "/vault/secrets"
-	repoSourcePath             = "/tmp/synapse/%s/nucleus"
-	nanoCPUUnit                = 1e9
+	networkName      = "test-at-scale"
+	defaultVaultPath = "/vault/secrets"
+	repoSourcePath   = "/tmp/synapse/%s/nucleus"
+	nanoCPUUnit      = 1e9
 	// GB defines number of bytes in 1 GB
 	GB int64 = 1e+9
 )
@@ -109,7 +109,7 @@ func (d *docker) getContainerHostConfiguration(r *core.RunnerOptions) *container
 		mounts = append(mounts, mount.Mount{
 			Type:   mount.TypeBind,
 			Source: repoBuildSourcePath,
-			Target: defaultContainerVolumePath,
+			Target: global.WorkspaceCacheDir,
 		})
 	}
 	return &container.HostConfig{

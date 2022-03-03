@@ -105,6 +105,7 @@ curl https://raw.githubusercontent.com/LambdaTest/test-at-scale/master/.sample.s
 - Download and run the docker compose file using the following command.
   
   ```bash
+  cd ~/test-at-scale
   curl -L https://raw.githubusercontent.com/LambdaTest/test-at-scale/master/docker-compose.yml -o docker-compose.yml
   docker-compose up -d
   ```
@@ -120,6 +121,7 @@ To get up and running quickly, you can use the following instructions to setup T
 - Execute the following command to run Test at Scale docker container
 
 ```bash
+cd ~/test-at-scale
 docker network create --internal test-at-scale
 docker run --name synapse --restart always \
     -v /var/run/docker.sock:/var/run/docker.sock \
@@ -196,7 +198,7 @@ Join the Test-at-scale Community on [Discord](https://discord.gg/Wyf8srhf6K). Cl
 
 ### **Support & Troubleshooting** 
 The documentation and community will help you troubleshoot most issues. If you have encountered a bug, you can contact us using one of the following channels:
-- Help yourself with our [Documentation](https://www.lambdatest.com/support/docs/tas-overview)📚.
+- Help yourself with our [Documentation](https://www.lambdatest.com/support/docs/tas-overview)📚, and [FAQs](https://www.lambdatest.com/support/docs/tas-faq/).
 - In case of Issue & bugs go to [GitHub issues](https://github.com/LambdaTest/test-at-scale/issues)🐛.
 - For support & feedback join our [Discord](https://discord.gg/Wyf8srhf6K) or reach out to us on our [email](mailto:hello.tas@lambdatest.com)💬. 
 

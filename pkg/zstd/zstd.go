@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/LambdaTest/synapse/pkg/core"
-	"github.com/LambdaTest/synapse/pkg/global"
 	"github.com/LambdaTest/synapse/pkg/lumber"
 )
 
@@ -49,7 +48,7 @@ func (z *zstdCompressor) Compress(ctx context.Context, compressedFileName string
 	if preservePath {
 		args = append(args, "-P")
 	}
-	if err := z.execManager.ExecuteInternalCommands(ctx, core.Zstd, args, global.RepoDir, nil, nil); err != nil {
+	if err := z.execManager.ExecuteInternalCommands(ctx, core.Zstd, args, workingDirectory, nil, nil); err != nil {
 		z.logger.Errorf("error while zstd compression %v", err)
 		return err
 	}
@@ -62,7 +61,7 @@ func (z *zstdCompressor) Decompress(ctx context.Context, filePath string, preser
 	if preservePath {
 		args = append(args, "-P")
 	}
-	if err := z.execManager.ExecuteInternalCommands(ctx, core.Zstd, args, global.RepoDir, nil, nil); err != nil {
+	if err := z.execManager.ExecuteInternalCommands(ctx, core.Zstd, args, workingDirectory, nil, nil); err != nil {
 		z.logger.Errorf("error while zstd decompression %v", err)
 		return err
 	}

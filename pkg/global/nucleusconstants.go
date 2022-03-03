@@ -6,6 +6,7 @@ import "time"
 const (
 	CoverageManifestFileName = "manifest.json"
 	HomeDir                  = "/home/nucleus"
+	WorkspaceCacheDir        = "/workspace-cache"
 	RepoDir                  = HomeDir + "/repo"
 	CodeCoverageDir          = RepoDir + "/coverage"
 	DefaultHTTPTimeout       = 45 * time.Second
