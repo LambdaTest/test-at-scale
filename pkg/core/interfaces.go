@@ -33,7 +33,7 @@ type DiffManager interface {
 // TestDiscoveryService services discovery of tests
 type TestDiscoveryService interface {
 	// Discover executes the test discovery scripts.
-	Discover(ctx context.Context, tasConfig *TASConfig, payload *Payload, secretData map[string]string, diff map[string]int) error
+	Discover(ctx context.Context, tasConfig *TASConfig, payload *Payload, secretData map[string]string, diff map[string]int, diffExists bool) error
 }
 
 // TestBlockListService is used for fetching blocklisted tests

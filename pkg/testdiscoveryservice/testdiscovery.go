@@ -27,7 +27,8 @@ func (tds *testDiscoveryService) Discover(ctx context.Context,
 	tasConfig *core.TASConfig,
 	payload *core.Payload,
 	secretData map[string]string,
-	diff map[string]int) error {
+	diff map[string]int,
+	diffExists bool) error {
 	var target []string
 	var envMap map[string]string
 	if payload.EventType == core.EventPullRequest {
@@ -51,7 +52,7 @@ func (tds *testDiscoveryService) Discover(ctx context.Context,
 
 	args := []string{"--command", "discover"}
 	if !discoverAll {
-		if len(diff) == 0 {
+		if len(diff) == 0 && diffExists {
 			// empty diff; in PR, a commit added and then reverted to cause an overall empty PR diff
 			args = append(args, "--diff")
 		} else {
