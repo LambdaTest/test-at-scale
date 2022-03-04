@@ -17,8 +17,6 @@ type NucleusConfig struct {
 	ExecuteMode    bool   `json:"execute" yaml:"executeOnly"`
 	TaskID         string `json:"taskID" env:"TASK_ID"`
 	BuildID        string `json:"buildID" env:"BUILD_ID"`
-	TargetCommit   string `json:"targetCommit" env:"TARGET_COMMIT_ID"`
-	BaseCommit     string `json:"baseCommit" env:"BASE_COMMIT_ID"`
 	Locators       string `json:"locators"`
 	LocatorAddress string `json:"locatorAddress"`
 	Env            string

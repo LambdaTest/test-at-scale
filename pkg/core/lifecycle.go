@@ -95,7 +95,6 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 		RepoLink:    payload.RepoLink,
 		OrgID:       payload.OrgID,
 		RepoID:      payload.RepoID,
-		CommitID:    payload.TargetCommit,
 		GitProvider: payload.GitProvider,
 		StartTime:   startTime,
 		Status:      Running,
@@ -158,7 +157,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 		return err
 	}
 
-	coverageDir := filepath.Join(global.CodeCoverageDir, payload.OrgID, payload.RepoID, payload.TargetCommit)
+	coverageDir := filepath.Join(global.CodeCoverageDir, payload.OrgID, payload.RepoID, payload.BuildTargetCommit)
 	cacheKey := fmt.Sprintf("%s/%s/%s", payload.OrgID, payload.RepoID, tasConfig.Cache.Key)
 
 	pl.Logger.Infof("Tas yaml: %+v", tasConfig)
@@ -167,8 +166,8 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	os.Setenv("TASK_ID", payload.TaskID)
 	os.Setenv("ORG_ID", payload.OrgID)
 	os.Setenv("BUILD_ID", payload.BuildID)
-	//set commit_id as environment variable
-	os.Setenv("COMMIT_ID", payload.TargetCommit)
+	//set target commit_id as environment variable
+	os.Setenv("COMMIT_ID", payload.BuildTargetCommit)
 	//set repo_id as environment variable
 	os.Setenv("REPO_ID", payload.RepoID)
 	//set coverage_dir as environment variable
@@ -223,7 +222,6 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 			return err
 		}
 
-		// TODO:  download from cdn
 		if err = pl.CacheStore.Download(ctx, cacheKey); err != nil {
 			pl.Logger.Errorf("Unable to download cache: %v", err)
 			errRemark = errs.GenericErrRemark.Error()
