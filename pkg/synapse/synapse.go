@@ -66,7 +66,7 @@ func (s *synapse) InitiateConnection(
 	defer wg.Done()
 	go s.openAndMaintainConnection(ctx, connectionFailed)
 	<-ctx.Done()
-	if !s.LogoutRequired {
+	if s.LogoutRequired {
 		s.logout()
 	}
 	s.runner.KillRunningDocker(context.TODO())
