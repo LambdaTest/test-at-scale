@@ -301,20 +301,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 			return err
 		}
 
-		taskPayload.Status = Passed
-		for _, result := range executionResults.Results {
-			for i := 0; i < len(result.TestPayload); i++ {
-				testResult := &result.TestPayload[i]
-				if testResult.Status == "failed" {
-					taskPayload.Status = Failed
-					break
-				}
-			}
-			if taskPayload.Status == "failed" {
-				taskPayload.Status = Failed
-				break
-			}
-		}
+		taskPayload.Status = findTaskPayloadStatus(executionResults)
 
 		if tasConfig.Postrun != nil {
 			pl.Logger.Infof("Running post-run steps")
@@ -329,6 +316,18 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	pl.Logger.Debugf("Completed pipeline")
 
 	return nil
+}
+
+func findTaskPayloadStatus(executionResults *ExecutionResults) Status {
+	for _, result := range executionResults.Results {
+		for i := 0; i < len(result.TestPayload); i++ {
+			testResult := &result.TestPayload[i]
+			if testResult.Status == "failed" {
+				return Failed
+			}
+		}
+	}
+	return Passed
 }
 
 func (pl *Pipeline) sendStats(payload ExecutionResults) error {

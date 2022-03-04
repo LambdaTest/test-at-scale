@@ -114,7 +114,7 @@ func (tes *testExecutionService) Run(ctx context.Context,
 	pid := int32(cmd.Process.Pid)
 	tes.logger.Debugf("execution command started with pid %d", pid)
 
-	if err := tes.ts.CaptureTestStats(pid, payload.CollectTestStats); err != nil {
+	if err := tes.ts.CaptureTestStats(pid, payload.CollectStats); err != nil {
 		tes.logger.Errorf("failed to find process for command %s with pid %d %v", cmd.String(), pid, err)
 		return nil, err
 	}
