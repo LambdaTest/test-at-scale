@@ -11,7 +11,7 @@
 
 <p align="center">
   <a href="https://github.com/LambdaTest/test-at-scale/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-Apache%20License%202.0.-blue" /></a>
-  <a href="#CODE_OF_CONDUCT.md"><img src="https://img.shields.io/badge/contributions-welcome-brightgreen?logo=github" /></a>
+  <a href="https://github.com/LambdaTest/test-at-scale/blob/master/CODE_OF_CONDUCT.md"><img src="https://img.shields.io/badge/contributions-welcome-brightgreen?logo=github" /></a>
   <a href="#build"><img src="https://github.com/lambdatest/test-at-scale/actions/workflows/main.yml/badge.svg" /></a>
   <a href="#lint"><img src="https://github.com/lambdatest/test-at-scale/actions/workflows/golangci-lint.yml/badge.svg" /></a>
   <a href="#stale"><img src="https://github.com/lambdatest/test-at-scale/actions/workflows/stale.yml/badge.svg" /></a>
