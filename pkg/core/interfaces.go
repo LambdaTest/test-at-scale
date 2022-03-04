@@ -60,7 +60,7 @@ type YMLParserService interface {
 
 // TestStats is used for servicing stat collection
 type TestStats interface {
-	CaptureTestStats(pid int32, CollectStats bool) error
+	CaptureTestStats(pid int32, collectStats bool) error
 }
 
 // Task is a service to update task status at neuron

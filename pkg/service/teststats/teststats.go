@@ -36,7 +36,7 @@ func New(cfg *config.NucleusConfig, logger lumber.Logger) (*ProcStats, error) {
 }
 
 // CaptureTestStats combines the ps stats for each test
-func (s *ProcStats) CaptureTestStats(pid int32, CollectStats bool) error {
+func (s *ProcStats) CaptureTestStats(pid int32, collectStats bool) error {
 	ps, err := procfs.New(pid, global.SamplingTime, false)
 	if err != nil {
 		s.logger.Errorf("failed to find process stats with pid %d %v", pid, err)
@@ -52,7 +52,7 @@ func (s *ProcStats) CaptureTestStats(pid int32, CollectStats bool) error {
 		}
 		select {
 		case executionResults := <-s.ExecutionResultInputChannel:
-			if CollectStats {
+			if collectStats {
 				for ind := range executionResults.Results {
 					// Refactor the impl of below 2 functions using generics when Go 1.18 arrives
 					// https://www.freecodecamp.org/news/generics-in-golang/
