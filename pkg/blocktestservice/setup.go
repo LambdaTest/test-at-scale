@@ -31,8 +31,7 @@ type blocktest struct {
 
 // blocktestAPIResponse fetch blocked test cases from neuron API
 type blocktestAPIResponse struct {
-	Name        string `json:"name"`
-	Repo        string `json:"repo"`
+	Name        string `json:"test_name"`
 	TestLocator string `json:"test_locator"`
 	Type        string `json:"type"`
 }
@@ -84,6 +83,7 @@ func (tbs *TestBlockListService) fetchBlockListFromNeuron(ctx context.Context, r
 	q := u.Query()
 	q.Set("repoID", repoID)
 	q.Set("branch", branch)
+	q.Set("buildID", tbs.cfg.BuildID)
 	u.RawQuery = q.Encode()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
@@ -152,7 +152,7 @@ func (tbs *TestBlockListService) GetBlockTests(ctx context.Context, tasConfig *c
 			tbs.errChan <- err
 			return
 		}
-		tbs.logger.Infof("Blocklisted tests: %+v", tbs.blockTestEntities)
+		tbs.logger.Infof("Block tests: %+v", tbs.blockTestEntities)
 
 		// write blocklistest tests on disk
 		marshalledBlocklist, err := json.Marshal(tbs.blockTestEntities)
@@ -162,7 +162,7 @@ func (tbs *TestBlockListService) GetBlockTests(ctx context.Context, tasConfig *c
 			return
 		}
 
-		if err = ioutil.WriteFile(global.BlocklistedFileLocation, marshalledBlocklist, 0644); err != nil {
+		if err = ioutil.WriteFile(global.BlockTestFileLocation, marshalledBlocklist, 0644); err != nil {
 			tbs.logger.Errorf("Unable to write blocklist file: %+v", err)
 			tbs.errChan <- err
 			return

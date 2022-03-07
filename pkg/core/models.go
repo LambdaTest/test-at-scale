@@ -119,7 +119,7 @@ type Pipeline struct {
 	DiffManager          DiffManager
 	CacheStore           CacheStore
 	TestDiscoveryService TestDiscoveryService
-	TestBlockListService TestBlockListService
+	BlockTestService     BlockTestService
 	TestExecutionService TestExecutionService
 	ParserService        YMLParserService
 	CoverageService      CoverageService
@@ -197,14 +197,12 @@ type Status string
 
 // Const related to task status
 const (
-	Initiating  Status = "initiating"
-	Running     Status = "running"
-	Failed      Status = "failed"
-	Aborted     Status = "aborted"
-	Passed      Status = "passed"
-	Error       Status = "error"
-	Blocklisted Status = "blocklisted"
-	Quarantined Status = "quarantined"
+	Initiating Status = "initiating"
+	Running    Status = "running"
+	Failed     Status = "failed"
+	Aborted    Status = "aborted"
+	Passed     Status = "passed"
+	Error      Status = "error"
 )
 
 // ParserStatus repersent information related to each parsing
@@ -341,4 +339,12 @@ type TaskType string
 const (
 	DiscoveryTask TaskType = "discover"
 	ExecutionTask TaskType = "execute"
+)
+
+// BlockTestType stores block tests type
+type BlockTestType string
+
+const (
+	Blocklisted BlockTestType = "blocklisted"
+	Quarantined BlockTestType = "quarantined"
 )

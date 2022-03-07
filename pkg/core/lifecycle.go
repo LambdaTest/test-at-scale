@@ -178,7 +178,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	os.Setenv("ENDPOINT_POST_TEST_LIST", endpointPostTestList)
 	os.Setenv("ENDPOINT_POST_TEST_RESULTS", endpointPostTestResults)
 	os.Setenv("REPO_ROOT", global.RepoDir)
-	os.Setenv("BLOCKLISTED_TESTS_FILE", global.BlocklistedFileLocation)
+	os.Setenv("BLOCK_TESTS_FILE", global.BlockTestFileLocation)
 
 	if tasConfig.NodeVersion != nil {
 		nodeVersion := tasConfig.NodeVersion.String()
@@ -215,7 +215,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	}
 
 	if pl.Cfg.DiscoverMode {
-		err = pl.TestBlockListService.GetBlockListedTests(ctx, tasConfig, payload.RepoID)
+		err = pl.BlockTestService.GetBlockTests(ctx, tasConfig, payload.RepoID, payload.BranchName)
 		if err != nil {
 			pl.Logger.Errorf("Unable to fetch blocklisted tests: %v", err)
 			errRemark = errs.GenericErrRemark.Error()

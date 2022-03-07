@@ -20,7 +20,7 @@ const (
 	RepoSecretPath           = "/vault/secrets/reposecrets"
 	OauthSecretPath          = "/vault/secrets/oauth"
 	NeuronRemoteHost         = "http://neuron-service.phoenix"
-	BlocklistedFileLocation  = RepoDir + "/blocklist.json"
+	BlockTestFileLocation    = RepoDir + "/blocktests.json"
 	SecretRegex              = `\${{\s*secrets\.(.*?)\s*}}`
 	ExecutionResultChunkSize = 50
 	TestLocatorsDelimiter    = "#TAS#"
