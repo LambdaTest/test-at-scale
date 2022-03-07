@@ -31,8 +31,7 @@ type blocktest struct {
 
 // blocktestAPIResponse fetch blocked test cases from neuron API
 type blocktestAPIResponse struct {
-	Name        string `json:"name"`
-	Repo        string `json:"repo"`
+	Name        string `json:"test_name"`
 	TestLocator string `json:"test_locator"`
 	Type        string `json:"type"`
 }
