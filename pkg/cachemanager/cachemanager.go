@@ -17,12 +17,12 @@ import (
 )
 
 const (
-	yarnLock                  = "yarn.lock"
-	packageLock               = "package-lock.json"
-	npmShrinkwrap             = "npm-shrinkwrap.json"
-	nodeModules               = "node_modules"
-	packageJSON               = "package.json"
-	defaultCompressedFileName = "cache.tzst"
+	yarnLock                    = "yarn.lock"
+	packageLock                 = "package-lock.json"
+	npmShrinkwrap               = "npm-shrinkwrap.json"
+	nodeModules                 = "node_modules"
+	defaultCompressedFileName   = "cache.tzst"
+	workspaceCompressedFilename = "workspace.tzst"
 )
 
 // cache represents the files/dirs that will be cached
@@ -147,6 +147,32 @@ func (c *cache) Upload(ctx context.Context, cacheKey string, itemsToCompress ...
 	_, err = c.azureClient.CreateUsingSASURL(ctx, sasURL, f, "application/zstd")
 	if err != nil {
 		c.logger.Errorf("error while uploading cached file %s with key %s, error: %v", defaultCompressedFileName, cacheKey, err)
+		return err
+	}
+	return nil
+}
+
+func (c *cache) CacheWorkspace(ctx context.Context) error {
+	tmpDir := os.TempDir()
+	if err := c.zstd.Compress(ctx, workspaceCompressedFilename, true, tmpDir, global.HomeDir); err != nil {
+		return err
+	}
+	src := filepath.Join(tmpDir, workspaceCompressedFilename)
+	dst := filepath.Join(global.WorkspaceCacheDir, workspaceCompressedFilename)
+	if err := fileutils.CopyFile(src, dst, false); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *cache) ExtractWorkspace(ctx context.Context) error {
+	tmpDir := os.TempDir()
+	src := filepath.Join(global.WorkspaceCacheDir, workspaceCompressedFilename)
+	dst := filepath.Join(tmpDir, workspaceCompressedFilename)
+	if err := fileutils.CopyFile(src, dst, false); err != nil {
+		return err
+	}
+	if err := c.zstd.Decompress(ctx, filepath.Join(tmpDir, workspaceCompressedFilename), true, global.HomeDir); err != nil {
 		return err
 	}
 	return nil

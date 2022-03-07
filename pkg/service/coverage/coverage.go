@@ -53,7 +53,7 @@ func New(execManager core.ExecutionManager,
 	if !cfg.CoverageMode {
 		return nil, nil
 	}
-	if _, err := os.Stat(global.CodeCoveragParentDir); os.IsNotExist(err) {
+	if _, err := os.Stat(global.CodeCoverageDir); os.IsNotExist(err) {
 		return nil, errors.New("coverage directory not mounted")
 	}
 	return &codeCoverageService{
@@ -61,7 +61,7 @@ func New(execManager core.ExecutionManager,
 		execManager:          execManager,
 		azureClient:          azureClient,
 		zstd:                 zstd,
-		codeCoveragParentDir: global.CodeCoveragParentDir,
+		codeCoveragParentDir: global.CodeCoverageDir,
 		endpoint:             global.NeuronHost + "/coverage",
 		httpClient: http.Client{
 			Timeout: global.DefaultHTTPTimeout,

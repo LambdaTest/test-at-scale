@@ -154,7 +154,7 @@ func (tes *testExecutionService) Run(ctx context.Context,
 		RepoID:           payload.RepoID,
 		BuildID:          payload.BuildID,
 		TaskID:           payload.TaskID,
-		CommitID:         payload.TargetCommit,
+		CommitID:         payload.BuildTargetCommit,
 		TestPayload:      testResults,
 		TestSuitePayload: testSuiteResults,
 	}, nil
