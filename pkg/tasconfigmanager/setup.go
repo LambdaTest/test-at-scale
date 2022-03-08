@@ -73,7 +73,6 @@ func (tc *tasConfigManager) LoadConfig(ctx context.Context,
 	}
 
 	tasConfig := &core.TASConfig{SmartRun: true, Tier: core.Small}
-
 	err = yaml.Unmarshal(yamlFile, tasConfig)
 	if err != nil {
 		tc.logger.Errorf("Error while unmarshalling yaml file, path %s, error %v", path, err)
