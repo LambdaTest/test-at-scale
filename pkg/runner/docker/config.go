@@ -18,7 +18,6 @@ import (
 )
 
 const (
-	networkName      = "test-at-scale"
 	defaultVaultPath = "/vault/secrets"
 	repoSourcePath   = "/tmp/synapse/%s/nucleus"
 	nanoCPUUnit      = 1e9
