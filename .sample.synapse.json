@@ -1,7 +1,6 @@
 {
     "logConfig": {
       "enableConsole": true,
-      "consoleJSONFormat": true,
       "consolelevel": "debug"
     },
     "Lambdatest": {
