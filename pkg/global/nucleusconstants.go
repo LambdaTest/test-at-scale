@@ -40,8 +40,9 @@ var RawContentURLMap = map[string]string{
 
 // APIHostURLMap is map of git provider with there api url
 var APIHostURLMap = map[string]string{
-	"github": "https://api.github.com/repos",
-	"gitlab": "https://gitlab.com/api/v4/projects",
+	"github":    "https://api.github.com/repos",
+	"gitlab":    "https://gitlab.com/api/v4/projects",
+	"bitbucket": "https://api.bitbucket.org/2.0",
 }
 
 // InstallRunnerCmd  are list of command used to install custom runner

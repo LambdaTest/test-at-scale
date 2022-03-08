@@ -47,7 +47,12 @@ func (gm *gitManager) Clone(ctx context.Context, payload *core.Payload, cloneTok
 		return err
 	}
 
-	if err = os.Rename(repoName+"-"+commitID, global.RepoDir); err != nil {
+	filename := repoName + "-" + commitID
+	if payload.GitProvider == core.Bitbucket {
+		filename = repoItems[len(repoItems)-2] + "-" + repoName + "-" + commitID[:12]
+	}
+
+	if err = os.Rename(filename, global.RepoDir); err != nil {
 		gm.logger.Errorf("failed to rename dir, error %v", err)
 		return err
 	}
