@@ -34,6 +34,7 @@ func (gm *gitManager) Clone(ctx context.Context, payload *core.Payload, cloneTok
 	repoLink := payload.RepoLink
 	repoItems := strings.Split(repoLink, "/")
 	repoName := repoItems[len(repoItems)-1]
+	orgName := repoItems[len(repoItems)-2]
 	commitID := payload.BuildTargetCommit
 	archiveURL, err := urlmanager.GetCloneURL(payload.GitProvider, repoLink, repoName, commitID)
 	if err != nil {
@@ -49,7 +50,8 @@ func (gm *gitManager) Clone(ctx context.Context, payload *core.Payload, cloneTok
 
 	filename := repoName + "-" + commitID
 	if payload.GitProvider == core.Bitbucket {
-		filename = repoItems[len(repoItems)-2] + "-" + repoName + "-" + commitID[:12]
+		// commitID[:12] bitbucket shorthand commit sha
+		filename = orgName + "-" + repoName + "-" + commitID[:12]
 	}
 
 	if err = os.Rename(filename, global.RepoDir); err != nil {

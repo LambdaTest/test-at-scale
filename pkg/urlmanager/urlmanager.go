@@ -9,27 +9,6 @@ import (
 	"github.com/LambdaTest/synapse/pkg/global"
 )
 
-// GetDownloadURL returns file download url for given git provider
-func GetDownloadURL(gitprovider, repoSlug, commitID, fileName string) (string, error) {
-	if global.TestEnv {
-		return global.TestServer, nil
-	}
-	switch gitprovider {
-	case core.GitHub:
-		return fmt.Sprintf("%s/%s/%s/%s", global.RawContentURLMap[gitprovider], repoSlug, commitID, fileName), nil
-
-	case core.GitLab:
-		encodedPath := url.QueryEscape(repoSlug)
-		return fmt.Sprintf("%s/%s/repository/files/%s/raw?ref=%s", global.APIHostURLMap[gitprovider], encodedPath, fileName, commitID), nil
-
-	case core.Bitbucket:
-		return fmt.Sprintf("%s/raw/%s/%s", repoLink, commitID, fileName), nil
-
-	default:
-		return "", errs.ErrUnsupportedGitProvider
-	}
-}
-
 // GetCloneURL returns repo clone url for given git provider
 func GetCloneURL(gitprovider, repoLink, repo, commitID string) (string, error) {
 	if global.TestEnv {

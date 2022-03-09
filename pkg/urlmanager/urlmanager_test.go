@@ -7,37 +7,6 @@ import (
 	"github.com/LambdaTest/synapse/pkg/global"
 )
 
-func TestGetDownloadURL(t *testing.T) {
-	type args struct {
-		gitprovider string
-		repoSlug    string
-		commitID    string
-		fileName    string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    string
-		wantErr bool
-	}{
-		{"For github as git provider", args{"github", "tests/nexe", "abc", "xyz"}, "https://raw.githubusercontent.com/tests/nexe/abc/xyz", false},
-		{"For non-github and gitlab as git provider", args{"gittest", "tests/nexe", "abc", "xyz"}, "", true},
-		{"For gitlab as git provider", args{"gitlab", "tests/nexe", "abc", "xyz"}, global.APIHostURLMap["gitlab"] + "/" + url.QueryEscape("tests/nexe") + "/repository/files/xyz/raw?ref=abc", false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := GetDownloadURL(tt.args.gitprovider, tt.args.repoSlug, tt.args.commitID, tt.args.fileName)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetDownloadURL() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if got != tt.want {
-				t.Errorf("GetDownloadURL() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestGetCloneURL(t *testing.T) {
 	type args struct {
 		gitprovider string
