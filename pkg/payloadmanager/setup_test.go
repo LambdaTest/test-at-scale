@@ -3,7 +3,9 @@ package payloadmanager
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -54,7 +56,13 @@ func Test_payloadManager_FetchPayload(t *testing.T) {
 		},
 		func(ctc context.Context, blobPath string, containerType core.ContainerType) error {
 			return nil
-		})
+		},
+	)
+
+	wantResp, err := ioutil.ReadFile("../../testutils/testdata/index.json")
+	if err != nil {
+		fmt.Printf("error in reading file: %+v\n", err)
+	}
 
 	pm := NewPayloadManger(azureClient, logger, cfg)
 
@@ -68,20 +76,24 @@ func Test_payloadManager_FetchPayload(t *testing.T) {
 		want    string
 		wantErr bool
 	}{
-		{"Test Payload fetch for success", args{ctx: context.TODO(), payloadAddress: server.URL + "/index.txt"}, testutils.PayloadCheck, false},
+		{"Test Payload fetch for success", args{ctx: context.TODO(), payloadAddress: server.URL + "/index.txt"}, string(wantResp), false},
 
 		{"Test Payload fetch for empty url", args{ctx: context.TODO(), payloadAddress: ""}, "<nil>", true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := pm.FetchPayload(tt.args.ctx, tt.args.payloadAddress)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("payloadManager.FetchPayload() error = %v, wantErr %v", err, tt.wantErr)
+			if tt.wantErr {
+				if err == nil {
+					t.Errorf("payloadManager.FetchPayload() error = %v, wantErr %v", err, tt.wantErr)
+				}
 				return
 			}
-			receivedPayload := fmt.Sprintf("%v", got)
+
+			received, _ := json.Marshal(got)
+			receivedPayload := fmt.Sprintf("%+v", string(received))
 			if receivedPayload != tt.want {
-				t.Errorf("payloadManager.FetchPayload() = \n%v, want \n%v", receivedPayload, tt.want)
+				t.Errorf("payloadManager.FetchPayload() = \n%v, \nwant: %v\n", receivedPayload, tt.want)
 			}
 		})
 	}
@@ -101,8 +113,6 @@ func Test_payloadManager_ValidatePayload(t *testing.T) {
 		parseMode      bool
 		locators       string
 		locatorAddress string
-		targetCommit   string
-		baseCommit     string
 		taskID         string
 	}
 	tests := []struct {
@@ -130,11 +140,11 @@ func Test_payloadManager_ValidatePayload(t *testing.T) {
 
 		{"Test validate payload for empty build target commit", args{ctx: context.TODO(), payload: &core.Payload{RepoLink: "github.com/abc/", RepoSlug: "/slug", GitProvider: "fake", BuildID: "build", RepoID: "repo", BranchName: "branch", OrgID: "org", TasFileName: "tas", BuildTargetCommit: ""}}, true},
 
-		{"Test validate payload for empty target commit in config", args{ctx: context.TODO(), payload: &core.Payload{RepoLink: "github.com/abc/", RepoSlug: "/slug", GitProvider: "fake", BuildID: "build", RepoID: "repo", BranchName: "branch", OrgID: "org", TasFileName: "tas", BuildTargetCommit: "btg"}, coverageMode: false, parseMode: false, locators: "../dummy", targetCommit: ""}, true},
+		{"Test validate payload for empty target commit in config", args{ctx: context.TODO(), payload: &core.Payload{RepoLink: "github.com/abc/", RepoSlug: "/slug", GitProvider: "fake", BuildID: "build", RepoID: "repo", BranchName: "branch", OrgID: "org", TasFileName: "tas", BuildTargetCommit: "btg"}, coverageMode: false, parseMode: false, locators: "../dummy"}, true},
 
-		{"Test validate payload for target & base commit in config", args{ctx: context.TODO(), payload: &core.Payload{RepoLink: "github.com/abc/", RepoSlug: "/slug", GitProvider: "fake", BuildID: "build", RepoID: "repo", BranchName: "branch", OrgID: "org", TasFileName: "tas", BuildTargetCommit: "btg"}, coverageMode: false, parseMode: false, locators: "../dummy", targetCommit: "tct", baseCommit: "bct"}, true},
+		{"Test validate payload for target & base commit in config", args{ctx: context.TODO(), payload: &core.Payload{RepoLink: "github.com/abc/", RepoSlug: "/slug", GitProvider: "fake", BuildID: "build", RepoID: "repo", BranchName: "branch", OrgID: "org", TasFileName: "tas", BuildTargetCommit: "btg"}, coverageMode: false, parseMode: false, locators: "../dummy"}, true},
 
-		{"Test validate payload for target, base commit & taskID in config", args{ctx: context.TODO(), payload: &core.Payload{RepoLink: "github.com/abc/", RepoSlug: "/slug", GitProvider: "fake", BuildID: "build", RepoID: "repo", BranchName: "branch", OrgID: "org", TasFileName: "tas", BuildTargetCommit: "btg"}, coverageMode: false, parseMode: false, locators: "../dummy", targetCommit: "tct", baseCommit: "bct", taskID: "tid"}, true},
+		{"Test validate payload for target, base commit & taskID in config", args{ctx: context.TODO(), payload: &core.Payload{RepoLink: "github.com/abc/", RepoSlug: "/slug", GitProvider: "fake", BuildID: "build", RepoID: "repo", BranchName: "branch", OrgID: "org", TasFileName: "tas", BuildTargetCommit: "btg"}, coverageMode: false, parseMode: false, locators: "../dummy", taskID: "tid"}, true},
 
 		{"Test validate payload for non push and pull event", args{ctx: context.TODO(), payload: &core.Payload{RepoLink: "github.com/abc/", RepoSlug: "/slug", GitProvider: "fake", BuildID: "build", RepoID: "repo", BranchName: "branch", OrgID: "org", TasFileName: "tas", BuildTargetCommit: "btg", EventType: "invalid"}, coverageMode: true}, true},
 
@@ -146,9 +156,9 @@ func Test_payloadManager_ValidatePayload(t *testing.T) {
 		cfg.CoverageMode = tt.args.coverageMode
 		cfg.ParseMode = tt.args.parseMode
 		cfg.LocatorAddress = tt.args.locatorAddress
-		cfg.TargetCommit = tt.args.targetCommit
+		// cfg.BuildTargetCommit = tt.args.buildTargetCommit
 		cfg.Locators = tt.args.locators
-		cfg.BaseCommit = tt.args.baseCommit
+		// cfg.BuildBaseCommit = tt.args.buildBaseCommit
 		cfg.TaskID = tt.args.taskID
 
 		pm := NewPayloadManger(azureClient, logger, cfg)
@@ -172,9 +182,9 @@ func Test_payloadManager_ValidatePayload(t *testing.T) {
 				}
 			}
 			if !(cfg.CoverageMode || cfg.ParseMode) {
-				if cfg.BaseCommit != "" || cfg.TargetCommit != "" || cfg.TaskID != "" {
-					if tt.args.payload.BaseCommit != tt.args.baseCommit || tt.args.payload.TargetCommit != tt.args.targetCommit || tt.args.payload.TaskID != tt.args.taskID {
-						t.Errorf("got payload.BaseCommit: %v, want: %v\ngot payload.TargetCommit: %v, want: %v\ngot payload.TaskID: %v, want: %v", tt.args.payload.BaseCommit, tt.args.baseCommit, tt.args.payload.TargetCommit, tt.args.targetCommit, tt.args.payload.TaskID, tt.args.taskID)
+				if cfg.TaskID != "" {
+					if tt.args.payload.TaskID != tt.args.taskID {
+						t.Errorf("got payload.TaskID: %v, want: %v", tt.args.payload.TaskID, tt.args.taskID)
 					}
 				}
 			}

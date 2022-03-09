@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/LambdaTest/synapse/pkg/core"
-	"github.com/LambdaTest/synapse/pkg/errs"
 	"github.com/LambdaTest/synapse/pkg/global"
 	"github.com/LambdaTest/synapse/testutils"
 )
@@ -58,35 +57,33 @@ func Test_diffManager_GetChangedFiles_PRDiff(t *testing.T) {
 		cloneToken string
 	}
 	tests := []struct {
-		name string
-		args args
-		want map[string]int
+		name    string
+		args    args
+		want    map[string]int
+		wantErr bool
 	}{
-		{"Test GetChangedFile for PRdiff for github gitprovider", args{ctx: context.TODO(), payload: &core.Payload{RepoSlug: "/testdata", RepoLink: server.URL + "/testdata", BuildTargetCommit: "abcd", BuildBaseCommit: "efgh", TargetCommit: "ijkl", BaseCommit: "mnop", TaskID: "taskid", BranchName: "branchname", BuildID: "buildid", RepoID: "repoid", OrgID: "orgid", GitProvider: "github", PrivateRepo: false, EventType: "pull-request", Diff: "xyz", PullRequestNumber: 2}, cloneToken: ""}, map[string]int{}},
+		// expects to hit Server.URL/testdata/pulls/2
+		{"Test GetChangedFile for PRdiff for github gitprovider", args{ctx: context.TODO(), payload: &core.Payload{RepoSlug: "/testdata", RepoLink: server.URL + "/testdata", GitProvider: "github", PrivateRepo: false, EventType: "pull-request", Diff: "xyz", PullRequestNumber: 2}, cloneToken: ""}, map[string]int{}, false},
 
-		{"Test GetChangedFile for PRdiff for gitlab gitprovider", args{ctx: context.TODO(), payload: &core.Payload{RepoSlug: "/testdata", RepoLink: server.URL + "/testdata", BuildTargetCommit: "abcd", BuildBaseCommit: "efgh", TargetCommit: "ijkl", BaseCommit: "mnop", TaskID: "taskid", BranchName: "branchname", BuildID: "buildid", RepoID: "repoid", OrgID: "orgid", GitProvider: "gitlab", PrivateRepo: false, EventType: "pull-request", Diff: "xyz", PullRequestNumber: 2}, cloneToken: ""}, map[string]int{}},
+		// expects to hit Server.URL/testdata/merge_requests/2/changes
+		{"Test GetChangedFile for PRdiff for gitlab gitprovider", args{ctx: context.TODO(), payload: &core.Payload{RepoSlug: "/testdata", RepoLink: server.URL + "/testdata", GitProvider: "gitlab", PrivateRepo: false, EventType: "pull-request", Diff: "xyz", PullRequestNumber: 2}, cloneToken: ""}, map[string]int{}, false},
 
-		{"Test GetChangedFile for PRdiff for unsupported gitprovider", args{ctx: context.TODO(), payload: &core.Payload{RepoSlug: "/testdata", RepoLink: server.URL + "/testdata", BuildTargetCommit: "abcd", BuildBaseCommit: "efgh", TargetCommit: "ijkl", BaseCommit: "mnop", TaskID: "taskid", BranchName: "branchname", BuildID: "buildid", RepoID: "repoid", OrgID: "orgid", GitProvider: "", PrivateRepo: false, EventType: "pull-request", Diff: "xyz", PullRequestNumber: 2}, cloneToken: ""}, map[string]int{}},
+		{"Test GetChangedFile for Commitdiff for unsupported gitprovider", args{ctx: context.TODO(), payload: &core.Payload{GitProvider: "unsupported"}}, map[string]int{}, true},
 
-		{"Test GetChangedFile for PRdiff for non 200 status", args{ctx: context.TODO(), payload: &core.Payload{RepoSlug: "/notfound/", RepoLink: server.URL + "/testdata", BuildTargetCommit: "abcd", BuildBaseCommit: "efgh", TargetCommit: "ijkl", BaseCommit: "mnop", TaskID: "taskid", BranchName: "branchname", BuildID: "buildid", RepoID: "repoid", OrgID: "orgid", GitProvider: "", PrivateRepo: false, EventType: "pull-request", Diff: "xyz", PullRequestNumber: 2}, cloneToken: ""}, map[string]int{}},
+		{"Test GetChangedFile for PRdiff for unsupported gitprovider", args{ctx: context.TODO(), payload: &core.Payload{GitProvider: "unsupported", EventType: "pull-request"}}, map[string]int{}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			global.APIHostURLMap[tt.args.payload.GitProvider] = server.URL
 			resp, err := dm.GetChangedFiles(tt.args.ctx, tt.args.payload, tt.args.cloneToken)
-			if tt.args.payload.GitProvider == "" {
+
+			if tt.wantErr {
 				if err == nil {
-					t.Errorf("Expected error: 'unsupoorted git provider', received: %v\n", err)
+					t.Errorf("GetChangedFiles() error = %v, wantErr %v", err, tt.wantErr)
 				}
 				return
 			}
-			if tt.args.payload.RepoSlug == "/notfound/" {
-				expErr := errs.New("non 200 response")
-				if err == nil {
-					t.Errorf("Expected error: %s, received error: %s", expErr, err)
-				}
-				return
-			}
+
 			expResp := testutils.GetGitDiff()
 			if err != nil {
 				t.Errorf("error in getting changed files, error %v", err.Error())
@@ -101,7 +98,7 @@ func Test_diffManager_GetChangedFiles_PRDiff(t *testing.T) {
 
 func Test_diffManager_GetChangedFiles_CommitDiff_Github(t *testing.T) {
 	server := httptest.NewServer( // mock server
-		http.FileServer(http.Dir("../../testutils")), // mock data stored at testutils/testdata
+		http.FileServer(http.Dir("../../testutils")),
 	)
 	defer server.Close()
 
@@ -121,31 +118,34 @@ func Test_diffManager_GetChangedFiles_CommitDiff_Github(t *testing.T) {
 		cloneToken string
 	}
 	tests := []struct {
-		name string
-		args args
-		want map[string]int
+		name    string
+		args    args
+		want    map[string]int
+		wantErr bool
 	}{
-		{"Test GetChangedFile for CommitDiff for github gitprovider", args{ctx: context.TODO(), payload: &core.Payload{RepoSlug: "/testdata", RepoLink: server.URL + "/testdata", BuildTargetCommit: "abcd", BuildBaseCommit: "efgh", TargetCommit: "xyz", BaseCommit: "abc", TaskID: "taskid", BranchName: "branchname", BuildID: "buildid", RepoID: "repoid", OrgID: "orgid", GitProvider: "github", PrivateRepo: false, EventType: "push", Diff: "xyz", PullRequestNumber: 2}, cloneToken: ""}, map[string]int{}},
+		// expects to hit serverURL/testdata/compare/abc...xyz
+		{"Test GetChangedFile for CommitDiff for github gitprovider", args{ctx: context.TODO(), payload: &core.Payload{RepoSlug: "/testdata", RepoLink: server.URL + "/testdata", BuildTargetCommit: "xyz", BuildBaseCommit: "abc", GitProvider: "github", EventType: "push", Diff: "xyz", PullRequestNumber: 2}}, map[string]int{}, false},
 
-		{"Test GetChangedFile for CommitDiff for github provider and empty base commit", args{ctx: context.TODO(), payload: &core.Payload{RepoSlug: "/testdata", RepoLink: server.URL + "/testdata", BuildTargetCommit: "abcd", BuildBaseCommit: "efgh", TargetCommit: "", BaseCommit: "", TaskID: "taskid", BranchName: "branchname", BuildID: "buildid", RepoID: "repoid", OrgID: "orgid", GitProvider: "gitlab", PrivateRepo: false, EventType: "push", Diff: "xyz", PullRequestNumber: 2}, cloneToken: ""}, map[string]int{}},
+		{"Test GetChangedFile for CommitDiff for github provider and empty base commit", args{ctx: context.TODO(), payload: &core.Payload{RepoSlug: "/testdata", RepoLink: server.URL + "/testdata", BuildBaseCommit: "", GitProvider: "gitlab", EventType: "push"}}, map[string]int{}, true},
 
-		{"Test GetChangedFile for CommitDiff for github provider for non 200 response", args{ctx: context.TODO(), payload: &core.Payload{RepoSlug: "/notfound/", RepoLink: server.URL + "/notfound/", BuildTargetCommit: "abcd", BuildBaseCommit: "efgh", TargetCommit: "xyz", BaseCommit: "abc", TaskID: "taskid", BranchName: "branchname", BuildID: "buildid", RepoID: "repoid", OrgID: "orgid", GitProvider: "gitlab", PrivateRepo: false, EventType: "push", Diff: "xyz", PullRequestNumber: 2}, cloneToken: ""}, map[string]int{}},
+		{"Test GetChangedFile for CommitDiff for github provider for non 200 response", args{ctx: context.TODO(), payload: &core.Payload{RepoLink: server.URL + "/notfound/", BuildTargetCommit: "xyz", BuildBaseCommit: "abc", GitProvider: "gitlab", EventType: "push"}}, map[string]int{}, true},
 
-		{"Test GetChangedFile for CommitDiff for non github and gitlab gitprovider", args{ctx: context.TODO(), payload: &core.Payload{RepoSlug: "/notfound/", RepoLink: server.URL + "/notfound/", BuildTargetCommit: "abcd", BuildBaseCommit: "efgh", TargetCommit: "xyz", BaseCommit: "abc", TaskID: "taskid", BranchName: "branchname", BuildID: "buildid", RepoID: "repoid", OrgID: "orgid", GitProvider: "gittest", PrivateRepo: false, EventType: "push", Diff: "xyz", PullRequestNumber: 2}, cloneToken: ""}, map[string]int{}},
+		{"Test GetChangedFile for CommitDiff for non supported git provider", args{ctx: context.TODO(), payload: &core.Payload{RepoSlug: "/notfound/", RepoLink: server.URL + "/notfound/", BuildTargetCommit: "xyz", BuildBaseCommit: "abc", GitProvider: "gittest", EventType: "push"}}, map[string]int{}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			global.APIHostURLMap[tt.args.payload.GitProvider] = server.URL
 			resp, err := dm.GetChangedFiles(tt.args.ctx, tt.args.payload, tt.args.cloneToken)
+			// t.Errorf("")
 			if tt.args.payload.GitProvider == "gittest" {
 				if resp != nil || err == nil {
 					t.Errorf("Expected error: 'unsupoorted git provider', received: %v\nexpected response: nil, received: %v", err, resp)
 				}
 				return
 			}
-			if tt.args.payload.BaseCommit == "" || tt.args.payload.RepoSlug == "/notfound/" {
-				if err != nil {
-					t.Errorf("Received error: %v, response: %v", err, resp)
+			if tt.wantErr {
+				if err == nil {
+					t.Errorf("Expected error: %v, Received error: %v, response: %v", tt.wantErr, err, resp)
 				}
 				return
 			}
@@ -197,18 +197,14 @@ func Test_diffManager_GetChangedFiles_CommitDiff_Gitlab(t *testing.T) {
 		args args
 		want map[string]int
 	}{
-		{"Test GetChangedFile for CommitDiff for gitlab gitprovider", args{ctx: context.TODO(), payload: &core.Payload{RepoSlug: "/testdata", RepoLink: server.URL + "/testdata", BuildTargetCommit: "abcd", BuildBaseCommit: "efgh", TargetCommit: "xyz", BaseCommit: "abc", TaskID: "taskid", BranchName: "branchname", BuildID: "buildid", RepoID: "repoid", OrgID: "orgid", GitProvider: "gitlab", PrivateRepo: false, EventType: "push", Diff: "xyz", PullRequestNumber: 2}, cloneToken: ""}, map[string]int{}},
+		// expects to hit serverURL/testdata/repository/compare?from=abc&to=abcd
+		{"Test GetChangedFile for CommitDiff for gitlab gitprovider", args{ctx: context.TODO(), payload: &core.Payload{RepoSlug: "/testdata", RepoLink: server.URL + "/testdata", BuildTargetCommit: "abcd", BuildBaseCommit: "abc", TaskID: "taskid", BranchName: "branchname", BuildID: "buildid", RepoID: "repoid", OrgID: "orgid", GitProvider: "gitlab", PrivateRepo: false, EventType: "push", Diff: "xyz", PullRequestNumber: 2}, cloneToken: ""}, map[string]int{}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			global.APIHostURLMap[tt.args.payload.GitProvider] = server.URL
 			resp, err := dm.GetChangedFiles(tt.args.ctx, tt.args.payload, tt.args.cloneToken)
-			if tt.args.payload.BaseCommit == "" || tt.args.payload.RepoSlug == "/notfound/" {
-				if err != nil || resp != nil {
-					t.Errorf("Received error: %v, response: %v", err, resp)
-				}
-				return
-			}
+
 			if err != nil {
 				t.Errorf("error in getting changed files, error %v", err.Error())
 			} else if len(resp) != 202 {
