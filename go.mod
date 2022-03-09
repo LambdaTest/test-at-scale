@@ -3,8 +3,7 @@ module github.com/LambdaTest/synapse
 go 1.17
 
 require (
-	github.com/Azure/azure-pipeline-go v0.2.3
-	github.com/Azure/azure-storage-blob-go v0.14.0
+	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v0.3.0
 	github.com/bmatcuk/doublestar/v4 v4.0.2
 	github.com/coreos/go-semver v0.3.0
 	github.com/denisbrodbeck/machineid v1.0.1
@@ -29,6 +28,8 @@ require (
 )
 
 require (
+	github.com/Azure/azure-sdk-for-go/sdk/azcore v0.21.1 // indirect
+	github.com/Azure/azure-sdk-for-go/sdk/internal v0.8.3 // indirect
 	github.com/Microsoft/go-winio v0.4.17 // indirect
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
 	github.com/andybalholm/brotli v1.0.1 // indirect
@@ -52,7 +53,6 @@ require (
 	github.com/klauspost/pgzip v1.2.5 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/magiconair/properties v1.8.5 // indirect
-	github.com/mattn/go-ieproxy v0.0.1 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/mitchellh/mapstructure v1.4.3 // indirect
 	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6 // indirect
