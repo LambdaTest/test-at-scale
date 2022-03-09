@@ -80,6 +80,7 @@ func LoadSynapseConfig(cmd *cobra.Command) (*SynapseConfig, error) {
 	return populateSynapseConfig(new(SynapseConfig))
 }
 
+// LoadRepoSecrets loads repo secrets from configuration file
 func LoadRepoSecrets(cmd *cobra.Command, synapseConfig *SynapseConfig) error {
 	if configFile, _ := cmd.Flags().GetString("config"); configFile != "" {
 		viper.SetConfigFile(configFile)
@@ -107,6 +108,7 @@ func LoadRepoSecrets(cmd *cobra.Command, synapseConfig *SynapseConfig) error {
 	return nil
 }
 
+// ValidateCfg checks the validity of the config
 func ValidateCfg(cfg *SynapseConfig, logger lumber.Logger) error {
 	if cfg.Lambdatest.SecretKey == "" {
 		return errors.New("error finding lambdatest secretkey in configuration file")

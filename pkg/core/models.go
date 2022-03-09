@@ -265,7 +265,7 @@ const (
 	GitLab string = "gitlab"
 )
 
-// Oauth repersents the sructure of Oauth
+// Oauth represents the sructure of Oauth
 type Oauth struct {
 	Data struct {
 		AccessToken  string    `json:"access_token"`
@@ -315,7 +315,7 @@ type Modifier struct {
 	Cli    string
 }
 
-// Run repersents  pre and post runs
+// Run represents  pre and post runs
 type Run struct {
 	Commands []string          `yaml:"command" validate:"omitempty,gt=0"`
 	EnvMap   map[string]string `yaml:"env" validate:"omitempty,gt=0"`

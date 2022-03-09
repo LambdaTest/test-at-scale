@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strconv"
 	"sync"
 	"time"
 
@@ -19,6 +20,7 @@ import (
 	"github.com/LambdaTest/synapse/pkg/runner/docker"
 	"github.com/LambdaTest/synapse/pkg/secrets"
 	"github.com/LambdaTest/synapse/pkg/synapse"
+	"github.com/LambdaTest/synapse/pkg/utils"
 	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
 )
@@ -44,7 +46,8 @@ func run(cmd *cobra.Command, args []string) {
 	// create a context that we can cancel
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
+	// set necessary os env
+	setEnv()
 	// a WaitGroup for the goroutines to tell us they've stopped
 	wg := sync.WaitGroup{}
 
@@ -104,7 +107,7 @@ func run(cmd *cobra.Command, args []string) {
 		}
 	}()
 
-	// listen for C-c
+	// listen for C-cInterrupt
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 
@@ -125,7 +128,7 @@ func run(cmd *cobra.Command, args []string) {
 	select {
 	case <-c:
 		{
-			logger.Debugf("main: received C-c - attempting graceful shutdown ....")
+			logger.Debugf("main: received OS Interrupt signal, attempting graceful shutdown ....")
 			// tell the goroutines to stop
 			logger.Debugf("main: telling goroutines to stop")
 			cancel()
@@ -141,4 +144,11 @@ func run(cmd *cobra.Command, args []string) {
 		os.Exit(0)
 	}
 
+}
+
+func setEnv() {
+	os.Setenv(global.AutoRemoveEnv, strconv.FormatBool(global.AutoRemove))
+	os.Setenv(global.LocalEnv, strconv.FormatBool(global.Local))
+	os.Setenv(global.SynapseHostEnv, utils.GetOutboundIP())
+	os.Setenv(global.NetworkEnvName, global.NetworkName)
 }
