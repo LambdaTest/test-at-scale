@@ -13,7 +13,7 @@ require (
 	github.com/go-playground/locales v0.14.0
 	github.com/go-playground/universal-translator v0.18.0
 	github.com/go-playground/validator/v10 v10.10.0
-	github.com/google/uuid v1.2.0 // indirect
+	github.com/google/uuid v1.2.0
 	github.com/gorilla/websocket v1.4.2
 	github.com/joho/godotenv v1.4.0
 	github.com/mholt/archiver/v3 v3.5.1
@@ -34,7 +34,7 @@ require (
 	github.com/andybalholm/brotli v1.0.1 // indirect
 	github.com/containerd/containerd v1.5.9 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/docker/distribution v2.7.1+incompatible // indirect
+	github.com/docker/distribution v2.8.0+incompatible // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/dsnet/compress v0.0.2-0.20210315054119-f66993602bf5 // indirect

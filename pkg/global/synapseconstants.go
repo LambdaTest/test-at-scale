@@ -6,13 +6,20 @@ import (
 
 // all constant related to synapse
 const (
-	GracefulTimeout      = 10000 * time.Millisecond
+	GracefulTimeout      = 100000 * time.Millisecond
 	ProxyServerPort      = "8000"
 	DirectoryPermissions = 0755
 	FilePermissions      = 0755
 	GitConfigFileName    = "oauth"
 	RepoSecretsFileName  = "reposecrets"
 	SynapseContainerURL  = "http://synapse:8000"
+	NetworkEnvName       = "NetworkName"
+	AutoRemoveEnv        = "AutoRemove"
+	SynapseHostEnv       = "synapsehost"
+	LocalEnv             = "local"
+	NetworkName          = "test-at-scale"
+	AutoRemove           = true
+	Local                = true
 )
 
 // SocketURL lambdatest url for synapse socket

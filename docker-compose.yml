@@ -2,6 +2,7 @@ version: "3.9"
 services:
   synapse:
     image: lambdatest/synapse:latest
+    stop_signal: SIGINT
     restart: always
     networks:
       - test-at-scale
