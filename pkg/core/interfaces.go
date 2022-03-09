@@ -15,8 +15,8 @@ type PayloadManager interface {
 
 // TASConfigManager defines operations for tas config
 type TASConfigManager interface {
-	// LoadConfig loads the TASConfig from the given path
-	LoadConfig(ctx context.Context, path string, eventType EventType, parseMode bool) (*TASConfig, error)
+	// LoadAndValidate loads the TASConfig from the given path
+	LoadAndValidate(ctx context.Context, path string, eventType EventType, licenseTier Tier) (*TASConfig, error)
 }
 
 // GitManager manages the cloning of git repositories
@@ -50,12 +50,6 @@ type TestExecutionService interface {
 // CoverageService services coverage of tests
 type CoverageService interface {
 	MergeAndUpload(ctx context.Context, payload *Payload) error
-}
-
-// YMLParserService parses the .tas.yml files
-type YMLParserService interface {
-	// ParseAndValidate the YML file and validades it
-	ParseAndValidate(ctx context.Context, payload *Payload) error
 }
 
 // TestStats is used for servicing stat collection

@@ -24,9 +24,6 @@ const (
 	endpointPostTestResults = "http://localhost:9876/results"
 )
 
-var endpointPostTestList string
-var endpointNeuronReport string
-
 // NewPipeline creates and returns a new Pipeline instance
 func NewPipeline(cfg *config.NucleusConfig, logger lumber.Logger) (*Pipeline, error) {
 	return &Pipeline{
@@ -49,8 +46,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	pl.Logger.Debugf("Starting pipeline.....")
 	pl.Logger.Debugf("Fetching config")
 
-	endpointPostTestList = global.NeuronHost + "/test-list"
-	endpointNeuronReport = global.NeuronHost + "/report"
+	endpointPostTestList := global.NeuronHost + "/test-list"
 	// fetch configuration
 	payload, err := pl.PayloadManager.FetchPayload(ctx, pl.Cfg.PayloadAddress)
 	if err != nil {
@@ -78,16 +74,6 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 
 	// set payload on pipeline object
 	pl.Payload = payload
-	if pl.Cfg.ParseMode {
-		err = pl.GitManager.Clone(ctx, payload, oauth)
-		if err != nil {
-			pl.Logger.Fatalf("failed to clone YML for build ID: %s, error: %v", payload.BuildID, err)
-		}
-		if err = pl.ParserService.ParseAndValidate(ctx, payload); err != nil {
-			pl.Logger.Fatalf("error while parsing YML for build ID: %s, error: %v", payload.BuildID, err)
-		}
-		os.Exit(0)
-	}
 
 	taskPayload := &TaskPayload{
 		TaskID:      payload.TaskID,
@@ -151,7 +137,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	}
 
 	// load tas yaml file
-	tasConfig, err := pl.TASConfigManager.LoadConfig(ctx, payload.TasFileName, payload.EventType, false)
+	tasConfig, err := pl.TASConfigManager.LoadAndValidate(ctx, payload.TasFileName, payload.EventType, payload.LicenseTier)
 	if err != nil {
 		pl.Logger.Errorf("Unable to load tas yaml file, error: %v", err)
 		errRemark = err.Error()
@@ -334,6 +320,7 @@ func findTaskPayloadStatus(executionResults *ExecutionResults) Status {
 }
 
 func (pl *Pipeline) sendStats(payload ExecutionResults) error {
+	endpointNeuronReport := global.NeuronHost + "/report"
 	reqBody, err := json.Marshal(payload)
 	if err != nil {
 		pl.Logger.Errorf("failed to marshal request body %v", err)

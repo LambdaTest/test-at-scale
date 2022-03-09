@@ -123,7 +123,6 @@ type Pipeline struct {
 	TestDiscoveryService TestDiscoveryService
 	BlockTestService     BlockTestService
 	TestExecutionService TestExecutionService
-	ParserService        YMLParserService
 	CoverageService      CoverageService
 	TestStats            TestStats
 	Task                 Task
@@ -206,26 +205,6 @@ const (
 	Passed     Status = "passed"
 	Error      Status = "error"
 )
-
-// ParserStatus repersent information related to each parsing
-type ParserStatus struct {
-	TargetCommitID string `json:"target_commit_id"`
-	BaseCommitID   string `json:"base_commit_id"`
-	Status         Status `json:"status"`
-	Message        string `json:"message"`
-	Tier           Tier   `json:"tier"`
-	ContainerImage string `json:"container_image"`
-}
-
-// ParserResponse repersent response of nucleus when runs on parsing mode
-type ParserResponse struct {
-	BuildID     string        `json:"build_id"`
-	RepoID      string        `json:"repo_id"`
-	OrgID       string        `json:"org_id"`
-	GitProvider string        `json:"git_provider"`
-	RepoSlug    string        `json:"repo_slug"`
-	Status      *ParserStatus `json:"status"`
-}
 
 // TaskPayload repersent task response given by nucleus to neuron
 type TaskPayload struct {

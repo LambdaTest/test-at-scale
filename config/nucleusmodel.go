@@ -12,7 +12,6 @@ type NucleusConfig struct {
 	LogFile        string
 	LogConfig      lumber.LoggingConfig
 	CoverageMode   bool   `json:"coverage" yaml:"coverageOnly"`
-	ParseMode      bool   `json:"parser" yaml:"parseOnly"`
 	DiscoverMode   bool   `json:"discover" yaml:"discoverOnly"`
 	ExecuteMode    bool   `json:"execute" yaml:"executeOnly"`
 	TaskID         string `json:"taskID" env:"TASK_ID"`

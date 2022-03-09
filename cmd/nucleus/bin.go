@@ -28,7 +28,6 @@ import (
 	"github.com/LambdaTest/synapse/pkg/secret"
 	"github.com/LambdaTest/synapse/pkg/server"
 	"github.com/LambdaTest/synapse/pkg/service/coverage"
-	"github.com/LambdaTest/synapse/pkg/service/parser"
 	"github.com/LambdaTest/synapse/pkg/service/teststats"
 	"github.com/LambdaTest/synapse/pkg/tasconfigmanager"
 	"github.com/LambdaTest/synapse/pkg/task"
@@ -139,8 +138,6 @@ func run(cmd *cobra.Command, args []string) {
 		logger.Fatalf("failed to initialize cache manager: %v", err)
 	}
 
-	parserService := parser.New(tcm, logger)
-
 	coverageService, err := coverage.New(execManager, azureClient, zstd, cfg, logger)
 	if err != nil {
 		logger.Fatalf("failed to initialize coverage service: %v", err)
@@ -154,7 +151,6 @@ func run(cmd *cobra.Command, args []string) {
 	pl.BlockTestService = tbs
 	pl.TestExecutionService = tes
 	pl.ExecutionManager = execManager
-	pl.ParserService = parserService
 	pl.CoverageService = coverageService
 	pl.TestStats = ts
 	pl.Task = t

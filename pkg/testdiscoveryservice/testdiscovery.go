@@ -77,7 +77,7 @@ func (tds *testDiscoveryService) Discover(ctx context.Context,
 	cmd.Dir = global.RepoDir
 	envVars, err := tds.execManager.GetEnvVariables(envMap, secretData)
 	if err != nil {
-		tds.logger.Errorf("failed to parsed env variables, error: %v", err)
+		tds.logger.Errorf("failed to parse env variables, error: %v", err)
 		return err
 	}
 	cmd.Env = envVars
