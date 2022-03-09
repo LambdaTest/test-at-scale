@@ -30,6 +30,8 @@ func getDummyTimeMap() map[string]time.Time {
 
 }
 
+// NOTE: Tests in this package are meant to be run in a Linux environment
+
 func TestNew(t *testing.T) {
 	cfg, _ := testutils.GetConfig()
 	logger, _ := testutils.GetLogger()
@@ -50,8 +52,8 @@ func TestNew(t *testing.T) {
 				httpClient: http.Client{
 					Timeout: global.DefaultHTTPTimeout,
 				},
-				ExecutionResultInputChannel:  make(chan core.ExecutionResult),
-				ExecutionResultOutputChannel: make(chan core.ExecutionResult),
+				ExecutionResultInputChannel:  make(chan core.ExecutionResults),
+				ExecutionResultOutputChannel: make(chan core.ExecutionResults),
 			}, false},
 	}
 	for _, tt := range tests {

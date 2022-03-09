@@ -9,7 +9,6 @@ import (
 
 	"github.com/LambdaTest/synapse/pkg/core"
 	"github.com/LambdaTest/synapse/pkg/errs"
-	"github.com/LambdaTest/synapse/pkg/global"
 	"github.com/LambdaTest/synapse/pkg/lumber"
 	"github.com/LambdaTest/synapse/testutils"
 	"github.com/LambdaTest/synapse/testutils/mocks"
@@ -80,18 +79,20 @@ func Test_zstdCompressor_Compress(t *testing.T) {
 	// ReceivedStringArg will have args passed to ExecuteInternalCommands
 	var ReceivedArgs []string
 	execManager := new(mocks.ExecutionManager)
-	execManager.On("ExecuteInternalCommands", mock.AnythingOfType("*context.emptyCtx"), mock.AnythingOfType("core.CommandType"), mock.AnythingOfType("[]string"), global.RepoDir, mock.AnythingOfType("map[string]string"), mock.AnythingOfType("map[string]string")).Return(
+	execManager.On("ExecuteInternalCommands", mock.AnythingOfType("*context.emptyCtx"), mock.AnythingOfType("core.CommandType"), mock.AnythingOfType("[]string"), mock.AnythingOfType("string"), mock.AnythingOfType("map[string]string"), mock.AnythingOfType("map[string]string")).Return(
 		func(ctx context.Context, commandType core.CommandType, commands []string, cwd string, envMap, secretData map[string]string) error {
 			ReceivedArgs = commands
 			return nil
-		})
+		},
+	)
 
 	execManagerErr := new(mocks.ExecutionManager)
-	execManagerErr.On("ExecuteInternalCommands", mock.AnythingOfType("*context.emptyCtx"), mock.AnythingOfType("core.CommandType"), mock.AnythingOfType("[]string"), global.RepoDir, mock.AnythingOfType("map[string]string"), mock.AnythingOfType("map[string]string")).Return(
+	execManagerErr.On("ExecuteInternalCommands", mock.AnythingOfType("*context.emptyCtx"), mock.AnythingOfType("core.CommandType"), mock.AnythingOfType("[]string"), mock.AnythingOfType("string"), mock.AnythingOfType("map[string]string"), mock.AnythingOfType("map[string]string")).Return(
 		func(ctx context.Context, commandType core.CommandType, commands []string, cwd string, envMap, secretData map[string]string) error {
 			ReceivedArgs = commands
 			return errs.New("error from mocked interface")
-		})
+		},
+	)
 
 	type fields struct {
 		logger      lumber.Logger
@@ -155,14 +156,14 @@ func Test_zstdCompressor_Decompress(t *testing.T) {
 	// ReceivedStringArg will have args passed to ExecuteInternalCommands
 	var ReceivedArgs []string
 	execManager := new(mocks.ExecutionManager)
-	execManager.On("ExecuteInternalCommands", mock.AnythingOfType("*context.emptyCtx"), mock.AnythingOfType("core.CommandType"), mock.AnythingOfType("[]string"), global.RepoDir, mock.AnythingOfType("map[string]string"), mock.AnythingOfType("map[string]string")).Return(
+	execManager.On("ExecuteInternalCommands", mock.AnythingOfType("*context.emptyCtx"), mock.AnythingOfType("core.CommandType"), mock.AnythingOfType("[]string"), mock.AnythingOfType("string"), mock.AnythingOfType("map[string]string"), mock.AnythingOfType("map[string]string")).Return(
 		func(ctx context.Context, commandType core.CommandType, commands []string, cwd string, envMap, secretData map[string]string) error {
 			ReceivedArgs = commands
 			return nil
 		})
 
 	execManagerErr := new(mocks.ExecutionManager)
-	execManagerErr.On("ExecuteInternalCommands", mock.AnythingOfType("*context.emptyCtx"), mock.AnythingOfType("core.CommandType"), mock.AnythingOfType("[]string"), global.RepoDir, mock.AnythingOfType("map[string]string"), mock.AnythingOfType("map[string]string")).Return(
+	execManagerErr.On("ExecuteInternalCommands", mock.AnythingOfType("*context.emptyCtx"), mock.AnythingOfType("core.CommandType"), mock.AnythingOfType("[]string"), mock.AnythingOfType("string"), mock.AnythingOfType("map[string]string"), mock.AnythingOfType("map[string]string")).Return(
 		func(ctx context.Context, commandType core.CommandType, commands []string, cwd string, envMap, secretData map[string]string) error {
 			ReceivedArgs = commands
 			return errs.New("error from mocked interface")

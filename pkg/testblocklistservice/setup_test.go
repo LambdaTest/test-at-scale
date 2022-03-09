@@ -219,7 +219,7 @@ func TestTestBlockListService_GetBlockListedTests(t *testing.T) {
 					Blocklist: []string{"src/test/f1.spec.js", "src/test/f2.spec.js"},
 					Tier:      "small"},
 				repoID: "/testBlocklist.json"},
-			true},
+			true}, // Will not get error if the test is run in docker container, so test will fail in docker container
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

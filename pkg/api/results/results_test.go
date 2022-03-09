@@ -13,7 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// These tests are meant to be run on a linux machine
+// NOTE: Tests in this package are meant to be run in a Linux environment
 
 func TestHandler(t *testing.T) {
 	logger, _ := testutils.GetLogger()
