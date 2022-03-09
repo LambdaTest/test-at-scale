@@ -17,6 +17,9 @@ const (
 	AutoRemoveEnv        = "AutoRemove"
 	SynapseHostEnv       = "synapsehost"
 	LocalEnv             = "local"
+	NetworkName          = "test-at-scale"
+	AutoRemove           = true
+	Local                = true
 )
 
 // SocketURL lambdatest url for synapse socket

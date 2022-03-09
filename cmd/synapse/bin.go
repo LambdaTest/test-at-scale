@@ -147,9 +147,8 @@ func run(cmd *cobra.Command, args []string) {
 }
 
 func setEnv() {
-	os.Setenv(global.AutoRemoveEnv, strconv.FormatBool(true))
-	os.Setenv(global.LocalEnv, strconv.FormatBool(true))
+	os.Setenv(global.AutoRemoveEnv, strconv.FormatBool(global.AutoRemove))
+	os.Setenv(global.LocalEnv, strconv.FormatBool(global.Local))
 	os.Setenv(global.SynapseHostEnv, utils.GetOutboundIP())
-	os.Setenv(global.NetworkEnvName, "test-at-scale")
-
+	os.Setenv(global.NetworkEnvName, global.NetworkName)
 }

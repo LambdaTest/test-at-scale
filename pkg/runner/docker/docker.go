@@ -23,6 +23,8 @@ const (
 	mb = 1048576
 )
 
+var gracefulyContainerStopDuration = time.Second * 10
+
 var networkName string
 
 type docker struct {
@@ -112,7 +114,6 @@ func (d *docker) Create(ctx context.Context, r *core.RunnerOptions) core.Contain
 }
 
 func (d *docker) Destroy(ctx context.Context, r *core.RunnerOptions) error {
-	gracefulyContainerStopDuration := time.Second * 10
 	if err := d.client.ContainerStop(ctx, r.ContainerID, &gracefulyContainerStopDuration); err != nil {
 		d.logger.Errorf("error stopping container %v", err)
 		return err
