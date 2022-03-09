@@ -33,11 +33,6 @@ var FrameworkRunnerMap = map[string]string{
 	"jest":    "./node_modules/.bin/jest-runner",
 }
 
-// RawContentURLMap is map of git provider with there raw content url
-var RawContentURLMap = map[string]string{
-	"github": "https://raw.githubusercontent.com",
-}
-
 // APIHostURLMap is map of git provider with there api url
 var APIHostURLMap = map[string]string{
 	"github":    "https://api.github.com/repos",
