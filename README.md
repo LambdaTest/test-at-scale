@@ -107,7 +107,7 @@ curl https://raw.githubusercontent.com/LambdaTest/test-at-scale/master/.sample.s
   
   ```bash
   cd ~/test-at-scale
-  curl -L https://raw.githubusercontent.com/LambdaTest/test-at-scale/master/docker-compose.yml -o docker-compose.yml
+  curl -L https://raw.githubusercontent.com/LambdaTest/test-at-scale/main/docker-compose.yml -o docker-compose.yml
   docker-compose up -d
   ```
 
