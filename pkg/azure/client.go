@@ -94,7 +94,6 @@ func (s *Store) FindUsingSASUrl(ctx context.Context, sasURL string) (io.ReadClos
 	if err != nil {
 		return nil, err
 	}
-
 	blobClient, err := azblob.NewBlockBlobClientWithNoCredential(u.String(), &azblob.ClientOptions{})
 	if err != nil {
 		s.logger.Errorf("failed to create blob client, error: %v", err)
@@ -212,8 +211,9 @@ func handleError(err error) error {
 	if err == nil {
 		return nil
 	}
-	if serr, ok := err.(azblob.StorageError); ok { // This error is a Service-specific
-		switch serr.ErrorCode { // Compare serviceCode to ServiceCodeXxx constants
+	var errResp *azblob.StorageError
+	if internalErr, ok := err.(*azblob.InternalError); ok && internalErr.As(&errResp) {
+		switch errResp.ErrorCode { // Compare serviceCode to ServiceCodeXxx constants
 		case azblob.StorageErrorCodeBlobNotFound:
 			return errs.ErrNotFound
 		}
