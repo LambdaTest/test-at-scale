@@ -2,6 +2,12 @@ package global
 
 import "time"
 
+// TestEnv : to set test env for urlmanager package
+var TestEnv bool = false
+
+// TestServer : store server URL of test server while doing mock testing
+var TestServer string
+
 // All constant related to nucleus
 const (
 	CoverageManifestFileName = "manifest.json"

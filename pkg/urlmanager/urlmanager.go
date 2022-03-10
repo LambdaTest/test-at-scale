@@ -11,6 +11,9 @@ import (
 
 // GetDownloadURL returns file download url for given git provider
 func GetDownloadURL(gitprovider, repoSlug, commitID, fileName string) (string, error) {
+	if global.TestEnv {
+		return global.TestServer, nil
+	}
 	switch gitprovider {
 	case core.GitHub:
 		return fmt.Sprintf("%s/%s/%s/%s", global.RawContentURLMap[gitprovider], repoSlug, commitID, fileName), nil
@@ -25,6 +28,9 @@ func GetDownloadURL(gitprovider, repoSlug, commitID, fileName string) (string, e
 
 // GetCloneURL returns repo clone url for given git provider
 func GetCloneURL(gitprovider, repoLink, repo, commitID string) (string, error) {
+	if global.TestEnv {
+		return global.TestServer, nil
+	}
 	switch gitprovider {
 	case core.GitHub:
 		return fmt.Sprintf("%s/archive/%s.zip", repoLink, commitID), nil
@@ -37,6 +43,9 @@ func GetCloneURL(gitprovider, repoLink, repo, commitID string) (string, error) {
 
 // GetCommitDiffURL returns commit diff url for given git provider
 func GetCommitDiffURL(gitprovider, path, baseCommit, targetCommit string) (string, error) {
+	if global.TestEnv {
+		return global.TestServer, nil
+	}
 	switch gitprovider {
 	case core.GitHub:
 		return fmt.Sprintf("%s%s/compare/%s...%s", global.APIHostURLMap[gitprovider], path, baseCommit, targetCommit), nil
@@ -52,6 +61,9 @@ func GetCommitDiffURL(gitprovider, path, baseCommit, targetCommit string) (strin
 
 // GetPullRequestDiffURL returns PR Diff url for given git provider
 func GetPullRequestDiffURL(gitprovider, path string, prNumber int) (string, error) {
+	if global.TestEnv {
+		return global.TestServer, nil
+	}
 	switch gitprovider {
 	case core.GitHub:
 		return fmt.Sprintf("%s%s/pulls/%d", global.APIHostURLMap[gitprovider], path, prNumber), nil
@@ -63,4 +75,5 @@ func GetPullRequestDiffURL(gitprovider, path string, prNumber int) (string, erro
 	default:
 		return "", errs.ErrUnsupportedGitProvider
 	}
+
 }
