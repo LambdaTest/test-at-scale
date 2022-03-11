@@ -119,7 +119,7 @@ func run(cmd *cobra.Command, args []string) {
 	execManager := command.NewExecutionManager(secretParser, azureClient, logger)
 	tds := testdiscoveryservice.NewTestDiscoveryService(execManager, logger)
 	tes := testexecutionservice.NewTestExecutionService(execManager, azureClient, ts, logger)
-	tbs, err := blocktestservice.NewTestBlockListService(cfg, logger)
+	tbs, err := blocktestservice.NewTestBlockTestService(cfg, logger)
 	if err != nil {
 		logger.Fatalf("failed to initialize test blocklist service: %v", err)
 	}

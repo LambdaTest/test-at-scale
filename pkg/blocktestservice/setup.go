@@ -22,28 +22,28 @@ const (
 	delimiter = "##"
 )
 
-//blocktest represents the blocklisted test suites and test cases.
+// blocktest represents the blocked test suites and test cases.
 type blocktest struct {
 	Source  string `json:"source"`
 	Locator string `json:"locator"`
-	Type    string `json:"type"`
+	Status  string `json:"status"`
 }
 
 // blocktestAPIResponse fetch blocked test cases from neuron API
 type blocktestAPIResponse struct {
 	Name        string `json:"test_name"`
 	TestLocator string `json:"test_locator"`
-	Type        string `json:"type"`
+	Status      string `json:"status"`
 }
 
-// blocktestLocator stores locator and its type info
+// blocktestLocator stores locator and its status info
 type blocktestLocator struct {
 	Locator string `json:"locator"`
-	Type    string `json:"type"`
+	Status  string `json:"status"`
 }
 
-// TestBlockListService represents an instance of ConfManager instance
-type TestBlockListService struct {
+// TestBlockTestService represents an instance of ConfManager instance
+type TestBlockTestService struct {
 	cfg               *config.NucleusConfig
 	logger            lumber.Logger
 	httpClient        http.Client
@@ -53,10 +53,10 @@ type TestBlockListService struct {
 	errChan           chan error
 }
 
-// NewTestBlockListService creates and returns a new TestBlockListService instance
-func NewTestBlockListService(cfg *config.NucleusConfig, logger lumber.Logger) (*TestBlockListService, error) {
+// NewTestBlockTestService creates and returns a new TestBlockTestService instance
+func NewTestBlockTestService(cfg *config.NucleusConfig, logger lumber.Logger) (*TestBlockTestService, error) {
 
-	return &TestBlockListService{
+	return &TestBlockTestService{
 		cfg:               cfg,
 		logger:            logger,
 		endpoint:          global.NeuronHost + "/blocktest",
@@ -70,7 +70,7 @@ func NewTestBlockListService(cfg *config.NucleusConfig, logger lumber.Logger) (*
 		}}, nil
 }
 
-func (tbs *TestBlockListService) fetchBlockListFromNeuron(ctx context.Context, repoID, branch string) error {
+func (tbs *TestBlockTestService) fetchBlockListFromNeuron(ctx context.Context, repoID, branch string) error {
 	var inp []blocktestAPIResponse
 	u, err := url.Parse(tbs.endpoint)
 	if err != nil {
@@ -130,7 +130,7 @@ func (tbs *TestBlockListService) fetchBlockListFromNeuron(ctx context.Context, r
 }
 
 // GetBlockTests provides list of blocked test cases
-func (tbs *TestBlockListService) GetBlockTests(ctx context.Context, tasConfig *core.TASConfig, repoID, branch string) error {
+func (tbs *TestBlockTestService) GetBlockTests(ctx context.Context, tasConfig *core.TASConfig, repoID, branch string) error {
 
 	tbs.once.Do(func() {
 
@@ -174,7 +174,7 @@ func (tbs *TestBlockListService) GetBlockTests(ctx context.Context, tasConfig *c
 	}
 }
 
-func (tbs *TestBlockListService) populateBlockList(blocktestSource string, blocktestLocators []*blocktestLocator) {
+func (tbs *TestBlockTestService) populateBlockList(blocktestSource string, blocktestLocators []*blocktestLocator) {
 
 	i := 0
 	for _, test := range blocktestLocators {
