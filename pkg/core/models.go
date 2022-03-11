@@ -341,10 +341,10 @@ const (
 	ExecutionTask TaskType = "execute"
 )
 
-// BlockTestType stores block tests type
-type BlockTestType string
+// TestStatus stores tests status
+type TestStatus string
 
 const (
-	Blocklisted BlockTestType = "blocklisted"
-	Quarantined BlockTestType = "quarantined"
+	Blocklisted TestStatus = "blocklisted"
+	Quarantined TestStatus = "quarantined"
 )

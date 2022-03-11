@@ -22,24 +22,24 @@ const (
 	delimiter = "##"
 )
 
-//blocktest represents the blocklisted test suites and test cases.
+// blocktest represents the blocklisted test suites and test cases.
 type blocktest struct {
 	Source  string `json:"source"`
 	Locator string `json:"locator"`
-	Type    string `json:"type"`
+	Status  string `json:"status"`
 }
 
 // blocktestAPIResponse fetch blocked test cases from neuron API
 type blocktestAPIResponse struct {
 	Name        string `json:"test_name"`
 	TestLocator string `json:"test_locator"`
-	Type        string `json:"type"`
+	Status      string `json:"status"`
 }
 
-// blocktestLocator stores locator and its type info
+// blocktestLocator stores locator and its status info
 type blocktestLocator struct {
 	Locator string `json:"locator"`
-	Type    string `json:"type"`
+	Status  string `json:"status"`
 }
 
 // TestBlockListService represents an instance of ConfManager instance
@@ -70,11 +70,8 @@ func NewTestBlockListService(cfg *config.NucleusConfig, logger lumber.Logger) (*
 		}}, nil
 }
 
-//fetchBlockListFromNeuron
 func (tbs *TestBlockListService) fetchBlockListFromNeuron(ctx context.Context, repoID, branch string) error {
-
 	var inp []blocktestAPIResponse
-
 	u, err := url.Parse(tbs.endpoint)
 	if err != nil {
 		tbs.logger.Errorf("error while parsing endpoint %s, %v", tbs.endpoint, err)
@@ -125,7 +122,7 @@ func (tbs *TestBlockListService) fetchBlockListFromNeuron(ctx context.Context, r
 	for i := range inp {
 		blockLocator := new(blocktestLocator)
 		blockLocator.Locator = inp[i].TestLocator
-		blockLocator.Type = inp[i].Type
+		blockLocator.Status = inp[i].Status
 		blocktestLocators = append(blocktestLocators, blockLocator)
 	}
 	tbs.populateBlockList("api", blocktestLocators)
@@ -141,7 +138,7 @@ func (tbs *TestBlockListService) GetBlockTests(ctx context.Context, tasConfig *c
 		for _, locator := range tasConfig.Blocklist {
 			blockLocator := new(blocktestLocator)
 			blockLocator.Locator = locator
-			blockLocator.Type = string(core.Blocklisted)
+			blockLocator.Status = string(core.Blocklisted)
 			blocktestLocators = append(blocktestLocators, blockLocator)
 		}
 
@@ -189,9 +186,9 @@ func (tbs *TestBlockListService) populateBlockList(blocktestSource string, block
 		//TODO: handle duplicate entries and ignore its individual suites or testcases in blocklist if file is blocklisted
 
 		if val, ok := tbs.blockTestEntities[test.Locator[:i]]; ok {
-			tbs.blockTestEntities[test.Locator[:i]] = append(val, blocktest{Source: blocktestSource, Locator: test.Locator, Type: test.Type})
+			tbs.blockTestEntities[test.Locator[:i]] = append(val, blocktest{Source: blocktestSource, Locator: test.Locator, Status: test.Status})
 		} else {
-			tbs.blockTestEntities[test.Locator[:i]] = append([]blocktest{}, blocktest{Source: blocktestSource, Locator: test.Locator, Type: test.Type})
+			tbs.blockTestEntities[test.Locator[:i]] = append([]blocktest{}, blocktest{Source: blocktestSource, Locator: test.Locator, Status: test.Status})
 		}
 	}
 }
