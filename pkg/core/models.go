@@ -119,7 +119,7 @@ type Pipeline struct {
 	DiffManager          DiffManager
 	CacheStore           CacheStore
 	TestDiscoveryService TestDiscoveryService
-	TestBlockListService TestBlockListService
+	BlockTestService     BlockTestService
 	TestExecutionService TestExecutionService
 	ParserService        YMLParserService
 	CoverageService      CoverageService
@@ -339,4 +339,12 @@ type TaskType string
 const (
 	DiscoveryTask TaskType = "discover"
 	ExecutionTask TaskType = "execute"
+)
+
+// TestStatus stores tests status
+type TestStatus string
+
+const (
+	Blocklisted TestStatus = "blocklisted"
+	Quarantined TestStatus = "quarantined"
 )

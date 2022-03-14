@@ -36,9 +36,9 @@ type TestDiscoveryService interface {
 	Discover(ctx context.Context, tasConfig *TASConfig, payload *Payload, secretData map[string]string, diff map[string]int, diffExists bool) error
 }
 
-// TestBlockListService is used for fetching blocklisted tests
-type TestBlockListService interface {
-	GetBlockListedTests(ctx context.Context, tasConfig *TASConfig, repo string) error
+// BlockTestService is used for fetching blocklisted tests
+type BlockTestService interface {
+	GetBlockTests(ctx context.Context, tasConfig *TASConfig, repo, branch string) error
 }
 
 // TestExecutionService services execution of tests
