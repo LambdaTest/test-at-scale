@@ -263,6 +263,8 @@ const (
 	GitHub string = "github"
 	// GitLab as git provider
 	GitLab string = "gitlab"
+	// Bitbucket as git provider
+	Bitbucket string = "bitbucket"
 )
 
 // Oauth represents the sructure of Oauth

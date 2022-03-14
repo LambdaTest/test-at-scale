@@ -142,7 +142,7 @@ func (dm *diffManager) getPRDiff(gitprovider, repoURL string, prNumber int, clon
 
 }
 
-func (dm *diffManager) parseGitHubDiff(diff string) map[string]int {
+func (dm *diffManager) parseDiff(diff string) map[string]int {
 	m := make(map[string]int)
 	scanner := bufio.NewScanner(strings.NewReader(diff))
 	for scanner.Scan() {
@@ -187,8 +187,8 @@ func (dm *diffManager) parseGitLabDiff(eventType core.EventType, diff []byte) (m
 
 func (dm *diffManager) parseGitDiff(gitprovider string, eventType core.EventType, diff []byte) (map[string]int, error) {
 	switch gitprovider {
-	case core.GitHub:
-		return dm.parseGitHubDiff(string(diff)), nil
+	case core.GitHub, core.Bitbucket:
+		return dm.parseDiff(string(diff)), nil
 	case core.GitLab:
 		return dm.parseGitLabDiff(eventType, diff)
 	default:

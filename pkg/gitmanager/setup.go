@@ -34,6 +34,7 @@ func (gm *gitManager) Clone(ctx context.Context, payload *core.Payload, cloneTok
 	repoLink := payload.RepoLink
 	repoItems := strings.Split(repoLink, "/")
 	repoName := repoItems[len(repoItems)-1]
+	orgName := repoItems[len(repoItems)-2]
 	commitID := payload.BuildTargetCommit
 	archiveURL, err := urlmanager.GetCloneURL(payload.GitProvider, repoLink, repoName, commitID)
 	if err != nil {
@@ -47,7 +48,13 @@ func (gm *gitManager) Clone(ctx context.Context, payload *core.Payload, cloneTok
 		return err
 	}
 
-	if err = os.Rename(repoName+"-"+commitID, global.RepoDir); err != nil {
+	filename := repoName + "-" + commitID
+	if payload.GitProvider == core.Bitbucket {
+		// commitID[:12] bitbucket shorthand commit sha
+		filename = orgName + "-" + repoName + "-" + commitID[:12]
+	}
+
+	if err = os.Rename(filename, global.RepoDir); err != nil {
 		gm.logger.Errorf("failed to rename dir, error %v", err)
 		return err
 	}
