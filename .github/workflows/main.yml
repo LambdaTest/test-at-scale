@@ -140,7 +140,7 @@ jobs:
       - name: Build Cloud Runners
         if: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/beta' || github.ref == 'refs/heads/dev' }}
         run: |
-          curl -X  POST "https://api.github.com/repos/LambdaTest/test-at-scale-deployment/actions/workflows/main.yml/dispatches" -H "Authorization:Bearer ${{ secrets.GH_API_TOKEN }}" -d '{"ref":"${GITHUB_REF_SLUG}"}'
+          curl -X  POST "https://api.github.com/repos/LambdaTest/test-at-scale-deployment/actions/workflows/main.yml/dispatches" -H "Authorization:Bearer ${{ secrets.GH_API_TOKEN }}" -d '{"ref":"'${GITHUB_REF_SLUG}'"}'
 
       - name: Setup Docker Image Tags
         run: |
