@@ -14,6 +14,8 @@ on:
       - beta
       - dev
 
+  workflow_dispatch:
+
 env:
   REGISTRY_NAME: lambdatest
 
