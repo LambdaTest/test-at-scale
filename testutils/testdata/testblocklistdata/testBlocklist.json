@@ -1,0 +1,7 @@
+[
+    {
+        "name": "t1",
+        "repo": "fake",
+        "test_locator" : "src/test/f1.spec.js"
+    }
+]

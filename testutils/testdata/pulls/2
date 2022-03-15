@@ -1,0 +1,13 @@
+diff --git a/src/steps/resource.ts b/src/steps/resource.ts
+index b50377a8..37b84a2f 100644
+--- a/src/steps/resource.ts
++++ b/src/steps/resource.ts
+@@ -10,7 +10,7 @@ export default async function resource(compiler: NexeCompiler, next: () => Promi
+   }
+   const step = compiler.log.step('Bundling Resources...')
+   let count = 0
+-
++  const testCommitChangeM = "Added 1 line in steps.ts"
+   // workaround for https://github.com/sindresorhus/globby/issues/127
+   // and https://github.com/mrmlnc/fast-glob#pattern-syntax
+   const resourcesWithForwardSlashes = resources.map((r) => r.replace(/\\/g, '/'))

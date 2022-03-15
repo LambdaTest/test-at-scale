@@ -13,7 +13,7 @@ import (
 //Handler captures the test execution results from nucleus
 func Handler(logger lumber.Logger, ts *teststats.ProcStats) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		request := core.ExecutionResult{}
+		request := core.ExecutionResults{}
 		if err := c.ShouldBindJSON(&request); err != nil {
 			logger.Errorf("error while binding json %v", err)
 			c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})

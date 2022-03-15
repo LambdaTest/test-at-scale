@@ -1,0 +1,20 @@
+{
+  "repo_link": "https://gittest.com/user/nexe",
+  "repo_slug": "/user/nexe",
+  "build_target_commit": "iued83e783dhiewd9",
+  "build_base_commit": "udhihei3hd83y8dye",
+  "task_id": "9sj239edfd48y",
+  "branch_name": "ut",
+  "build_id": "fudf3ufjicjir34",
+  "repo_id": "2edejr48f",
+  "org_id": "ed39udjdj",
+  "git_provider": "gittest",
+  "private_repo" : false,
+  "event_type": "pull-request",
+  "diff_url": "https://api.gittest.com/user/nexe/diff/abcshd",
+  "pull_request_number": 2,
+  "tas_file_name": "user.tas",
+  "locators": "sdfr",
+  "locator_address": "sjc/dwd/",
+  "parent_commit_coverage_exists": false
+}

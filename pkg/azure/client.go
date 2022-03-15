@@ -11,8 +11,8 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/Azure/azure-pipeline-go/pipeline"
-	"github.com/Azure/azure-storage-blob-go/azblob"
+	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
+
 	"github.com/LambdaTest/synapse/config"
 	"github.com/LambdaTest/synapse/pkg/core"
 	"github.com/LambdaTest/synapse/pkg/errs"
@@ -21,20 +21,16 @@ import (
 )
 
 var (
-	defaultBufferSize    = 3 * 1024 * 1024
-	defaultMaxBuffers    = 4
-	defaultContainerName = "cache"
+	defaultBufferSize     = 3 * 1024 * 1024
+	defaultMaxBuffers     = 4
+	coverageContainerName = "coverage"
 )
 
 // Store represents the azure storage
 type Store struct {
-	containerName      string
-	storageAccountName string
-	storageAccessKey   string
-	containerURL       *azblob.ContainerURL
-	azurePipeLine      *pipeline.Pipeline
-	httpClient         http.Client
-	logger             lumber.Logger
+	containerClient azblob.ContainerClient
+	httpClient      http.Client
+	logger          lumber.Logger
 }
 
 // request body for getting SAS URL API.
@@ -53,8 +49,7 @@ func NewAzureBlobEnv(cfg *config.NucleusConfig, logger lumber.Logger) (core.Azur
 	// if non coverage mode then use Azure SAS Token
 	if !cfg.CoverageMode {
 		return &Store{
-			logger:        logger,
-			containerName: defaultContainerName,
+			logger: logger,
 			httpClient: http.Client{
 				Timeout: global.DefaultHTTPTimeout,
 			},
@@ -73,18 +68,23 @@ func NewAzureBlobEnv(cfg *config.NucleusConfig, logger lumber.Logger) (core.Azur
 		return nil, err
 	}
 
-	p := azblob.NewPipeline(credential, azblob.PipelineOptions{})
-	URL, err := url.Parse(fmt.Sprintf("https://%s.blob.core.windows.net/%s", cfg.Azure.StorageAccountName, cfg.Azure.ContainerName))
+	u, err := url.Parse(fmt.Sprintf("https://%s.blob.core.windows.net/%s", cfg.Azure.StorageAccountName, cfg.Azure.ContainerName))
 	if err != nil {
 		return nil, err
 	}
-	containerURL := azblob.NewContainerURL(*URL, p)
+
+	serviceClient, err := azblob.NewServiceClientWithSharedKey(u.String(), credential, nil)
+	if err != nil {
+		logger.Errorf("Failed to create azure service client, error: %v", err)
+		return nil, err
+	}
+
 	return &Store{
-		containerName:      defaultContainerName,
-		storageAccountName: cfg.Azure.StorageAccountName,
-		storageAccessKey:   cfg.Azure.StorageAccessKey,
-		containerURL:       &containerURL,
-		azurePipeLine:      &p,
+		logger: logger,
+		httpClient: http.Client{
+			Timeout: global.DefaultHTTPTimeout,
+		},
+		containerClient: serviceClient.NewContainerClient(coverageContainerName),
 	}, nil
 }
 
@@ -94,13 +94,18 @@ func (s *Store) FindUsingSASUrl(ctx context.Context, sasURL string) (io.ReadClos
 	if err != nil {
 		return nil, err
 	}
-	blobURL := azblob.NewBlobURL(*u, azblob.NewPipeline(azblob.NewAnonymousCredential(), azblob.PipelineOptions{}))
-
-	out, err := blobURL.Download(ctx, 0, azblob.CountToEnd, azblob.BlobAccessConditions{}, false, azblob.ClientProvidedKeyOptions{})
+	blobClient, err := azblob.NewBlockBlobClientWithNoCredential(u.String(), &azblob.ClientOptions{})
+	if err != nil {
+		s.logger.Errorf("failed to create blob client, error: %v", err)
+		return nil, err
+	}
+	s.logger.Debugf("Downloading blob from %s", blobClient.URL())
+	out, err := blobClient.Download(ctx, &azblob.DownloadBlobOptions{})
 	if err != nil {
 		return nil, handleError(err)
 	}
-	return out.Body(azblob.RetryReaderOptions{MaxRetryRequests: 5}), nil
+
+	return out.Body(&azblob.RetryReaderOptions{MaxRetryRequests: 5}), nil
 }
 
 // CreateUsingSASURL creates object using sasURL
@@ -109,36 +114,44 @@ func (s *Store) CreateUsingSASURL(ctx context.Context, sasURL string, reader io.
 	if err != nil {
 		return "", err
 	}
-	blobURL := azblob.NewBlockBlobURL(*u, azblob.NewPipeline(azblob.NewAnonymousCredential(), azblob.PipelineOptions{}))
-	_, err = azblob.UploadStreamToBlockBlob(ctx, reader, blobURL, azblob.UploadStreamToBlockBlobOptions{
-		BlobHTTPHeaders: azblob.BlobHTTPHeaders{ContentType: mimeType},
-		BufferSize:      defaultBufferSize,
-		MaxBuffers:      defaultMaxBuffers,
+	blobClient, err := azblob.NewBlockBlobClientWithNoCredential(u.String(), &azblob.ClientOptions{})
+	if err != nil {
+		s.logger.Errorf("failed to create blob client, error: %v", err)
+		return "", err
+	}
+	s.logger.Debugf("Uploading blob to %s", blobClient.URL())
+
+	_, err = blobClient.UploadStreamToBlockBlob(ctx, reader, azblob.UploadStreamToBlockBlobOptions{
+		HTTPHeaders: &azblob.BlobHTTPHeaders{BlobContentType: &mimeType},
+		BufferSize:  defaultBufferSize,
+		MaxBuffers:  defaultMaxBuffers,
 	})
 
-	return blobURL.String(), err
+	return blobClient.URL(), err
 }
 
 // Find function downloads blob based on URI
 func (s *Store) Find(ctx context.Context, path string) (io.ReadCloser, error) {
-	blobURL := s.containerURL.NewBlockBlobURL(path)
-	out, err := blobURL.Download(ctx, 0, azblob.CountToEnd, azblob.BlobAccessConditions{}, false, azblob.ClientProvidedKeyOptions{})
+	blobClient := s.containerClient.NewBlockBlobClient(path)
+	out, err := blobClient.Download(ctx, &azblob.DownloadBlobOptions{})
 	if err != nil {
 		return nil, handleError(err)
 	}
-	return out.Body(azblob.RetryReaderOptions{MaxRetryRequests: 5}), nil
+	defer out.RawResponse.Body.Close()
+
+	return out.Body(&azblob.RetryReaderOptions{MaxRetryRequests: 5}), nil
 }
 
 // Create function ulploads blob to URI
 func (s *Store) Create(ctx context.Context, path string, reader io.Reader, mimeType string) (string, error) {
-	blobURL := s.containerURL.NewBlockBlobURL(path)
-	_, err := azblob.UploadStreamToBlockBlob(ctx, reader, blobURL, azblob.UploadStreamToBlockBlobOptions{
-		BlobHTTPHeaders: azblob.BlobHTTPHeaders{ContentType: mimeType},
-		BufferSize:      defaultBufferSize,
-		MaxBuffers:      defaultMaxBuffers,
+	blobClient := s.containerClient.NewBlockBlobClient(path)
+	_, err := blobClient.UploadStreamToBlockBlob(ctx, reader, azblob.UploadStreamToBlockBlobOptions{
+		HTTPHeaders: &azblob.BlobHTTPHeaders{BlobContentType: &mimeType},
+		BufferSize:  defaultBufferSize,
+		MaxBuffers:  defaultMaxBuffers,
 	})
 
-	return blobURL.String(), err
+	return blobClient.URL(), err
 }
 
 // GetSASURL calls request neuron to get the SAS url
@@ -184,22 +197,24 @@ func (s *Store) GetSASURL(ctx context.Context, containerPath string, containerTy
 
 // Exists checks the blob if exists
 func (s *Store) Exists(ctx context.Context, path string) (bool, error) {
-	blobURL := s.containerURL.NewBlockBlobURL(path)
-	get, err := blobURL.GetProperties(ctx, azblob.BlobAccessConditions{}, azblob.ClientProvidedKeyOptions{})
+	blobClient := s.containerClient.NewBlockBlobClient(path)
+	get, err := blobClient.GetProperties(ctx, &azblob.GetBlobPropertiesOptions{})
 	if err != nil {
 		return false, fmt.Errorf("check if object exists, %w", err)
 	}
-
-	return get.StatusCode() == http.StatusOK, nil
+	statusCode := get.RawResponse.StatusCode
+	defer get.RawResponse.Body.Close()
+	return statusCode == http.StatusOK, nil
 }
 
 func handleError(err error) error {
 	if err == nil {
 		return nil
 	}
-	if serr, ok := err.(azblob.StorageError); ok { // This error is a Service-specific
-		switch serr.ServiceCode() { // Compare serviceCode to ServiceCodeXxx constants
-		case azblob.ServiceCodeBlobNotFound:
+	var errResp *azblob.StorageError
+	if internalErr, ok := err.(*azblob.InternalError); ok && internalErr.As(&errResp) {
+		switch errResp.ErrorCode { // Compare serviceCode to ServiceCodeXxx constants
+		case azblob.StorageErrorCodeBlobNotFound:
 			return errs.ErrNotFound
 		}
 	}

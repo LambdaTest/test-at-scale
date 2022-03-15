@@ -36,15 +36,15 @@ type TestDiscoveryService interface {
 	Discover(ctx context.Context, tasConfig *TASConfig, payload *Payload, secretData map[string]string, diff map[string]int, diffExists bool) error
 }
 
-// TestBlockListService is used for fetching blocklisted tests
-type TestBlockListService interface {
-	GetBlockListedTests(ctx context.Context, tasConfig *TASConfig, repo string) error
+// BlockTestService is used for fetching blocklisted tests
+type BlockTestService interface {
+	GetBlockTests(ctx context.Context, tasConfig *TASConfig, repo, branch string) error
 }
 
 // TestExecutionService services execution of tests
 type TestExecutionService interface {
 	// Run executes the test execution scripts.
-	Run(ctx context.Context, tasConfig *TASConfig, payload *Payload, coverageDirectory string, secretMap map[string]string) (*ExecutionResult, error)
+	Run(ctx context.Context, tasConfig *TASConfig, payload *Payload, coverageDirectory string, secretMap map[string]string) (*ExecutionResults, error)
 }
 
 // CoverageService services coverage of tests
@@ -60,7 +60,7 @@ type YMLParserService interface {
 
 // TestStats is used for servicing stat collection
 type TestStats interface {
-	CaptureTestStats(pid int32) error
+	CaptureTestStats(pid int32, collectStats bool) error
 }
 
 // Task is a service to update task status at neuron

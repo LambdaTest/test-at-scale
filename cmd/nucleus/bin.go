@@ -16,6 +16,7 @@ import (
 	"github.com/LambdaTest/synapse/config"
 	"github.com/LambdaTest/synapse/pkg/api"
 	"github.com/LambdaTest/synapse/pkg/azure"
+	"github.com/LambdaTest/synapse/pkg/blocktestservice"
 	"github.com/LambdaTest/synapse/pkg/cachemanager"
 	"github.com/LambdaTest/synapse/pkg/command"
 	"github.com/LambdaTest/synapse/pkg/core"
@@ -31,7 +32,6 @@ import (
 	"github.com/LambdaTest/synapse/pkg/service/teststats"
 	"github.com/LambdaTest/synapse/pkg/tasconfigmanager"
 	"github.com/LambdaTest/synapse/pkg/task"
-	"github.com/LambdaTest/synapse/pkg/testblocklistservice"
 	"github.com/LambdaTest/synapse/pkg/testdiscoveryservice"
 	"github.com/LambdaTest/synapse/pkg/testexecutionservice"
 	"github.com/LambdaTest/synapse/pkg/zstd"
@@ -119,7 +119,7 @@ func run(cmd *cobra.Command, args []string) {
 	execManager := command.NewExecutionManager(secretParser, azureClient, logger)
 	tds := testdiscoveryservice.NewTestDiscoveryService(execManager, logger)
 	tes := testexecutionservice.NewTestExecutionService(execManager, azureClient, ts, logger)
-	tbs, err := testblocklistservice.NewTestBlockListService(cfg, logger)
+	tbs, err := blocktestservice.NewTestBlockTestService(cfg, logger)
 	if err != nil {
 		logger.Fatalf("failed to initialize test blocklist service: %v", err)
 	}
@@ -151,7 +151,7 @@ func run(cmd *cobra.Command, args []string) {
 	pl.GitManager = gm
 	pl.DiffManager = dm
 	pl.TestDiscoveryService = tds
-	pl.TestBlockListService = tbs
+	pl.BlockTestService = tbs
 	pl.TestExecutionService = tes
 	pl.ExecutionManager = execManager
 	pl.ParserService = parserService

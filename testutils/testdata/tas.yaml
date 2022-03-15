@@ -1,0 +1,38 @@
+# supported frameworks: mocha|jest|jasmine
+framework: mocha
+# supported tiers: xmall|small|medium|large|xlarge
+tier: xsmall
+blocklist:
+  # format: "<filename>##<suit-name>##<suit-name>##<test-name>"
+  - "src/test/api.js"
+  - "src/test/api1.js##this is a test-suite"
+  - "src/test/api2.js##this is a test-suite##this is a test-case"
+postMerge:
+  # env vars provided at the time of discovering and executing the post-merge tests
+  env:
+    REPONAME: nexe
+    AWS_KEY: ${{ secrets.AWS_KEY }}
+  # glob-pattern for identifying the test files
+  pattern:
+    - "./test/**/*.spec.ts"
+  # strategy for trigerring builds for post-merge
+  strategy:
+    threshold: 1
+    name: after_n_commits
+preMerge:
+  pattern:
+    - "./test/**/*.spec.ts"
+preRun:
+  # set of commands to run before running the tests like `yarn install`, `yarn build`
+  command:
+    - npm ci
+    - docker build --build-arg NPM_TOKEN=${{ secrets.NPM_TOKEN }} --tag=nucleus
+postRun:
+  # set of commands to run after running the tests
+  command:
+    - node --version
+# path to your custom configuration file required by framework
+configFile: mocharc.yml
+# provide the version of nodejs required for your project
+nodeVersion: 14.17.2
+version: 2.0

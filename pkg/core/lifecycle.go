@@ -178,7 +178,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	os.Setenv("ENDPOINT_POST_TEST_LIST", endpointPostTestList)
 	os.Setenv("ENDPOINT_POST_TEST_RESULTS", endpointPostTestResults)
 	os.Setenv("REPO_ROOT", global.RepoDir)
-	os.Setenv("BLOCKLISTED_TESTS_FILE", global.BlocklistedFileLocation)
+	os.Setenv("BLOCK_TESTS_FILE", global.BlockTestFileLocation)
 
 	if tasConfig.NodeVersion != nil {
 		nodeVersion := tasConfig.NodeVersion.String()
@@ -215,7 +215,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	}
 
 	if pl.Cfg.DiscoverMode {
-		err = pl.TestBlockListService.GetBlockListedTests(ctx, tasConfig, payload.RepoID)
+		err = pl.BlockTestService.GetBlockTests(ctx, tasConfig, payload.RepoID, payload.BranchName)
 		if err != nil {
 			pl.Logger.Errorf("Unable to fetch blocklisted tests: %v", err)
 			errRemark = errs.GenericErrRemark.Error()
@@ -285,27 +285,23 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	}
 
 	if pl.Cfg.ExecuteMode {
+
+		pl.Logger.Debugf("execute Mode")
 		// execute test cases
-		executionResult, err := pl.TestExecutionService.Run(ctx, tasConfig, pl.Payload, coverageDir, secretMap)
+		executionResults, err := pl.TestExecutionService.Run(ctx, tasConfig, pl.Payload, coverageDir, secretMap)
 		if err != nil {
 			pl.Logger.Infof("Unable to perform test execution: %v", err)
 			errRemark = "Error occurred in executing tests"
 			return err
 		}
 
-		if err = pl.sendStats(*executionResult); err != nil {
+		if err = pl.sendStats(*executionResults); err != nil {
 			pl.Logger.Errorf("error while sending test reports %v", err)
 			errRemark = errs.GenericErrRemark.Error()
 			return err
 		}
-		taskPayload.Status = Passed
-		for i := 0; i < len(executionResult.TestPayload); i++ {
-			testResult := &executionResult.TestPayload[i]
-			if testResult.Status == "failed" {
-				taskPayload.Status = Failed
-				break
-			}
-		}
+
+		taskPayload.Status = findTaskPayloadStatus(executionResults)
 
 		if tasConfig.Postrun != nil {
 			pl.Logger.Infof("Running post-run steps")
@@ -322,7 +318,19 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	return nil
 }
 
-func (pl *Pipeline) sendStats(payload ExecutionResult) error {
+func findTaskPayloadStatus(executionResults *ExecutionResults) Status {
+	for _, result := range executionResults.Results {
+		for i := 0; i < len(result.TestPayload); i++ {
+			testResult := &result.TestPayload[i]
+			if testResult.Status == "failed" {
+				return Failed
+			}
+		}
+	}
+	return Passed
+}
+
+func (pl *Pipeline) sendStats(payload ExecutionResults) error {
 	reqBody, err := json.Marshal(payload)
 	if err != nil {
 		pl.Logger.Errorf("failed to marshal request body %v", err)
