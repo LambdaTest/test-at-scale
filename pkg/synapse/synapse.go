@@ -24,8 +24,8 @@ const (
 	JobID                  = "job-id"
 	Mode                   = "mode"
 	ID                     = "id"
-	DuplicateConnectionErr = "Duplicate connection"
-	AuthenticationFailed   = "Authentication failed"
+	DuplicateConnectionErr = "Synapse already has an open connection"
+	AuthenticationFailed   = "Synapse authentication failed"
 )
 
 type synapse struct {
@@ -73,6 +73,10 @@ func (s *synapse) InitiateConnection(
 	s.logger.Debugf("exiting synapse")
 }
 
+/*
+openAndMaintainConnection tries to create and mantain connection with
+exponential backoff factor
+*/
 func (s *synapse) openAndMaintainConnection(ctx context.Context, connectionFailed chan struct{}) {
 	// setup exponential backoff for retrying control websocket connection
 	var policy = backoff.NewExponential(
@@ -81,12 +85,9 @@ func (s *synapse) openAndMaintainConnection(ctx context.Context, connectionFaile
 		backoff.WithMaxRetries(global.MaxConnectionAttempts), // If not specified, default number of retries is 10
 	)
 
-	normalCloser := make(chan struct{})
-
 	b, cancel := policy.Start(context.Background())
 	defer cancel()
-	s.logger.Debugf("starting socket connection")
-	s.logger.Errorf("starting socket connection at URL %s", global.SocketURL[viper.GetString("env")])
+	s.logger.Debugf("starting socket connection at URL %s", global.SocketURL[viper.GetString("env")])
 	for backoff.Continue(b) {
 		s.logger.Debugf("trying to connect to lamdatest server")
 		select {
@@ -101,26 +102,8 @@ func (s *synapse) openAndMaintainConnection(ctx context.Context, connectionFaile
 			s.conn = conn
 			s.logger.Debugf("synapse connected to lambdatest server")
 			s.login()
-			go s.handleIncomingMessage(normalCloser)
-			go s.WriteMessage()
-			select {
-			case <-ctx.Done():
-				s.ConnectionAborted <- struct{}{}
+			if !s.connectionHandler(ctx, conn, connectionFailed) {
 				return
-			case <-normalCloser:
-				conn.Close()
-				s.ConnectionAborted <- struct{}{}
-				return
-			case <-s.InvalidConnectionRequest:
-				conn.Close()
-				s.ConnectionAborted <- struct{}{}
-				connectionFailed <- struct{}{}
-				s.LogoutRequired = false
-				return
-			case <-s.MsgErrChan:
-				s.logger.Errorf("Connection between synpase and lambdatest break")
-				s.ConnectionAborted <- struct{}{}
-				conn.Close()
 			}
 			s.MsgErrChan = make(chan struct{})
 			go s.openAndMaintainConnection(ctx, connectionFailed)
@@ -133,12 +116,48 @@ func (s *synapse) openAndMaintainConnection(ctx context.Context, connectionFaile
 	s.LogoutRequired = false
 }
 
-func (s *synapse) handleIncomingMessage(normalCloser chan struct{}) {
+/*
+ connectionHandler handles the connection by listening to any connection closer
+ also it returns boolean value which repersents whether we can retry to connect
+*/
+func (s *synapse) connectionHandler(ctx context.Context, conn *websocket.Conn, connectionFailed chan struct{}) bool {
+	normalCloser := make(chan struct{})
+	ctxDone := false
+	defer func() {
+		// if gracefully terminated, wait for logout message to be sent
+		if !ctxDone {
+			conn.Close()
+		}
+		s.ConnectionAborted <- struct{}{}
+	}()
+
+	go s.messageReader(normalCloser, conn)
+	go s.messageWriter(conn)
+	select {
+	case <-ctx.Done():
+		ctxDone = true
+		return false
+	case <-normalCloser:
+		return false
+	case <-s.InvalidConnectionRequest:
+		connectionFailed <- struct{}{}
+		s.LogoutRequired = false
+		return false
+	case <-s.MsgErrChan:
+		s.logger.Errorf("Connection between synpase and lambdatest break")
+		return true
+	}
+}
+
+/*
+messageReader reads websocket messages and acts upon it
+*/
+func (s *synapse) messageReader(normalCloser chan struct{}, conn *websocket.Conn) {
 
 	// s.conn.SetReadLimit(maxMessageSize)
 	// s.conn.SetReadDeadline(time.Now().Add(pingWait))
-	s.conn.SetPingHandler(func(string) error {
-		if err := s.conn.WriteMessage(websocket.PongMessage, nil); err != nil {
+	conn.SetPingHandler(func(string) error {
+		if err := conn.WriteMessage(websocket.PongMessage, nil); err != nil {
 			s.logger.Errorf("Error in writing pong msg %s", err.Error())
 			s.MsgErrChan <- struct{}{}
 			close(s.MsgErrChan)
@@ -148,7 +167,7 @@ func (s *synapse) handleIncomingMessage(normalCloser chan struct{}) {
 	})
 
 	for {
-		_, msg, err := s.conn.ReadMessage()
+		_, msg, err := conn.ReadMessage()
 		if err != nil {
 			if websocket.IsCloseError(err, websocket.CloseNormalClosure) {
 				s.logger.Debugf("Normal closure occurred...........")
@@ -164,6 +183,7 @@ func (s *synapse) handleIncomingMessage(normalCloser chan struct{}) {
 	}
 }
 
+// processMessage process messages recieved via websocket
 func (s *synapse) processMessage(msg []byte) {
 	var message core.Message
 	err := json.Unmarshal(msg, &message)
@@ -185,6 +205,7 @@ func (s *synapse) processMessage(msg []byte) {
 	}
 }
 
+// processErrorMessage handles error messages
 func (s *synapse) processErrorMessage(message core.Message) {
 	errMsg := string(message.Content)
 	s.logger.Errorf("error message received from server, error %s ", errMsg)
@@ -194,6 +215,7 @@ func (s *synapse) processErrorMessage(message core.Message) {
 
 }
 
+// processTask handles task type message
 func (s *synapse) processTask(message core.Message) {
 	var runnerOpts core.RunnerOptions
 	err := json.Unmarshal(message.Content, &runnerOpts)
@@ -206,7 +228,7 @@ func (s *synapse) processTask(message core.Message) {
 		jobInfo := CreateJobInfo(core.JobStarted, &runnerOpts)
 		s.logger.Infof("Sending update to neuron %+v", jobInfo)
 		resourceStatsMessage := CreateJobUpdateMessage(jobInfo)
-		s.SendMessage(&resourceStatsMessage)
+		s.writeMessageToBuffer(&resourceStatsMessage)
 	}
 	// mounting secrets to container
 	runnerOpts.HostVolumePath = fmt.Sprintf("/tmp/synapse/data/%s", runnerOpts.ContainerName)
@@ -225,6 +247,7 @@ func (s *synapse) processTask(message core.Message) {
 
 }
 
+// runAndUpdateJobStatus intiate and sends jobs status
 func (s *synapse) runAndUpdateJobStatus(runnerOpts core.RunnerOptions) {
 	// starting container
 	statusChan := make(chan core.ContainerStatus)
@@ -244,9 +267,10 @@ func (s *synapse) runAndUpdateJobStatus(runnerOpts core.RunnerOptions) {
 	jobInfo := CreateJobInfo(jobStatus, &runnerOpts)
 	s.logger.Infof("Sending update to neuron %+v", jobInfo)
 	resourceStatsMessage := CreateJobUpdateMessage(jobInfo)
-	s.SendMessage(&resourceStatsMessage)
+	s.writeMessageToBuffer(&resourceStatsMessage)
 }
 
+// login write login message to lambdatest server
 func (s *synapse) login() {
 	cpu, ram := s.runner.GetInfo(context.TODO())
 	id, err := machineid.ProtectedID("synapaseMeta")
@@ -263,9 +287,10 @@ func (s *synapse) login() {
 	s.logger.Infof("Login synapse with id %s", loginDetails.SynapseID)
 
 	loginMessage := CreateLoginMessage(loginDetails)
-	s.SendMessage(&loginMessage)
+	s.writeMessageToBuffer(&loginMessage)
 }
 
+// logout writes logout message to lambdatest server
 func (s *synapse) logout() {
 	s.logger.Infof("Logging out from lambdatest server")
 	logoutMessage := CreateLogoutMessage()
@@ -281,6 +306,7 @@ func (s *synapse) logout() {
 	}
 }
 
+// sendResourceUpdates sends resource status of synapse
 func (s *synapse) sendResourceUpdates(
 	status core.StatType,
 	runnerOpts core.RunnerOptions,
@@ -292,10 +318,11 @@ func (s *synapse) sendResourceUpdates(
 		RAM:    specs.RAM,
 	}
 	resourceStatsMessage := CreateResourceStatsMessage(resourceStats)
-	s.SendMessage(&resourceStatsMessage)
+	s.writeMessageToBuffer(&resourceStatsMessage)
 }
 
-func (s *synapse) SendMessage(message *core.Message) {
+// writeMessageToBuffer  writes all message to buffer channel
+func (s *synapse) writeMessageToBuffer(message *core.Message) {
 	messageJson, err := json.Marshal(message)
 	if err != nil {
 		s.logger.Errorf("error marshaling message")
@@ -304,13 +331,14 @@ func (s *synapse) SendMessage(message *core.Message) {
 	s.MsgChan <- messageJson
 }
 
-func (s *synapse) WriteMessage() {
+// messageWriter writes the messages to open websocket
+func (s *synapse) messageWriter(conn *websocket.Conn) {
 	for {
 		select {
 		case <-s.ConnectionAborted:
 			return
 		case messageJson := <-s.MsgChan:
-			if err := s.conn.WriteMessage(websocket.TextMessage, messageJson); err != nil {
+			if err := conn.WriteMessage(websocket.TextMessage, messageJson); err != nil {
 				s.logger.Errorf("error sending message to the server error %v", err)
 				s.MsgChan <- messageJson
 				s.MsgErrChan <- struct{}{}
