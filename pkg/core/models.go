@@ -52,6 +52,7 @@ const (
 	Zstd           CommandType = "zstd"
 	CoverageMerge  CommandType = "coveragemerge"
 	InstallNodeVer CommandType = "installnodeversion"
+	InitGit        CommandType = "initgit"
 )
 
 // Types of containers

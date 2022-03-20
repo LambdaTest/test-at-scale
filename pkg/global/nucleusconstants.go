@@ -40,8 +40,8 @@ var APIHostURLMap = map[string]string{
 	"bitbucket": "https://api.bitbucket.org/2.0",
 }
 
-// InstallRunnerCmd  are list of command used to install custom runner
-var InstallRunnerCmd = []string{"tar", "-xzf", "/custom-runners/custom-runners.tgz"}
+// InstallRunnerCmds  are list of command used to install custom runner
+var InstallRunnerCmds = []string{"tar -xzf /custom-runners/custom-runners.tgz"}
 
 // NeuronHost is neuron host end point
 var NeuronHost string

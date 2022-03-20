@@ -84,8 +84,8 @@ func (m *manager) ExecuteInternalCommands(ctx context.Context,
 	commands []string,
 	cwd string,
 	envMap, secretData map[string]string) error {
-	argsString := strings.Join(commands, " ")
-	cmd := exec.CommandContext(ctx, "/bin/bash", "-c", argsString)
+	bashCommands := strings.Join(commands, " && ")
+	cmd := exec.CommandContext(ctx, "/bin/bash", "-c", bashCommands)
 	if cwd != "" {
 		cmd.Dir = cwd
 	}
