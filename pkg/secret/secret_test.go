@@ -181,6 +181,7 @@ func Test_secretParser_Expired(t *testing.T) {
 	type args struct {
 		token *core.Oauth
 	}
+	//nolint:unused
 	type data struct {
 		AccessToken  string    `json:"access_token"`
 		Expiry       time.Time `json:"expiry"`
