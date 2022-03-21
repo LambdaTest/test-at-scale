@@ -6,6 +6,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/LambdaTest/synapse/pkg/core"
 	"github.com/LambdaTest/synapse/pkg/errs"
@@ -90,4 +91,16 @@ func (s *secretParser) SubstituteSecret(command string, secretData map[string]st
 	}
 
 	return result, nil
+}
+
+// expired reports whether the token is expired.
+func (s *secretParser) Expired(token *core.Oauth) bool {
+	if len(token.Data.RefreshToken) == 0 {
+		return false
+	}
+	if token.Data.Expiry.IsZero() && len(token.Data.AccessToken) != 0 {
+		return false
+	}
+	return token.Data.Expiry.Add(-global.ExpiryDelta).
+		Before(time.Now())
 }

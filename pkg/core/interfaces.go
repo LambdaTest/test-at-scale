@@ -110,6 +110,7 @@ type SecretParser interface {
 	GetOauthSecret(filepath string) (*Oauth, error)
 	GetRepoSecret(string) (map[string]string, error)
 	SubstituteSecret(command string, secretData map[string]string) (string, error)
+	Expired(token *Oauth) bool
 }
 
 // ExecutionManager has responsibility for executing the preRun, postRun and internal commands
