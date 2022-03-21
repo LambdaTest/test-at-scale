@@ -3,7 +3,7 @@ services:
   synapse:
     image: lambdatest/synapse:latest
     stop_signal: SIGINT
-    restart: always
+    restart: on-failure
     networks:
       - test-at-scale
     hostname: synapse
