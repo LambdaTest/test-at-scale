@@ -249,7 +249,7 @@ func TestProcStats_appendStatsToTestSuites(t *testing.T) {
 				{SuiteID: "testSuite1", StartTime: timeMap["tpast1"], EndTime: timeMap["tfuture1"]},
 			},
 				[]*procfs.Stats{}},
-			"[{SuiteID:testSuite1 SuiteName: ParentSuiteID: BlacklistSource: Blacklisted:false StartTime:2021-02-22 16:23:01 +0000 UTC EndTime:2021-02-22 16:23:01 +0000 UTC Duration:0 Status: Stats:[]}]",
+			"[{SuiteID:testSuite1 SuiteName: ParentSuiteID: BlocklistSource: Blocklisted:false StartTime:2021-02-22 16:23:01 +0000 UTC EndTime:2021-02-22 16:23:01 +0000 UTC Duration:0 Status: Stats:[]}]",
 		},
 
 		{"Test appendStatsToTests",
@@ -296,7 +296,7 @@ func TestProcStats_appendStatsToTestSuites(t *testing.T) {
 					},
 				},
 			},
-			"[{SuiteID:testSuite2 SuiteName: ParentSuiteID: BlacklistSource: Blacklisted:false StartTime:2021-02-22 16:23:01 +0000 UTC EndTime:2021-02-22 16:23:01.1 +0000 UTC Duration:100 Status: Stats:[{Memory:131 CPU:1.2 Storage:0 RecordTime:2021-02-22 16:23:01 +0000 UTC}]} {SuiteID:testSuite3 SuiteName: ParentSuiteID: BlacklistSource: Blacklisted:false StartTime:2021-02-22 16:22:05 +0000 UTC EndTime:2021-02-22 16:22:05.2 +0000 UTC Duration:200 Status: Stats:[{Memory:100 CPU:25.4 Storage:250 RecordTime:2021-02-22 16:22:05 +0000 UTC}]}]",
+			"[{SuiteID:testSuite2 SuiteName: ParentSuiteID: BlocklistSource: Blocklisted:false StartTime:2021-02-22 16:23:01 +0000 UTC EndTime:2021-02-22 16:23:01.1 +0000 UTC Duration:100 Status: Stats:[{Memory:131 CPU:1.2 Storage:0 RecordTime:2021-02-22 16:23:01 +0000 UTC}]} {SuiteID:testSuite3 SuiteName: ParentSuiteID: BlocklistSource: Blocklisted:false StartTime:2021-02-22 16:22:05 +0000 UTC EndTime:2021-02-22 16:22:05.2 +0000 UTC Duration:200 Status: Stats:[{Memory:100 CPU:25.4 Storage:250 RecordTime:2021-02-22 16:22:05 +0000 UTC}]}]",
 		},
 	}
 	for _, tt := range tests {
