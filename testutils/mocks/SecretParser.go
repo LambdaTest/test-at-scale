@@ -12,6 +12,20 @@ type SecretParser struct {
 	mock.Mock
 }
 
+// Expired provides a mock function with given fields: token
+func (_m *SecretParser) Expired(token *core.Oauth) bool {
+	ret := _m.Called(token)
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(*core.Oauth) bool); ok {
+		r0 = rf(token)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
 // GetOauthSecret provides a mock function with given fields: filepath
 func (_m *SecretParser) GetOauthSecret(filepath string) (*core.Oauth, error) {
 	ret := _m.Called(filepath)
