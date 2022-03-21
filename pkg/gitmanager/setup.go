@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -19,15 +20,20 @@ import (
 )
 
 type gitManager struct {
-	logger     lumber.Logger
-	httpClient http.Client
+	logger      lumber.Logger
+	httpClient  http.Client
+	execManager core.ExecutionManager
 }
 
 // NewGitManager returns a new GitManager
-func NewGitManager(logger lumber.Logger) core.GitManager {
-	return &gitManager{logger: logger, httpClient: http.Client{
-		Timeout: global.DefaultHTTPTimeout,
-	}}
+func NewGitManager(logger lumber.Logger, execManager core.ExecutionManager) core.GitManager {
+	return &gitManager{
+		logger: logger,
+		httpClient: http.Client{
+			Timeout: global.DefaultHTTPTimeout,
+		},
+		execManager: execManager,
+	}
 }
 
 func (gm *gitManager) Clone(ctx context.Context, payload *core.Payload, cloneToken string) error {
@@ -56,6 +62,11 @@ func (gm *gitManager) Clone(ctx context.Context, payload *core.Payload, cloneTok
 
 	if err = os.Rename(filename, global.RepoDir); err != nil {
 		gm.logger.Errorf("failed to rename dir, error %v", err)
+		return err
+	}
+
+	if err = gm.initGit(ctx, payload, cloneToken); err != nil {
+		gm.logger.Errorf("failed to initialize git, error %v", err)
 		return err
 	}
 
@@ -117,4 +128,26 @@ func (gm *gitManager) copyAndExtractFile(resp *http.Response, path string) error
 		}
 	}
 	return err
+}
+
+func (gm *gitManager) initGit(ctx context.Context, payload *core.Payload, cloneToken string) error {
+	branch := payload.BranchName
+	repoURL, perr := url.Parse(payload.RepoLink)
+	if perr != nil {
+		return perr
+	}
+	repoURL.User = url.UserPassword("x-token-auth", cloneToken)
+	urlWithToken := repoURL.String()
+	commands := []string{
+		"git init",
+		fmt.Sprintf("git remote add origin %s.git", payload.RepoLink),
+		fmt.Sprintf("git config --global url.%s.InsteadOf %s", urlWithToken, payload.RepoLink),
+		fmt.Sprintf("git fetch --depth=1 origin +%s:refs/remotes/origin/%s", payload.BuildTargetCommit, branch),
+		fmt.Sprintf("git config --global --remove-section url.%s", urlWithToken),
+		fmt.Sprintf("git checkout --progress --force -B %s refs/remotes/origin/%s", branch, branch),
+	}
+	if err := gm.execManager.ExecuteInternalCommands(ctx, core.InitGit, commands, global.RepoDir, nil, nil); err != nil {
+		return err
+	}
+	return nil
 }

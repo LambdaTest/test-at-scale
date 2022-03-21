@@ -182,13 +182,15 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 
 	if tasConfig.NodeVersion != nil {
 		nodeVersion := tasConfig.NodeVersion.String()
-		// Running the `source` command in a directory where .nvmrc is present, exits with exitCode 3
+		// Running the `source` commands in a directory where .nvmrc is present, exits with exitCode 3
 		// https://github.com/nvm-sh/nvm/issues/1985
 		// TODO [good-to-have]: Auto-read and install from .nvmrc file, if present
-		command := []string{"source", "/home/nucleus/.nvm/nvm.sh",
-			"&&", "nvm", "install", nodeVersion}
+		commands := []string{
+			"source /home/nucleus/.nvm/nvm.sh",
+			fmt.Sprintf("nvm install %s", nodeVersion),
+		}
 		pl.Logger.Infof("Using user-defined node version: %v", nodeVersion)
-		err = pl.ExecutionManager.ExecuteInternalCommands(ctx, InstallNodeVer, command, "", nil, nil)
+		err = pl.ExecutionManager.ExecuteInternalCommands(ctx, InstallNodeVer, commands, "", nil, nil)
 		if err != nil {
 			pl.Logger.Errorf("Unable to install user-defined nodeversion %v", err)
 			errRemark = errs.GenericErrRemark.Error()
@@ -237,7 +239,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 				return err
 			}
 		}
-		err = pl.ExecutionManager.ExecuteInternalCommands(ctx, InstallRunners, global.InstallRunnerCmd, global.RepoDir, nil, nil)
+		err = pl.ExecutionManager.ExecuteInternalCommands(ctx, InstallRunners, global.InstallRunnerCmds, global.RepoDir, nil, nil)
 		if err != nil {
 			pl.Logger.Errorf("Unable to install custom runners %v", err)
 			errRemark = errs.GenericErrRemark.Error()
@@ -308,7 +310,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 			err = pl.ExecutionManager.ExecuteUserCommands(ctx, PostRun, payload, tasConfig.Postrun, secretMap)
 			if err != nil {
 				pl.Logger.Errorf("Unable to run post-run steps %v", err)
-				errRemark = "Error occurred in pre-run steps"
+				errRemark = "Error occurred in post-run steps"
 				return err
 			}
 		}

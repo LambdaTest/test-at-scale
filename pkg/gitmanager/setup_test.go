@@ -12,9 +12,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/LambdaTest/synapse/pkg/command"
 	"github.com/LambdaTest/synapse/pkg/global"
 	"github.com/LambdaTest/synapse/pkg/lumber"
 	"github.com/LambdaTest/synapse/testutils"
+	"github.com/LambdaTest/synapse/testutils/mocks"
 )
 
 func CreateDirectory(path string) {
@@ -112,7 +114,10 @@ func TestClone(t *testing.T) {
 		if err != nil {
 			fmt.Println("Logger can't be established")
 		}
-		gm := NewGitManager(logger)
+		azureClient := new(mocks.AzureClient)
+		secretParser := new(mocks.SecretParser)
+		execManager := command.NewExecutionManager(secretParser, azureClient, logger)
+		gm := NewGitManager(logger, execManager)
 
 		payload, err := testutils.GetPayload()
 		if err != nil {
