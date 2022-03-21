@@ -270,11 +270,13 @@ const (
 
 // Oauth represents the sructure of Oauth
 type Oauth struct {
-	Data struct {
-		AccessToken  string    `json:"access_token"`
-		Expiry       time.Time `json:"expiry"`
-		RefreshToken string    `json:"refresh_token"`
-	} `json:"data"`
+	Data Token `json:"data"`
+}
+
+type Token struct {
+	AccessToken  string    `json:"access_token"`
+	Expiry       time.Time `json:"expiry"`
+	RefreshToken string    `json:"refresh_token"`
 }
 
 // TASConfig represents the .tas.yml file

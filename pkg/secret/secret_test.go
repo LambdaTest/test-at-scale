@@ -165,3 +165,88 @@ func TestSubstituteSecret(t *testing.T) {
 		})
 	}
 }
+
+func TestExpired(t *testing.T) {
+	logger, err := lumber.NewLogger(lumber.LoggingConfig{EnableConsole: true}, true, lumber.InstanceZapLogger)
+	if err != nil {
+		log.Fatalf("Could not instantiate logger %s", err.Error())
+	}
+
+	secretParser := New(logger)
+
+	tests := []struct {
+		token   *core.Oauth
+		expired bool
+	}{
+		{
+			expired: false,
+			token: &core.Oauth{
+				Data: core.Token{
+					AccessToken:  "12345",
+					RefreshToken: ""},
+			},
+		},
+		{
+			expired: false,
+			token: &core.Oauth{
+				Data: core.Token{
+					AccessToken:  "12345",
+					RefreshToken: "",
+					Expiry:       time.Now().Add(-time.Hour)},
+			},
+		},
+		{
+			expired: false,
+			token: &core.Oauth{
+				Data: core.Token{
+					AccessToken:  "12345",
+					RefreshToken: "54321"},
+			},
+		},
+		{
+			expired: false,
+			token: &core.Oauth{
+				Data: core.Token{
+					AccessToken:  "12345",
+					RefreshToken: "54321",
+					Expiry:       time.Now().Add(time.Hour)},
+			},
+		},
+		// missing access token
+		{
+			expired: true,
+			token: &core.Oauth{
+				Data: core.Token{
+					AccessToken:  "",
+					RefreshToken: "54321"},
+			},
+		},
+		// token expired
+		{
+			expired: true,
+			token: &core.Oauth{
+				Data: core.Token{
+					AccessToken:  "12345",
+					RefreshToken: "54321",
+					Expiry:       time.Now().Add(-time.Second)},
+			},
+		},
+		// this token is not expired, however, it is within
+		// the default 15 minute expiry window.
+		{
+			expired: true,
+			token: &core.Oauth{
+				Data: core.Token{
+					AccessToken:  "12345",
+					RefreshToken: "54321",
+					Expiry:       time.Now().Add(time.Second * 600)},
+			},
+		},
+	}
+
+	for i, test := range tests {
+		if got, want := secretParser.Expired(test.token), test.expired; got != want {
+			t.Errorf("Want token expired %v, got %v at index %d", want, got, i)
+		}
+	}
+}
