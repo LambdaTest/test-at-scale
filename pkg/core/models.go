@@ -176,8 +176,8 @@ type TestSuitePayload struct {
 	SuiteID         string             `json:"suiteID"`
 	SuiteName       string             `json:"suiteName"`
 	ParentSuiteID   string             `json:"parentSuiteID"`
-	BlacklistSource string             `json:"blacklistSource"`
-	Blacklisted     bool               `json:"blacklist"`
+	BlocklistSource string             `json:"blocklistSource"`
+	Blocklisted     bool               `json:"blocklist"`
 	StartTime       time.Time          `json:"start_time"`
 	EndTime         time.Time          `json:"end_time"`
 	Duration        int                `json:"duration"`
