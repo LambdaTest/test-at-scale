@@ -72,6 +72,7 @@ func (s *secretParser) GetOauthSecret(path string) (*core.Oauth, error) {
 	return o, err
 }
 
+// SubstituteSecret replace secret placeholders with their respective values
 func (s *secretParser) SubstituteSecret(command string, secretData map[string]string) (string, error) {
 	matches := s.secretRegex.FindAllStringSubmatch(command, -1)
 	if matches == nil {
@@ -93,7 +94,7 @@ func (s *secretParser) SubstituteSecret(command string, secretData map[string]st
 	return result, nil
 }
 
-// expired reports whether the token is expired.
+// Expired reports whether the token is expired.
 func (s *secretParser) Expired(token *core.Oauth) bool {
 	if len(token.Data.RefreshToken) == 0 {
 		return false

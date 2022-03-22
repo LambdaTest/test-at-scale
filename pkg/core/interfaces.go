@@ -107,9 +107,13 @@ type CacheStore interface {
 
 // SecretParser defines operation for parsing the vault secrets in given path
 type SecretParser interface {
+	// GetOauthSecret parses the oauth secret for given path
 	GetOauthSecret(filepath string) (*Oauth, error)
+	// GetRepoSecret parses the repo secret for given path
 	GetRepoSecret(string) (map[string]string, error)
+	// SubstituteSecret replace secret placeholders with their respective values
 	SubstituteSecret(command string, secretData map[string]string) (string, error)
+	// Expired reports whether the token is expired.
 	Expired(token *Oauth) bool
 }
 
