@@ -45,7 +45,7 @@ func (z *zstdCompressor) Compress(ctx context.Context, compressedFileName string
 		z.logger.Errorf("failed to create manifest file %v", err)
 		return err
 	}
-	command := fmt.Sprintf("%s --posix -I 'zstd -5 -T0' -cf %s -C %s -T %s", z.execPath, compressedFileName, workingDirectory, filepath.Join(os.TempDir(), manifestFileName))
+	command := fmt.Sprintf("%s --posix -I 'zstd -1 -T0' -cf %s -C %s -T %s", z.execPath, compressedFileName, workingDirectory, filepath.Join(os.TempDir(), manifestFileName))
 	if preservePath {
 		command = fmt.Sprintf("%s -P", command)
 	}
