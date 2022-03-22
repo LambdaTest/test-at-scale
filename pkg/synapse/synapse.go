@@ -279,6 +279,7 @@ func (s *synapse) login() {
 	}
 	lambdatestConfig := s.secretsManager.GetLambdatestSecrets()
 	loginDetails := core.LoginDetails{
+		Name:      s.secretsManager.GetSynapseName(),
 		SecretKey: lambdatestConfig.SecretKey,
 		CPU:       cpu,
 		RAM:       ram,

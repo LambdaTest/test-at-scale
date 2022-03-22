@@ -34,6 +34,10 @@ func (s *secertManager) GetLambdatestSecrets() *config.LambdatestConfig {
 	return &s.cfg.Lambdatest
 }
 
+func (s *secertManager) GetSynapseName() string {
+	return s.cfg.Name
+}
+
 func (s *secertManager) WriteGitSecrets(path string) error {
 	gitSecrets := secretsFile{
 		Secrets: core.Secret{

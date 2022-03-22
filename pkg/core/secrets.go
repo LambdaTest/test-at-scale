@@ -23,4 +23,6 @@ type SecretsManager interface {
 
 	// GetDockerSecrets returns Mode , RegistryAuth, and URL for pulling remote docker image
 	GetDockerSecrets(r *RunnerOptions) (ContainerImageConfig, error)
+	// GetSynapseName returns synapse name mentioned in config
+	GetSynapseName() string
 }

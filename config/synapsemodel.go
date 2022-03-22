@@ -6,6 +6,7 @@ import "github.com/LambdaTest/synapse/pkg/lumber"
 
 // SynapseConfig the application's configuration
 type SynapseConfig struct {
+	Name              string
 	Config            string
 	LogFile           string
 	LogConfig         lumber.LoggingConfig
