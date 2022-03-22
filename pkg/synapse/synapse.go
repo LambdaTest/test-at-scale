@@ -118,7 +118,7 @@ func (s *synapse) openAndMaintainConnection(ctx context.Context, connectionFaile
 
 /*
  connectionHandler handles the connection by listening to any connection closer
- also it returns boolean value which repersents whether we can retry to connect
+ also it returns boolean value which represents whether we can retry to connect
 */
 func (s *synapse) connectionHandler(ctx context.Context, conn *websocket.Conn, connectionFailed chan struct{}) bool {
 	normalCloser := make(chan struct{})
@@ -183,7 +183,7 @@ func (s *synapse) messageReader(normalCloser chan struct{}, conn *websocket.Conn
 	}
 }
 
-// processMessage process messages recieved via websocket
+// processMessage process messages received via websocket
 func (s *synapse) processMessage(msg []byte) {
 	var message core.Message
 	err := json.Unmarshal(msg, &message)
