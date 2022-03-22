@@ -25,6 +25,7 @@ import (
 	"github.com/LambdaTest/synapse/pkg/global"
 	"github.com/LambdaTest/synapse/pkg/lumber"
 	"github.com/LambdaTest/synapse/pkg/payloadmanager"
+	"github.com/LambdaTest/synapse/pkg/requestutils"
 	"github.com/LambdaTest/synapse/pkg/secret"
 	"github.com/LambdaTest/synapse/pkg/server"
 	"github.com/LambdaTest/synapse/pkg/service/coverage"
@@ -113,18 +114,21 @@ func run(cmd *cobra.Command, args []string) {
 	pm := payloadmanager.NewPayloadManger(azureClient, logger, cfg)
 	secretParser := secret.New(logger)
 	tcm := tasconfigmanager.NewTASConfigManager(logger)
+	requests := requestutils.New(logger)
 	execManager := command.NewExecutionManager(secretParser, azureClient, logger)
 	gm := gitmanager.NewGitManager(logger, execManager)
 	dm := diffmanager.NewDiffManager(cfg, logger)
-	tds := testdiscoveryservice.NewTestDiscoveryService(execManager, logger)
+
+	tdResChan := make(chan core.DiscoveryResult)
+	tds := testdiscoveryservice.NewTestDiscoveryService(ctx, tdResChan, execManager, requests, logger)
 	tes := testexecutionservice.NewTestExecutionService(execManager, azureClient, ts, logger)
 	tbs, err := blocktestservice.NewTestBlockTestService(cfg, logger)
 	if err != nil {
 		logger.Fatalf("failed to initialize test blocklist service: %v", err)
 	}
-	router := api.NewRouter(logger, ts)
+	router := api.NewRouter(logger, ts, tdResChan)
 
-	t, err := task.New(ctx, cfg, logger)
+	t, err := task.New(ctx, requests, logger)
 	if err != nil {
 		logger.Fatalf("failed to initialize task: %v", err)
 	}

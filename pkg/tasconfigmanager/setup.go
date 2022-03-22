@@ -98,7 +98,18 @@ func (tc *tasConfigManager) LoadAndValidate(ctx context.Context,
 
 		tc.logger.Errorf("Error while validating yaml file, error %v", validateErr)
 		return nil, errors.New(errMsg)
+	}
 
+	if tasConfig.Cache == nil {
+		checksum, err := utils.ComputeChecksum(fmt.Sprintf("%s/%s", global.RepoDir, packageJSON))
+		if err != nil {
+			tc.logger.Errorf("Error while computing checksum, error %v", err)
+			return nil, err
+		}
+		tasConfig.Cache = &core.Cache{
+			Key:   checksum,
+			Paths: []string{},
+		}
 	}
 
 	if tasConfig.CoverageThreshold == nil {

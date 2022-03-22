@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 	"strconv"
 	"time"
 
@@ -22,6 +23,7 @@ import (
 
 const (
 	endpointPostTestResults = "http://localhost:9876/results"
+	endpointPostTestList    = "http://localhost:9876/test-list"
 )
 
 // NewPipeline creates and returns a new Pipeline instance
@@ -46,7 +48,6 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	pl.Logger.Debugf("Starting pipeline.....")
 	pl.Logger.Debugf("Fetching config")
 
-	endpointPostTestList := global.NeuronHost + "/test-list"
 	// fetch configuration
 	payload, err := pl.PayloadManager.FetchPayload(ctx, pl.Cfg.PayloadAddress)
 	if err != nil {
@@ -101,7 +102,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	defer func() {
 		taskPayload.EndTime = time.Now()
 		if p := recover(); p != nil {
-			pl.Logger.Errorf("panic stack trace: %v", p)
+			pl.Logger.Errorf("panic stack trace: %v\n%s", p, string(debug.Stack()))
 			taskPayload.Status = Error
 			taskPayload.Remark = errs.GenericErrRemark.Error()
 		} else if err != nil {

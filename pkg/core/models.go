@@ -130,6 +130,21 @@ type Pipeline struct {
 	HttpClient           http.Client
 }
 
+type DiscoveryResult struct {
+	Tests           []TestPayload      `json:"tests"`
+	ImpactedTests   []string           `json:"impactedTests"`
+	TestSuites      []TestSuitePayload `json:"testSuites"`
+	ExecuteAllTests bool               `json:"executeAllTests"`
+	Parallelism     int                `json:"parallelism"`
+	RepoID          string             `json:"repoID"`
+	BuildID         string             `json:"buildID"`
+	CommitID        string             `json:"commitID"`
+	TaskID          string             `json:"taskID"`
+	OrgID           string             `json:"orgID"`
+	Branch          string             `json:"branch"`
+	Tier            Tier               `json:"tier"`
+}
+
 // ExecutionResult represents the request body for test and test suite execution
 type ExecutionResult struct {
 	TestPayload      []TestPayload      `json:"testResults"`

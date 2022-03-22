@@ -122,3 +122,7 @@ type ExecutionManager interface {
 	// StoreCommandLogs stores the command logs in the azure.
 	StoreCommandLogs(ctx context.Context, blobPath string, reader io.Reader) <-chan error
 }
+
+type Requests interface {
+	MakeAPIRequest(ctx context.Context, httpMethod, endpoint string, body []byte) error
+}
