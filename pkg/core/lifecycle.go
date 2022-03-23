@@ -398,6 +398,5 @@ func (pl *Pipeline) getOauthSecret(repoID, gitProvider string) (*Oauth, error) {
 	}
 
 	refreshedOauth.Data.Type = Bearer
-
 	return refreshedOauth, nil
 }
