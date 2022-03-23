@@ -14,7 +14,7 @@ func MockConfig() *config.SynapseConfig {
 		},
 		Git: config.GitConfig{
 			Token:     "dummytoken",
-			TokenType: "Beraer",
+			TokenType: "Bearer",
 		},
 		ContainerRegistry: config.ContainerRegistryConfig{
 			Mode:       config.PublicMode,
