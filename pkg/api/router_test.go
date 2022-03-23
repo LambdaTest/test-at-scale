@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/LambdaTest/synapse/pkg/core"
 	"github.com/LambdaTest/synapse/pkg/lumber"
 	"github.com/LambdaTest/synapse/pkg/service/teststats"
 	"github.com/LambdaTest/synapse/testutils"
@@ -19,23 +20,25 @@ func TestNewRouter(t *testing.T) {
 	logger, _ := testutils.GetLogger()
 	cfg, _ := testutils.GetConfig()
 	ts, err := teststats.New(cfg, logger)
+	tdResChan := make(chan core.DiscoveryResult)
 	if err != nil {
 		t.Errorf("Error creating teststats service: %v", err)
 	}
 	type args struct {
-		logger lumber.Logger
-		ts     *teststats.ProcStats
+		logger    lumber.Logger
+		ts        *teststats.ProcStats
+		tdResChan chan core.DiscoveryResult
 	}
 	tests := []struct {
 		name string
 		args args
 		want Router
 	}{
-		{"TestNewRouter", args{logger, ts}, Router{logger, ts}},
+		{"TestNewRouter", args{logger, ts, tdResChan}, Router{logger, ts, tdResChan}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewRouter(tt.args.logger, tt.args.ts); !reflect.DeepEqual(got, tt.want) {
+			if got := NewRouter(tt.args.logger, tt.args.ts, tt.args.tdResChan); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewRouter() = %v, want %v", got, tt.want)
 			}
 		})
@@ -45,6 +48,7 @@ func TestRouter_Handler(t *testing.T) {
 	logger, _ := testutils.GetLogger()
 	cfg, _ := testutils.GetConfig()
 	ts, err := teststats.New(cfg, logger)
+	tdResChan := make(chan core.DiscoveryResult)
 	if err != nil {
 		t.Errorf("Error creating teststats service: %v", err)
 	}
@@ -60,7 +64,7 @@ func TestRouter_Handler(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			newRouter := NewRouter(logger, ts)
+			newRouter := NewRouter(logger, ts, tdResChan)
 			resp := httptest.NewRecorder()
 			gin.SetMode(gin.TestMode)
 			c, _ := gin.CreateTestContext(resp)
