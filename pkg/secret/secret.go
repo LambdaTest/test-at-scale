@@ -69,6 +69,11 @@ func (s *secretParser) GetOauthSecret(path string) (*core.Oauth, error) {
 		return nil, err
 	}
 
+	// If tokentype is not basic set it to bearer
+	if o.Data.Type != core.Basic {
+		o.Data.Type = core.Bearer
+	}
+
 	return o, err
 }
 
@@ -94,7 +99,6 @@ func (s *secretParser) SubstituteSecret(command string, secretData map[string]st
 	return result, nil
 }
 
-// Expired reports whether the token is expired.
 func (s *secretParser) Expired(token *core.Oauth) bool {
 	if len(token.Data.RefreshToken) == 0 {
 		return false

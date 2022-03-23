@@ -79,7 +79,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	// set payload on pipeline object
 	pl.Payload = payload
 	if pl.Cfg.ParseMode {
-		err = pl.GitManager.Clone(ctx, payload, oauth.Data.AccessToken)
+		err = pl.GitManager.Clone(ctx, payload, oauth)
 		if err != nil {
 			pl.Logger.Fatalf("failed to clone YML for build ID: %s, error: %v", payload.BuildID, err)
 		}
@@ -134,7 +134,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 
 	if pl.Cfg.DiscoverMode {
 		pl.Logger.Infof("Cloning repo ...")
-		err = pl.GitManager.Clone(ctx, pl.Payload, oauth.Data.AccessToken)
+		err = pl.GitManager.Clone(ctx, pl.Payload, oauth)
 		if err != nil {
 			pl.Logger.Errorf("Unable to clone repo '%s': %s", payload.RepoLink, err)
 			errRemark = fmt.Sprintf("Unable to clone repo: %s", payload.RepoLink)
@@ -249,7 +249,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 
 		pl.Logger.Infof("Identifying changed files ...")
 		diffExists := true
-		diff, err := pl.DiffManager.GetChangedFiles(ctx, payload, oauth.Data.AccessToken)
+		diff, err := pl.DiffManager.GetChangedFiles(ctx, payload, oauth)
 		if err != nil {
 			if errors.Is(err, errs.ErrGitDiffNotFound) {
 				diffExists = false
@@ -396,6 +396,8 @@ func (pl *Pipeline) getOauthSecret(repoID string) (*Oauth, error) {
 	if err != nil {
 		pl.Logger.Errorf("error while unmarshaling json to oauth for RepoID %s : %s", repoID, err)
 	}
+
+	refreshedOauth.Data.Type = Bearer
 
 	return refreshedOauth, nil
 }

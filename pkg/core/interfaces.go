@@ -22,12 +22,12 @@ type TASConfigManager interface {
 // GitManager manages the cloning of git repositories
 type GitManager interface {
 	// Clone repository from TAS config
-	Clone(ctx context.Context, payload *Payload, cloneToken string) error
+	Clone(ctx context.Context, payload *Payload, oauth *Oauth) error
 }
 
 // DiffManager manages the diff findings for the given payload
 type DiffManager interface {
-	GetChangedFiles(ctx context.Context, payload *Payload, cloneToken string) (map[string]int, error)
+	GetChangedFiles(ctx context.Context, payload *Payload, oauth *Oauth) (map[string]int, error)
 }
 
 // TestDiscoveryService services discovery of tests

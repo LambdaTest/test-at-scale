@@ -36,7 +36,7 @@ func NewGitManager(logger lumber.Logger, execManager core.ExecutionManager) core
 	}
 }
 
-func (gm *gitManager) Clone(ctx context.Context, payload *core.Payload, cloneToken string) error {
+func (gm *gitManager) Clone(ctx context.Context, payload *core.Payload, oauth *core.Oauth) error {
 	repoLink := payload.RepoLink
 	repoItems := strings.Split(repoLink, "/")
 	repoName := repoItems[len(repoItems)-1]
@@ -48,7 +48,7 @@ func (gm *gitManager) Clone(ctx context.Context, payload *core.Payload, cloneTok
 		return err
 	}
 	gm.logger.Debugf("cloning from %s", archiveURL)
-	err = gm.downloadFile(ctx, archiveURL, commitID+".zip", cloneToken)
+	err = gm.downloadFile(ctx, archiveURL, commitID+".zip", oauth)
 	if err != nil {
 		gm.logger.Errorf("failed to download file %v", err)
 		return err
@@ -65,7 +65,7 @@ func (gm *gitManager) Clone(ctx context.Context, payload *core.Payload, cloneTok
 		return err
 	}
 
-	if err = gm.initGit(ctx, payload, cloneToken); err != nil {
+	if err = gm.initGit(ctx, payload, oauth.Data.AccessToken); err != nil {
 		gm.logger.Errorf("failed to initialize git, error %v", err)
 		return err
 	}
@@ -74,13 +74,13 @@ func (gm *gitManager) Clone(ctx context.Context, payload *core.Payload, cloneTok
 }
 
 // downloadFile clones the archive from github and extracts the file if it is a zip file.
-func (gm *gitManager) downloadFile(ctx context.Context, archiveURL, fileName, cloneToken string) error {
+func (gm *gitManager) downloadFile(ctx context.Context, archiveURL, fileName string, oauth *core.Oauth) error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, archiveURL, nil)
 	if err != nil {
 		return err
 	}
-	if cloneToken != "" {
-		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", cloneToken))
+	if oauth.Data.AccessToken != "" {
+		req.Header.Add("Authorization", fmt.Sprintf("%s %s", oauth.Data.Type, oauth.Data.AccessToken))
 	}
 	resp, err := gm.httpClient.Do(req)
 	if err != nil {
