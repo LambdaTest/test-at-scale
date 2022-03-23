@@ -34,6 +34,7 @@ func (s *secertManager) GetLambdatestSecrets() *config.LambdatestConfig {
 	return &s.cfg.Lambdatest
 }
 
+// GetSynapseName returns the name of synapse if mentioned in config
 func (s *secertManager) GetSynapseName() string {
 	return s.cfg.Name
 }
