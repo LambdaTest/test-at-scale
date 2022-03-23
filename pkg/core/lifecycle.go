@@ -71,7 +71,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 		os.Exit(0)
 	}
 
-	oauth, err := pl.getOauthSecret(payload.RepoID)
+	oauth, err := pl.getOauthSecret(payload.RepoID, payload.GitProvider)
 	if err != nil {
 		pl.Logger.Fatalf("failed to get oauth secret %v", err)
 	}
@@ -363,13 +363,13 @@ func (pl *Pipeline) sendStats(payload ExecutionResults) error {
 }
 
 // getOauthSecret returns a valid oauth token
-func (pl *Pipeline) getOauthSecret(repoID string) (*Oauth, error) {
+func (pl *Pipeline) getOauthSecret(repoID, gitProvider string) (*Oauth, error) {
 	oauth, err := pl.SecretParser.GetOauthSecret(global.OauthSecretPath)
 	if err != nil {
 		return nil, err
 	}
 
-	if !pl.SecretParser.Expired(oauth) {
+	if gitProvider != Bitbucket || !pl.SecretParser.Expired(oauth) {
 		return oauth, nil
 	}
 
