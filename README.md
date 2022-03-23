@@ -91,7 +91,7 @@ curl https://raw.githubusercontent.com/LambdaTest/test-at-scale/main/.sample.syn
 #### Installation on Docker
 
 ##### Prerequisites
-- [Docker](https://docs.docker.com/get-docker/) or [Docker-Compose](https://docs.docker.com/compose/install/) (Recommended)
+- [Docker](https://docs.docker.com/get-docker/) and [Docker-Compose](https://docs.docker.com/compose/install/) (Recommended)
 
 ##### Docker Compose
 - Run the docker application.
