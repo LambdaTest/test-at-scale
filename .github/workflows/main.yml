@@ -80,7 +80,6 @@ jobs:
           issues_threshold=13
           gofmt_score_threshold=100
           go_vet_score_threshold=100
-          golint_score_threshold=98
           gocyclo_score_threshold=91
           git clone https://github.com/gojp/goreportcard.git
           cd goreportcard
@@ -93,7 +92,6 @@ jobs:
           issues=$(cat reportcard.txt| grep 'Issues:' | awk  '{print $2}' | tr -d \%)
           gofmt_score=$(cat reportcard.txt| grep 'gofmt:' | awk  '{print $2}' | tr -d \%)
           go_vet_score=$(cat reportcard.txt| grep 'go_vet:' | awk  '{print $2}' | tr -d \%)
-          golint_score=$(cat reportcard.txt| grep 'golint:' | awk  '{print $2}' | tr -d \%)
           gocyclo_score=$(cat reportcard.txt| grep 'gocyclo:' | awk  '{print $2}' | tr -d \%)
           rm reportcard.txt
           failed_checks=0
@@ -108,10 +106,6 @@ jobs:
           fi
           if [[ $go_vet_score -lt $go_vet_score_threshold ]]; then
             failure_reason="${failure_reason}\ngo-vet score: $go_vet_score. Threshold was: $go_vet_score_threshold."
-            ((failed_checks+=1))
-          fi
-          if [[ $golint_score -lt $golint_score_threshold ]]; then
-            failure_reason="${failure_reason}\ngo-lint score: $golint_score. Threshold was: $golint_score_threshold."
             ((failed_checks+=1))
           fi
           if [[ $gocyclo_score -lt $gocyclo_score_threshold ]]; then
