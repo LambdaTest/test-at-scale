@@ -3,6 +3,7 @@ package gitmanager
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"net/http"
@@ -65,7 +66,7 @@ func (gm *gitManager) Clone(ctx context.Context, payload *core.Payload, oauth *c
 		return err
 	}
 
-	if err = gm.initGit(ctx, payload, oauth.Data.AccessToken); err != nil {
+	if err = gm.initGit(ctx, payload, oauth); err != nil {
 		gm.logger.Errorf("failed to initialize git, error %v", err)
 		return err
 	}
@@ -130,13 +131,26 @@ func (gm *gitManager) copyAndExtractFile(resp *http.Response, path string) error
 	return err
 }
 
-func (gm *gitManager) initGit(ctx context.Context, payload *core.Payload, cloneToken string) error {
+func (gm *gitManager) initGit(ctx context.Context, payload *core.Payload, oauth *core.Oauth) error {
 	branch := payload.BranchName
 	repoURL, perr := url.Parse(payload.RepoLink)
 	if perr != nil {
 		return perr
 	}
-	repoURL.User = url.UserPassword("x-token-auth", cloneToken)
+
+	if oauth.Data.Type == core.Basic {
+		decodedToken, err := base64.StdEncoding.DecodeString(oauth.Data.AccessToken)
+		if err != nil {
+			gm.logger.Errorf("Failed to decode basic oauth token for RepoID %s: %s", payload.RepoID, err)
+			return err
+		}
+
+		creds := strings.Split(string(decodedToken), ":")
+		repoURL.User = url.UserPassword(creds[0], creds[1])
+	} else {
+		repoURL.User = url.UserPassword("x-token-auth", oauth.Data.AccessToken)
+	}
+
 	urlWithToken := repoURL.String()
 	commands := []string{
 		"git init",
