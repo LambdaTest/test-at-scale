@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -70,7 +71,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 		os.Exit(0)
 	}
 
-	oauth, err := pl.SecretParser.GetOauthSecret(global.OauthSecretPath)
+	oauth, err := pl.getOauthSecret(payload.RepoID)
 	if err != nil {
 		pl.Logger.Fatalf("failed to get oauth secret %v", err)
 	}
@@ -359,4 +360,42 @@ func (pl *Pipeline) sendStats(payload ExecutionResults) error {
 		return errors.New("non 200 status")
 	}
 	return nil
+}
+
+// getOauthSecret returns a valid oauth token
+func (pl *Pipeline) getOauthSecret(repoID string) (*Oauth, error) {
+	oauth, err := pl.SecretParser.GetOauthSecret(global.OauthSecretPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if !pl.SecretParser.Expired(oauth) {
+		return oauth, nil
+	}
+
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/%s", global.NeuronHost+global.RefreshTokenEndpoint, repoID), nil)
+	if err != nil {
+		pl.Logger.Errorf("failed to create new request %v", err)
+	}
+
+	res, err := pl.HttpClient.Do(req)
+	if err != nil {
+		pl.Logger.Errorf("error while refreshing token for RepoID %s : %s", repoID, err)
+	}
+	if res.Body != nil {
+		defer res.Body.Close()
+	}
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		pl.Logger.Errorf("error while reading token response body for RepoID %s : %s", repoID, err)
+	}
+
+	refreshedOauth := new(Oauth)
+	err = json.Unmarshal(body, &refreshedOauth)
+	if err != nil {
+		pl.Logger.Errorf("error while unmarshaling json to oauth for RepoID %s : %s", repoID, err)
+	}
+
+	return refreshedOauth, nil
 }
