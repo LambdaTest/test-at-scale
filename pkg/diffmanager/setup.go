@@ -62,7 +62,7 @@ func (dm *diffManager) updateWithOr(m map[string]int, key string, value int) {
 	m[key] = m[key] | value
 }
 
-func (dm *diffManager) getCommitDiff(gitprovider, repoURL string, oauth *core.Oauth, baseCommit, targetCommit string) ([]byte, error) {
+func (dm *diffManager) getCommitDiff(gitprovider, repoURL string, oauth *core.Oauth, baseCommit, targetCommit, forkSlug string) ([]byte, error) {
 	if baseCommit == "" {
 		dm.logger.Debugf("basecommit is empty for gitprovider %v error %v", gitprovider, errs.ErrGitDiffNotFound)
 		return nil, errs.ErrGitDiffNotFound
@@ -72,7 +72,7 @@ func (dm *diffManager) getCommitDiff(gitprovider, repoURL string, oauth *core.Oa
 		return nil, err
 	}
 
-	apiURLString, err := urlmanager.GetCommitDiffURL(gitprovider, url.Path, baseCommit, targetCommit)
+	apiURLString, err := urlmanager.GetCommitDiffURL(gitprovider, url.Path, baseCommit, targetCommit, forkSlug)
 	if err != nil {
 		dm.logger.Errorf("failed to get api url for gitprovider: %v error: %v", gitprovider, err)
 		return nil, err
@@ -210,7 +210,7 @@ func (dm *diffManager) GetChangedFiles(ctx context.Context, payload *core.Payloa
 			return nil, err
 		}
 	} else {
-		diff, err = dm.getCommitDiff(payload.GitProvider, payload.RepoLink, oauth, payload.BuildBaseCommit, payload.BuildTargetCommit)
+		diff, err = dm.getCommitDiff(payload.GitProvider, payload.RepoLink, oauth, payload.BuildBaseCommit, payload.BuildTargetCommit, payload.ForkSlug)
 		if err != nil {
 			dm.logger.Errorf("failed to get commit diff for gitprovider: %s error: %v", payload.GitProvider, err)
 			return nil, err

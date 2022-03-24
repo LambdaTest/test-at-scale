@@ -85,6 +85,7 @@ type CommitChangeList struct {
 // Payload defines structure of payload
 type Payload struct {
 	RepoSlug                   string             `json:"repo_slug"`
+	ForkSlug                   string             `json:"fork_slug"`
 	RepoLink                   string             `json:"repo_link"`
 	BuildTargetCommit          string             `json:"build_target_commit"`
 	BuildBaseCommit            string             `json:"build_base_commit"`
