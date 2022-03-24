@@ -123,6 +123,7 @@ type ExecutionManager interface {
 	StoreCommandLogs(ctx context.Context, blobPath string, reader io.Reader) <-chan error
 }
 
+// Requests is a util interface for making API Requests
 type Requests interface {
 	MakeAPIRequest(ctx context.Context, httpMethod, endpoint string, body []byte) error
 }
