@@ -14,6 +14,14 @@ import (
 	"github.com/LambdaTest/synapse/pkg/lumber"
 )
 
+//nolint unused
+type data struct {
+	AccessToken  string         `json:"access_token"`
+	Expiry       time.Time      `json:"expiry"`
+	RefreshToken string         `json:"refresh_token"`
+	Type         core.TokenType `json:"token_type,omitempty"`
+}
+
 func Test_secretParser_GetRepoSecret(t *testing.T) {
 	logger, err := lumber.NewLogger(lumber.LoggingConfig{EnableConsole: true}, true, lumber.InstanceZapLogger)
 	if err != nil {
@@ -63,16 +71,11 @@ func Test_secretParser_GetOauthSecret(t *testing.T) {
 		log.Fatalf("Could not instantiate logger %s", err.Error())
 	}
 	secretParser := New(logger)
-	type data struct {
-		AccessToken  string    `json:"access_token"`
-		Expiry       time.Time `json:"expiry"`
-		RefreshToken string    `json:"refresh_token"`
-	}
 	time, err := time.Parse("Mon, 02 Jan 2006 15:04:05 MST", "Tue, 22 Feb 2022 16:22:01 IST")
 	if err != nil {
 		log.Fatalf("Could not parse time, error: %v", err)
 	}
-	Data := data{AccessToken: "token", Expiry: time, RefreshToken: "refresh"}
+	Data := data{AccessToken: "token", Expiry: time, RefreshToken: "refresh", Type: core.Bearer}
 
 	type args struct {
 		path string
@@ -96,9 +99,9 @@ func Test_secretParser_GetOauthSecret(t *testing.T) {
 				t.Errorf("secretParser.GetOauthSecret() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			expected := "&{{token 2022-02-22 16:22:01 +0530 IST refresh}}"
+			expected := fmt.Sprintf("%v", tt.want)
 			received := fmt.Sprintf("%v", got)
-			if got != nil && !(strings.HasPrefix(received, "&{{token") && strings.HasSuffix(received, "refresh}}")) {
+			if got != nil && !(strings.HasPrefix(received, "&{{token") && strings.HasSuffix(received, "Bearer}}")) {
 				t.Errorf("Expected: %v, got: %v", expected, received)
 				return
 			}
@@ -180,12 +183,6 @@ func Test_secretParser_Expired(t *testing.T) {
 	}
 	type args struct {
 		token *core.Oauth
-	}
-	//nolint:unused
-	type data struct {
-		AccessToken  string    `json:"access_token"`
-		Expiry       time.Time `json:"expiry"`
-		RefreshToken string    `json:"refresh_token"`
 	}
 	tests := []struct {
 		name   string

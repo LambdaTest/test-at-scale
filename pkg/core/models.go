@@ -268,12 +268,22 @@ const (
 	Bitbucket string = "bitbucket"
 )
 
+type TokenType string
+
+const (
+	// Bearer as token type
+	Bearer TokenType = "Bearer"
+	// Basic as token type
+	Basic TokenType = "Basic"
+)
+
 // Oauth represents the sructure of Oauth
 type Oauth struct {
 	Data struct {
 		AccessToken  string    `json:"access_token"`
 		Expiry       time.Time `json:"expiry"`
 		RefreshToken string    `json:"refresh_token"`
+		Type         TokenType `json:"token_type,omitempty"`
 	} `json:"data"`
 }
 
