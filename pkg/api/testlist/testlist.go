@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-//Handler captures the test execution results from nucleus
+// Handler captures the test execution results from nucleus
 func Handler(logger lumber.Logger, tdResChan chan core.DiscoveryResult) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		request := core.DiscoveryResult{}
