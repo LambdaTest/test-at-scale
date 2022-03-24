@@ -5,7 +5,6 @@ import (
 	"log"
 	"reflect"
 	"regexp"
-	"strings"
 	"testing"
 	"time"
 
@@ -14,6 +13,7 @@ import (
 	"github.com/LambdaTest/synapse/pkg/lumber"
 )
 
+//nolint unused
 type data struct {
 	AccessToken  string         `json:"access_token"`
 	Expiry       time.Time      `json:"expiry"`
@@ -74,7 +74,7 @@ func Test_secretParser_GetOauthSecret(t *testing.T) {
 	if err != nil {
 		log.Fatalf("Could not parse time, error: %v", err)
 	}
-	Data := data{AccessToken: "token", Expiry: time, RefreshToken: "refresh"}
+	Data := data{AccessToken: "token", Expiry: time, RefreshToken: "refresh", Type: core.Bearer}
 
 	type args struct {
 		path string
@@ -98,9 +98,9 @@ func Test_secretParser_GetOauthSecret(t *testing.T) {
 				t.Errorf("secretParser.GetOauthSecret() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			expected := "&{{token 2022-02-22 16:22:01 +0530 IST refresh}}"
+			expected := fmt.Sprintf("%v", tt.want)
 			received := fmt.Sprintf("%v", got)
-			if got != nil && !(strings.HasPrefix(received, "&{{token") && strings.HasSuffix(received, "refresh}}")) {
+			if got != nil && expected != received {
 				t.Errorf("Expected: %v, got: %v", expected, received)
 				return
 			}

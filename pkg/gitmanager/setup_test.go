@@ -21,6 +21,7 @@ import (
 	"github.com/LambdaTest/synapse/testutils/mocks"
 )
 
+//nolint unused
 type data struct {
 	AccessToken  string         `json:"access_token"`
 	Expiry       time.Time      `json:"expiry"`
