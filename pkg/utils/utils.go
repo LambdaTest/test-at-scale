@@ -13,7 +13,6 @@ import (
 	"github.com/bmatcuk/doublestar/v4"
 )
 
-// Min returns the smaller of x or y.
 func Min(x, y int) int {
 	if x > y {
 		return y
@@ -21,7 +20,6 @@ func Min(x, y int) int {
 	return x
 }
 
-// ComputeChecksum compute the md5 hash for the given filename
 func ComputeChecksum(filename string) (string, error) {
 	checksum := ""
 
@@ -41,7 +39,6 @@ func ComputeChecksum(filename string) (string, error) {
 	return checksum, nil
 }
 
-// InterfaceToMap converts interface{} to map[string]string
 func InterfaceToMap(in interface{}) map[string]string {
 	result := make(map[string]string)
 	for key, value := range in.(map[string]interface{}) {
@@ -50,7 +47,6 @@ func InterfaceToMap(in interface{}) map[string]string {
 	return result
 }
 
-// CreateDirectory creates directory recursively if does not exists
 func CreateDirectory(path string) error {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		if err := os.MkdirAll(path, global.DirectoryPermissions); err != nil {
@@ -60,7 +56,6 @@ func CreateDirectory(path string) error {
 	return nil
 }
 
-// WriteFileToDirectory writes `data` file to `filename`/`path`
 func WriteFileToDirectory(path string, filename string, data []byte) error {
 	location := fmt.Sprintf("%s/%s", path, filename)
 	if err := os.WriteFile(location, data, global.FilePermissions); err != nil {
@@ -69,12 +64,10 @@ func WriteFileToDirectory(path string, filename string, data []byte) error {
 	return nil
 }
 
-// GetOutboundIP returns preferred outbound ip of this container
 func GetOutboundIP() string {
 	return global.SynapseContainerURL
 }
 
-// GetConfigFileName returns the name of the configuration file
 func GetConfigFileName(path string) (string, error) {
 	if global.TestEnv {
 		return path, nil
