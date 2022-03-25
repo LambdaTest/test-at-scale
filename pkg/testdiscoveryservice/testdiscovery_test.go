@@ -16,6 +16,7 @@ import (
 )
 
 func Test_testDiscoveryService_Discover(t *testing.T) {
+
 	logger, err := testutils.GetLogger()
 	if err != nil {
 		t.Errorf("Couldn't initialise logger, error: %v", err)
