@@ -3,6 +3,8 @@ package testdiscoveryservice
 
 import (
 	"context"
+	"encoding/json"
+	"net/http"
 	"os/exec"
 
 	"github.com/LambdaTest/synapse/pkg/core"
@@ -13,14 +15,28 @@ import (
 )
 
 type testDiscoveryService struct {
+	ctx         context.Context
 	logger      lumber.Logger
 	execManager core.ExecutionManager
+	tdResChan   chan core.DiscoveryResult
+	requests    core.Requests
+	endpoint    string
 }
 
 // NewTestDiscoveryService creates and returns a new testDiscoveryService instance
-func NewTestDiscoveryService(execManager core.ExecutionManager, logger lumber.Logger) core.TestDiscoveryService {
-	tds := testDiscoveryService{logger: logger, execManager: execManager}
-	return &tds
+func NewTestDiscoveryService(ctx context.Context,
+	tdResChan chan core.DiscoveryResult,
+	execManager core.ExecutionManager,
+	requests core.Requests,
+	logger lumber.Logger) core.TestDiscoveryService {
+	return &testDiscoveryService{
+		ctx:         ctx,
+		logger:      logger,
+		execManager: execManager,
+		tdResChan:   tdResChan,
+		requests:    requests,
+		endpoint:    global.NeuronHost + "/test-list",
+	}
 }
 
 func (tds *testDiscoveryService) Discover(ctx context.Context,
@@ -77,7 +93,7 @@ func (tds *testDiscoveryService) Discover(ctx context.Context,
 	cmd.Dir = global.RepoDir
 	envVars, err := tds.execManager.GetEnvVariables(envMap, secretData)
 	if err != nil {
-		tds.logger.Errorf("failed to parsed env variables, error: %v", err)
+		tds.logger.Errorf("failed to parse env variables, error: %v", err)
 		return err
 	}
 	cmd.Env = envVars
@@ -93,5 +109,26 @@ func (tds *testDiscoveryService) Discover(ctx context.Context,
 		return err
 	}
 
+	testDiscoveryResult := <-tds.tdResChan
+	testDiscoveryResult.Parallelism = tasConfig.Parallelism
+	testDiscoveryResult.Tier = tasConfig.Tier
+	if err := tds.updateResult(&testDiscoveryResult); err != nil {
+		return err
+	}
 	return nil
+}
+
+func (tds *testDiscoveryService) updateResult(testDiscoveryResult *core.DiscoveryResult) error {
+	reqBody, err := json.Marshal(testDiscoveryResult)
+	if err != nil {
+		tds.logger.Errorf("error while json marshal %v", err)
+		return err
+	}
+
+	if err := tds.requests.MakeAPIRequest(tds.ctx, http.MethodPost, tds.endpoint, reqBody); err != nil {
+		return err
+	}
+
+	return nil
+
 }

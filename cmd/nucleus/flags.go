@@ -12,7 +12,6 @@ func AttachCLIFlags(rootCmd *cobra.Command) error {
 	rootCmd.PersistentFlags().StringP("payloadAddress", "l", "", "Payload address")
 	rootCmd.PersistentFlags().BoolP("verbose", "", false, "Run in verbose mode")
 	rootCmd.PersistentFlags().BoolP("coverage", "", false, "Run coverage only mode")
-	rootCmd.PersistentFlags().BoolP("parser", "", false, "Run YML parsing only mode")
 	rootCmd.PersistentFlags().BoolP("discover", "", false, "Run nucleus in test discovery mode")
 	rootCmd.PersistentFlags().BoolP("execute", "", false, "Run nucleus in test execution mode")
 	rootCmd.PersistentFlags().StringP("env", "e", "prod", "Environment.")

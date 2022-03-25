@@ -20,7 +20,7 @@ func getRunnerOptions() *core.RunnerOptions {
 		ContainerArgs:  []string{"sleep", "10"},
 		DockerImage:    "ubuntu:latest",
 		HostVolumePath: "/tmp",
-		PodType:        core.ParsingPod,
+		PodType:        core.NucleusPod,
 	}
 	return &r
 }

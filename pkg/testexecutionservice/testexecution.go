@@ -85,7 +85,7 @@ func (tes *testExecutionService) Run(ctx context.Context,
 	commandArgs := args
 	envVars, err := tes.execManager.GetEnvVariables(envMap, secretData)
 	if err != nil {
-		tes.logger.Errorf("failed to parsed env variables, error: %v", err)
+		tes.logger.Errorf("failed to parse env variables, error: %v", err)
 		return nil, err
 	}
 	var cmd *exec.Cmd

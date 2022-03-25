@@ -105,6 +105,5 @@ type PodType string
 // Values that PodType can take
 const (
 	NucleusPod  PodType = "nucleus"
-	ParsingPod  PodType = "parse"
 	CoveragePod PodType = "coverage"
 )
