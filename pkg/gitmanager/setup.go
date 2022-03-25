@@ -43,11 +43,13 @@ func (gm *gitManager) Clone(ctx context.Context, payload *core.Payload, oauth *c
 	repoName := repoItems[len(repoItems)-1]
 	orgName := repoItems[len(repoItems)-2]
 	commitID := payload.BuildTargetCommit
-	archiveURL, err := urlmanager.GetCloneURL(payload.GitProvider, repoLink, repoName, commitID)
+
+	archiveURL, err := urlmanager.GetCloneURL(payload.GitProvider, repoLink, repoName, commitID, payload.ForkSlug, payload.RepoSlug)
 	if err != nil {
 		gm.logger.Errorf("failed to get clone url for provider %s, error %v", payload.GitProvider, err)
 		return err
 	}
+
 	gm.logger.Debugf("cloning from %s", archiveURL)
 	err = gm.downloadFile(ctx, archiveURL, commitID+".zip", oauth)
 	if err != nil {
@@ -55,12 +57,7 @@ func (gm *gitManager) Clone(ctx context.Context, payload *core.Payload, oauth *c
 		return err
 	}
 
-	filename := repoName + "-" + commitID
-	if payload.GitProvider == core.Bitbucket {
-		// commitID[:12] bitbucket shorthand commit sha
-		filename = orgName + "-" + repoName + "-" + commitID[:12]
-	}
-
+	filename := gm.getUnzippedFileName(payload.GitProvider, orgName, repoName, payload.ForkSlug, commitID)
 	if err = os.Rename(filename, global.RepoDir); err != nil {
 		gm.logger.Errorf("failed to rename dir, error %v", err)
 		return err
@@ -133,7 +130,12 @@ func (gm *gitManager) copyAndExtractFile(resp *http.Response, path string) error
 
 func (gm *gitManager) initGit(ctx context.Context, payload *core.Payload, oauth *core.Oauth) error {
 	branch := payload.BranchName
-	repoURL, perr := url.Parse(payload.RepoLink)
+	repoLink := payload.RepoLink
+	if payload.GitProvider == core.Bitbucket && payload.ForkSlug != "" {
+		repoLink = strings.Replace(repoLink, payload.RepoSlug, payload.ForkSlug, -1)
+	}
+
+	repoURL, perr := url.Parse(repoLink)
 	if perr != nil {
 		return perr
 	}
@@ -154,8 +156,8 @@ func (gm *gitManager) initGit(ctx context.Context, payload *core.Payload, oauth 
 	urlWithToken := repoURL.String()
 	commands := []string{
 		"git init",
-		fmt.Sprintf("git remote add origin %s.git", payload.RepoLink),
-		fmt.Sprintf("git config --global url.%s.InsteadOf %s", urlWithToken, payload.RepoLink),
+		fmt.Sprintf("git remote add origin %s.git", repoLink),
+		fmt.Sprintf("git config --global url.%s.InsteadOf %s", urlWithToken, repoLink),
 		fmt.Sprintf("git fetch --depth=1 origin +%s:refs/remotes/origin/%s", payload.BuildTargetCommit, branch),
 		fmt.Sprintf("git config --global --remove-section url.%s", urlWithToken),
 		fmt.Sprintf("git checkout --progress --force -B %s refs/remotes/origin/%s", branch, branch),
@@ -164,4 +166,19 @@ func (gm *gitManager) initGit(ctx context.Context, payload *core.Payload, oauth 
 		return err
 	}
 	return nil
+}
+
+func (gm *gitManager) getUnzippedFileName(gitProvider, orgName, repoName, forkSlug, commitID string) string {
+	if gitProvider != core.Bitbucket {
+		return repoName + "-" + commitID
+	}
+
+	// commitID[:12] bitbucket shorthand commit sha
+	if forkSlug != "" {
+		// forkItmes : forkOrg, forkRepo
+		forkItems := strings.Split(forkSlug, "/")
+		return forkItems[0] + "-" + forkItems[1] + "-" + commitID[:12]
+	}
+
+	return orgName + "-" + repoName + "-" + commitID[:12]
 }
