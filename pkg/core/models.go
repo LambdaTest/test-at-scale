@@ -356,3 +356,7 @@ const (
 	Blocklisted TestStatus = "blocklisted"
 	Quarantined TestStatus = "quarantined"
 )
+
+type ABC struct {
+	Test string
+}

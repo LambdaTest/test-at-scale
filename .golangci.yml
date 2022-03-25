@@ -1,5 +1,3 @@
-# Uncomment following lines after fixing linting issues in test files
-
 linters-settings:
   depguard:
     list-type: blacklist
