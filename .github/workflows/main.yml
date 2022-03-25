@@ -3,12 +3,12 @@ name: Go report card & Test coverage
 on:
   push:
     branches:
-      - master
+      - main
 
       
   pull_request:
     branches:
-      - master
+      - main
 
 jobs:
   Unit_Test_Cases:
