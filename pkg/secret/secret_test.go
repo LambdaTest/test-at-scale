@@ -14,6 +14,7 @@ import (
 	"github.com/LambdaTest/synapse/pkg/lumber"
 )
 
+//nolint unused
 type data struct {
 	AccessToken  string         `json:"access_token"`
 	Expiry       time.Time      `json:"expiry"`
@@ -37,26 +38,11 @@ func Test_secretParser_GetRepoSecret(t *testing.T) {
 		want    map[string]string
 		wantErr bool
 	}{
-		{
-			name:    "Test for correct file",
-			args:    args{path: "../../testutils/testdata/secretTestData/secretfile.json"},
-			want:    map[string]string{"abc": "val", "xyz": "val2"},
-			wantErr: false,
-		},
+		{"Test for correct file", args{path: "../../testutils/testdata/secretTestData/secretfile.json"}, map[string]string{"abc": "val", "xyz": "val2"}, false},
 
-		{
-			name:    "Test for incorrect path",
-			args:    args{path: "../../testutils/testdata/secretTestData/PathNotExist/a.json"},
-			want:    map[string]string{},
-			wantErr: false,
-		},
+		{"Test for incorrect path", args{path: "../../testutils/testdata/secretTestData/PathNotExist/a.json"}, map[string]string{}, false},
 
-		{
-			name:    "Test for invalid file",
-			args:    args{path: "../../testutils/testdata/secretTestData/invalidsecretfile"},
-			want:    map[string]string{},
-			wantErr: true,
-		},
+		{"Test for invalid file", args{path: "../../testutils/testdata/secretTestData/invalidsecretfile"}, map[string]string{}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -85,11 +71,11 @@ func Test_secretParser_GetOauthSecret(t *testing.T) {
 		log.Fatalf("Could not instantiate logger %s", err.Error())
 	}
 	secretParser := New(logger)
-	parsedtime, err := time.Parse("Mon, 02 Jan 2006 15:04:05 MST", "Tue, 22 Feb 2022 16:22:01 IST")
+	time, err := time.Parse("Mon, 02 Jan 2006 15:04:05 MST", "Tue, 22 Feb 2022 16:22:01 IST")
 	if err != nil {
 		log.Fatalf("Could not parse time, error: %v", err)
 	}
-	Data := data{AccessToken: "token", Expiry: parsedtime, RefreshToken: "refresh", Type: core.Bearer}
+	Data := data{AccessToken: "token", Expiry: time, RefreshToken: "refresh", Type: core.Bearer}
 
 	type args struct {
 		path string
@@ -100,26 +86,11 @@ func Test_secretParser_GetOauthSecret(t *testing.T) {
 		want    *core.Oauth
 		wantErr bool
 	}{
-		{
-			name:    "Test for correct file",
-			args:    args{path: "../../testutils/testdata/secretTestData/secretOauthFile.json"},
-			want:    &core.Oauth{Data: Data},
-			wantErr: false,
-		},
+		{"Test for correct file", args{path: "../../testutils/testdata/secretTestData/secretOauthFile.json"}, &core.Oauth{Data: Data}, false},
 
-		{
-			name:    "Test for incorrect path",
-			args:    args{path: "../../testutils/testdata/secretTestData/PathNotExist/a.json"},
-			want:    nil,
-			wantErr: true,
-		},
+		{"Test for incorrect path", args{path: "../../testutils/testdata/secretTestData/PathNotExist/a.json"}, nil, true},
 
-		{
-			name:    "Test for invalid file",
-			args:    args{path: "../../testutils/testdata/secretTestData/invalidsecretfile"},
-			want:    nil,
-			wantErr: true,
-		},
+		{"Test for invalid file", args{path: "../../testutils/testdata/secretTestData/invalidsecretfile"}, nil, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -205,22 +176,26 @@ func Test_secretParser_Expired(t *testing.T) {
 	if err != nil {
 		log.Fatalf("Could not instantiate logger %s", err.Error())
 	}
-	secretRegex := regexp.MustCompile(global.SecretRegex)
-	s := &secretParser{
-		logger:      logger,
-		secretRegex: secretRegex,
-	}
 
+	type fields struct {
+		logger      lumber.Logger
+		secretRegex *regexp.Regexp
+	}
 	type args struct {
 		token *core.Oauth
 	}
 	tests := []struct {
-		name string
-		args args
-		want bool
+		name   string
+		fields fields
+		args   args
+		want   bool
 	}{
 		{
 			name: "Missing Refresh Token",
+			fields: fields{
+				logger:      logger,
+				secretRegex: regexp.MustCompile(global.SecretRegex),
+			},
 			args: args{
 				token: &core.Oauth{
 					Data: data{
@@ -233,6 +208,10 @@ func Test_secretParser_Expired(t *testing.T) {
 		},
 		{
 			name: "Missing Access Token",
+			fields: fields{
+				logger:      logger,
+				secretRegex: regexp.MustCompile(global.SecretRegex),
+			},
 			args: args{
 				token: &core.Oauth{
 					Data: data{
@@ -244,6 +223,10 @@ func Test_secretParser_Expired(t *testing.T) {
 		},
 		{
 			name: "Missing Time",
+			fields: fields{
+				logger:      logger,
+				secretRegex: regexp.MustCompile(global.SecretRegex),
+			},
 			args: args{
 				token: &core.Oauth{
 					Data: data{
@@ -255,6 +238,10 @@ func Test_secretParser_Expired(t *testing.T) {
 		},
 		{
 			name: "Token Valid",
+			fields: fields{
+				logger:      logger,
+				secretRegex: regexp.MustCompile(global.SecretRegex),
+			},
 			args: args{
 				token: &core.Oauth{
 					Data: data{
@@ -267,6 +254,10 @@ func Test_secretParser_Expired(t *testing.T) {
 		},
 		{
 			name: "Token Expire",
+			fields: fields{
+				logger:      logger,
+				secretRegex: regexp.MustCompile(global.SecretRegex),
+			},
 			args: args{
 				token: &core.Oauth{
 					Data: data{
@@ -279,6 +270,10 @@ func Test_secretParser_Expired(t *testing.T) {
 		},
 		{
 			name: "Token not Expiredn but in expiry buffer",
+			fields: fields{
+				logger:      logger,
+				secretRegex: regexp.MustCompile(global.SecretRegex),
+			},
 			args: args{
 				token: &core.Oauth{
 					Data: data{
@@ -292,6 +287,10 @@ func Test_secretParser_Expired(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			s := &secretParser{
+				logger:      tt.fields.logger,
+				secretRegex: tt.fields.secretRegex,
+			}
 			if got := s.Expired(tt.args.token); got != tt.want {
 				t.Errorf("secretParser.Expired() = %v, want %v", got, tt.want)
 			}

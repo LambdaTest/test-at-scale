@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -20,9 +21,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func newCodeCoverageService(logger lumber.Logger, execManager *mocks.ExecutionManager,
-	codeCoveragParentDir string, azureClient *mocks.AzureClient,
-	zstd *mocks.ZstdCompressor, endpoint string) *codeCoverageService {
+func newCodeCoverageService(logger lumber.Logger, execManager *mocks.ExecutionManager, codeCoveragParentDir string, azureClient *mocks.AzureClient, zstd *mocks.ZstdCompressor, endpoint string) *codeCoverageService {
 	return &codeCoverageService{
 		logger:               logger,
 		execManager:          execManager,
@@ -36,15 +35,14 @@ func newCodeCoverageService(logger lumber.Logger, execManager *mocks.ExecutionMa
 	}
 }
 
-func initialiseArgs() (logger lumber.Logger, execManager *mocks.ExecutionManager,
-	azureClient *mocks.AzureClient, zstd *mocks.ZstdCompressor) {
+func initialiseArgs() (logger lumber.Logger, execManager *mocks.ExecutionManager, azureClient *mocks.AzureClient, zstd *mocks.ZstdCompressor) {
 	azureClient = new(mocks.AzureClient)
 	execManager = new(mocks.ExecutionManager)
 	zstdCompressor := new(mocks.ZstdCompressor)
 
 	logger, err := testutils.GetLogger()
 	if err != nil {
-		fmt.Printf("Couldn't initialize logger, error: %v", err)
+		fmt.Printf("Couldn't initialise logger, error: %v", err)
 	}
 	return logger, execManager, azureClient, zstdCompressor
 }
@@ -60,10 +58,7 @@ func Test_codeCoverageService_mergeCodeCoverageFiles(t *testing.T) {
 	logger, execManager, azureClient, zstdCompressor := initialiseArgs()
 
 	var receivedArgs string
-	execManager.On("ExecuteInternalCommands", mock.AnythingOfType("*context.emptyCtx"),
-		mock.AnythingOfType("core.CommandType"), mock.AnythingOfType("[]string"),
-		mock.AnythingOfType("string"), mock.AnythingOfType("map[string]string"),
-		mock.AnythingOfType("map[string]string")).Return(
+	execManager.On("ExecuteInternalCommands", mock.AnythingOfType("*context.emptyCtx"), mock.AnythingOfType("core.CommandType"), mock.AnythingOfType("[]string"), mock.AnythingOfType("string"), mock.AnythingOfType("map[string]string"), mock.AnythingOfType("map[string]string")).Return(
 		func(ctx context.Context, commandType core.CommandType, commands []string, cwd string, envMap, secretData map[string]string) error {
 			receivedArgs = fmt.Sprintf("%+v %+v %+v %+v %+v", commandType, commands, cwd, envMap, secretData)
 			return nil
@@ -114,10 +109,9 @@ func Test_codeCoverageService_uploadFile(t *testing.T) {
 	logger, execManager, azureClient, zstdCompressor := initialiseArgs()
 
 	var calledArgs string
-	azureClient.On("Create", mock.AnythingOfType("*context.emptyCtx"), mock.AnythingOfType("string"),
-		mock.AnythingOfType("*os.File"), mock.AnythingOfType("string")).Return(
+	azureClient.On("Create", mock.AnythingOfType("*context.emptyCtx"), mock.AnythingOfType("string"), mock.AnythingOfType("*os.File"), mock.AnythingOfType("string")).Return(
 		func(ctx context.Context, path string, reader io.Reader, mimeType string) string {
-			st, _ := io.ReadAll(reader)
+			st, _ := ioutil.ReadAll(reader)
 			calledArgs = fmt.Sprintf("%v %v %v", path, string(st), mimeType)
 			return "blobURL"
 		},
@@ -221,8 +215,7 @@ func Test_codeCoverageService_downloadAndDecompressParentCommitDir(t *testing.T)
 	defer server.Close()
 
 	logger, execManager, azureClient, zstdCompressor := initialiseArgs()
-	zstdCompressor.On("Decompress", mock.AnythingOfType("*context.emptyCtx"),
-		mock.AnythingOfType("string"), false, mock.AnythingOfType("string")).Return(
+	zstdCompressor.On("Decompress", mock.AnythingOfType("*context.emptyCtx"), mock.AnythingOfType("string"), false, mock.AnythingOfType("string")).Return(
 		func(ctx context.Context, filePath string, preservePath bool, workingDirectory string) error {
 			return nil
 		},
@@ -240,8 +233,7 @@ func Test_codeCoverageService_downloadAndDecompressParentCommitDir(t *testing.T)
 	}{
 		// TODO: Add success case, currently on local tempdir can't be created
 		{"Test downloadAndDecompressParentCommitDir",
-			args{ctx: context.TODO(), coverage: parentCommitCoverage{Bloblink: server.URL, ParentCommit: "parentCommit"},
-				repoDir: "../../../testutils/testdata"},
+			args{ctx: context.TODO(), coverage: parentCommitCoverage{Bloblink: server.URL, ParentCommit: "parentCommit"}, repoDir: "../../../testutils/testdata"},
 			true,
 		},
 	}
@@ -300,24 +292,11 @@ func Test_codeCoverageService_getParentCommitCoverageDir(t *testing.T) {
 		wantCoverage parentCommitCoverage
 		wantErr      bool
 	}{
-		{
-			"Test getParentCommitCoverageDir",
-			args{repoID: "dummyRepoID", commitID: "dummyCommitID"},
-			parentCommitCoverage{Bloblink: "http://fakeblob.link", ParentCommit: "fake_parent_commit"},
-			false,
-		},
+		{"Test getParentCommitCoverageDir", args{repoID: "dummyRepoID", commitID: "dummyCommitID"}, parentCommitCoverage{Bloblink: "http://fakeblob.link", ParentCommit: "fake_parent_commit"}, false},
 
-		{
-			"Test getParentCommitCoverageDir for non 200 status error",
-			args{repoID: "non200", commitID: "non200"}, parentCommitCoverage{},
-			true,
-		},
+		{"Test getParentCommitCoverageDir for non 200 status error", args{repoID: "non200", commitID: "non200"}, parentCommitCoverage{}, true},
 
-		{
-			"Test getParentCommitCoverageDir for payloadDecodeError",
-			args{repoID: "payloadDecodeError", commitID: "payloadError"}, parentCommitCoverage{},
-			true,
-		},
+		{"Test getParentCommitCoverageDir for payloadDecodeError", args{repoID: "payloadDecodeError", commitID: "payloadError"}, parentCommitCoverage{}, true},
 	}
 	c := newCodeCoverageService(logger, execManager, "", azureClient, zstdCompressor, ts.URL)
 	for _, tt := range tests {
@@ -348,7 +327,7 @@ func Test_codeCoverageService_sendCoverageData(t *testing.T) {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/endpoint", func(res http.ResponseWriter, req *http.Request) {
-		body, _ := io.ReadAll(req.Body)
+		body, _ := ioutil.ReadAll(req.Body)
 		expResp := `[{"build_id":"buildID1","repo_id":"repoID1","commit_id":"commitID1","blob_link":"blobLink1","total_coverage":{"bar":"baz"}}]`
 		if !reflect.DeepEqual(string(body), expResp) {
 			t.Errorf("Expected response body: %v, got: %v\n", expResp, string(body))
@@ -372,19 +351,9 @@ func Test_codeCoverageService_sendCoverageData(t *testing.T) {
 		endpoint string
 		wantErr  bool
 	}{
-		{
-			"Test sendCoverageData for success",
-			args{payload: payload},
-			"/endpoint",
-			false,
-		},
+		{"Test sendCoverageData for success", args{payload: payload}, "/endpoint", false},
 
-		{
-			"Test sendCoverageData for non 200 status",
-			args{payload: payload},
-			"/endpoint-err",
-			true,
-		},
+		{"Test sendCoverageData for non 200 status", args{payload: payload}, "/endpoint-err", true},
 	}
 	for _, tt := range tests {
 		c := newCodeCoverageService(logger, execManager, "", azureClient, zstdCompressor, ts.URL+tt.endpoint)
@@ -408,19 +377,9 @@ func Test_codeCoverageService_getTotalCoverage(t *testing.T) {
 		want    json.RawMessage
 		wantErr bool
 	}{
-		{
-			"Test getTotalCoverage",
-			args{"../../../testutils/testdata/coverage/sample/coverage-final.json"},
-			json.RawMessage([]byte(`"80%"`)),
-			false,
-		},
+		{"Test getTotalCoverage", args{"../../../testutils/testdata/coverage/sample/coverage-final.json"}, json.RawMessage([]byte(`"80%"`)), false},
 
-		{
-			"Test getTotalCoverage for no field of total coverage",
-			args{"../../../testutils/testdata/coverage/coverage-final.json"},
-			json.RawMessage{},
-			true,
-		},
+		{"Test getTotalCoverage for no field of total coverage", args{"../../../testutils/testdata/coverage/coverage-final.json"}, json.RawMessage{}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

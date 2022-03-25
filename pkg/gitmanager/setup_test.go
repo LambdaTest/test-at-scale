@@ -5,7 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -21,6 +21,7 @@ import (
 	"github.com/LambdaTest/synapse/testutils/mocks"
 )
 
+//nolint unused
 type data struct {
 	AccessToken  string         `json:"access_token"`
 	Expiry       time.Time      `json:"expiry"`
@@ -92,16 +93,15 @@ func Test_copyAndExtractFile(t *testing.T) {
 	}
 	fileBody := "Hello World!"
 	resp := http.Response{
-		Body: io.NopCloser(bytes.NewBufferString(fileBody)),
+		Body: ioutil.NopCloser(bytes.NewBufferString(fileBody)),
 	}
 	path := "newFile"
 	err2 := gm.copyAndExtractFile(&resp, path)
-	defer removeFile(path)
 	if err2 != nil {
 		t.Errorf("Error: %v", err2)
 		return
 	}
-	fileContent, err := os.ReadFile("./newFile")
+	fileContent, err := ioutil.ReadFile("./newFile")
 	if err != nil {
 		t.Errorf("Error: %v", err)
 		return
@@ -109,6 +109,7 @@ func Test_copyAndExtractFile(t *testing.T) {
 	if string(fileContent) != fileBody {
 		t.Errorf("Expected file content: %v\nReceived: %v", fileBody, string(fileContent))
 	}
+	defer removeFile(path)
 }
 
 func TestClone(t *testing.T) {

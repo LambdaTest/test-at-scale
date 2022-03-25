@@ -8,6 +8,7 @@ import (
 
 	"github.com/LambdaTest/synapse/pkg/core"
 	"github.com/LambdaTest/synapse/pkg/global"
+	"github.com/LambdaTest/synapse/pkg/lumber"
 	"github.com/LambdaTest/synapse/pkg/requestutils"
 	"github.com/LambdaTest/synapse/testutils"
 	"github.com/LambdaTest/synapse/testutils/mocks"
@@ -17,7 +18,7 @@ import (
 func Test_testDiscoveryService_Discover(t *testing.T) {
 	logger, err := testutils.GetLogger()
 	if err != nil {
-		t.Errorf("Couldn't initialize logger, error: %v", err)
+		t.Errorf("Couldn't initialise logger, error: %v", err)
 	}
 	requests := requestutils.New(logger)
 	tdResChan := make(chan core.DiscoveryResult)
@@ -40,7 +41,11 @@ func Test_testDiscoveryService_Discover(t *testing.T) {
 			return nil
 		},
 	)
-	tds := NewTestDiscoveryService(context.TODO(), tdResChan, execManager, requests, logger)
+
+	type fields struct {
+		logger      lumber.Logger
+		execManager core.ExecutionManager
+	}
 	type args struct {
 		ctx        context.Context
 		tasConfig  *core.TASConfig
@@ -51,12 +56,17 @@ func Test_testDiscoveryService_Discover(t *testing.T) {
 	}
 	tests := []struct {
 		name           string
+		fields         fields
 		args           args
 		wantErr        bool
 		wantEnvMap     map[string]string
 		wantSecretData map[string]string
 	}{
 		{"Test Discover with Premerge pattern",
+			fields{
+				logger:      logger,
+				execManager: execManager,
+			},
 			args{
 				ctx: context.TODO(),
 				tasConfig: &core.TASConfig{
@@ -81,6 +91,10 @@ func Test_testDiscoveryService_Discover(t *testing.T) {
 			map[string]string{"secret": "data"},
 		},
 		{"Test Discover with Postmerge pattern",
+			fields{
+				logger:      logger,
+				execManager: execManager,
+			},
 			args{
 				ctx: context.TODO(),
 				tasConfig: &core.TASConfig{
@@ -105,6 +119,10 @@ func Test_testDiscoveryService_Discover(t *testing.T) {
 			map[string]string{"this is": "a secret"},
 		},
 		{"Test Discover not to execute discoverAll",
+			fields{
+				logger:      logger,
+				execManager: execManager,
+			},
 			args{
 				ctx: context.TODO(),
 				tasConfig: &core.TASConfig{
@@ -133,10 +151,11 @@ func Test_testDiscoveryService_Discover(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			tds := NewTestDiscoveryService(context.TODO(), tdResChan, tt.fields.execManager, requests, tt.fields.logger)
 			err := tds.Discover(tt.args.ctx, tt.args.tasConfig, tt.args.payload, tt.args.secretData, tt.args.diff, tt.args.diffExists)
+
 			if !reflect.DeepEqual(PassedEnvMap, tt.wantEnvMap) || !reflect.DeepEqual(PassedSecretDataMap, tt.wantSecretData) {
-				t.Errorf("expected Envmap: %+v, received: %+v\nexpected SecretDataMap: %+v, received: %+v\n",
-					tt.wantEnvMap, PassedEnvMap, tt.wantSecretData, PassedSecretDataMap)
+				t.Errorf("expected Envmap: %+v, received: %+v\nexpected SecretDataMap: %+v, received: %+v\n", tt.wantEnvMap, PassedEnvMap, tt.wantSecretData, PassedSecretDataMap)
 			}
 			if (err != nil) != tt.wantErr {
 				t.Errorf("testDiscoveryService.Discover() error = %v, wantErr %v", err, tt.wantErr)
