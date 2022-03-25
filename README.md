@@ -10,8 +10,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/LambdaTest/test-at-scale/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-Apache%20License%202.0.-blue" /></a>
-  <a href="https://github.com/LambdaTest/test-at-scale/blob/master/CONTRIBUTING.md"><img src="https://img.shields.io/badge/contributions-welcome-brightgreen?logo=github" /></a>
+  <a href="https://github.com/LambdaTest/test-at-scale/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-Apache%20License%202.0.-blue" /></a>
+  <a href="https://github.com/LambdaTest/test-at-scale/blob/main/CONTRIBUTING.md"><img src="https://img.shields.io/badge/contributions-welcome-brightgreen?logo=github" /></a>
   <a href="#build"><img src="https://github.com/lambdatest/test-at-scale/actions/workflows/main.yml/badge.svg" /></a>
   <a href="#lint"><img src="https://github.com/lambdatest/test-at-scale/actions/workflows/golangci-lint.yml/badge.svg" /></a>
   <a href="#stale"><img src="https://github.com/lambdatest/test-at-scale/actions/workflows/stale.yml/badge.svg" /></a>
@@ -76,7 +76,7 @@ Before installation we need to create a file that will be used for configuring t
 ```bash
 mkdir ~/test-at-scale
 cd ~/test-at-scale
-curl https://raw.githubusercontent.com/LambdaTest/test-at-scale/master/.sample.synapse.json -o .synapse.json
+curl https://raw.githubusercontent.com/LambdaTest/test-at-scale/main/.sample.synapse.json -o .synapse.json
 ```
 - Open the downloaded `.synapse.json` configuration file in any editor of your choice.
 - You will need to add the following in this file: 
@@ -207,4 +207,4 @@ We are committed to fostering an open and welcoming environment in the community
 
 ## **License**
 
-TestAtScale is available under the [Apache License 2.0](https://github.com/LambdaTest/test-at-scale/blob/master/LICENSE). Use it wisely.
+TestAtScale is available under the [Apache License 2.0](https://github.com/LambdaTest/test-at-scale/blob/main/LICENSE). Use it wisely.
