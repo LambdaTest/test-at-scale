@@ -2,7 +2,6 @@ package utils
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -14,6 +13,8 @@ func removeCreatedFile(path string) {
 		fmt.Println("error in removing!!")
 	}
 }
+
+const existingDirectory = "../../testutils/testdirectory"
 
 func TestMin(t *testing.T) {
 	type args struct {
@@ -73,7 +74,7 @@ func TestComputeChecksum(t *testing.T) {
 
 func TestCreateDirectory(t *testing.T) {
 	newDir := "../../testutils/nonExistingDir"
-	existDir := "../../testutils/testdirectory"
+	existDir := existingDirectory
 	type args struct {
 		path string
 	}
@@ -112,7 +113,7 @@ func TestWriteFileToDirectory(t *testing.T) {
 		return
 	}
 	defer removeCreatedFile(filepath.Join(path, filename))
-	checkData, err := ioutil.ReadFile(filepath.Join(path, filename))
+	checkData, err := os.ReadFile(filepath.Join(path, filename))
 	if err != nil {
 		t.Errorf("Error: %v", err)
 		return

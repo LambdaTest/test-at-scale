@@ -84,10 +84,8 @@ func (_m *AzureClient) Find(ctx context.Context, path string) (io.ReadCloser, er
 	var r0 io.ReadCloser
 	if rf, ok := ret.Get(0).(func(context.Context, string) io.ReadCloser); ok {
 		r0 = rf(ctx, path)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(io.ReadCloser)
-		}
+	} else if ret.Get(0) != nil {
+		r0 = ret.Get(0).(io.ReadCloser)
 	}
 
 	var r1 error
@@ -107,10 +105,8 @@ func (_m *AzureClient) FindUsingSASUrl(ctx context.Context, sasURL string) (io.R
 	var r0 io.ReadCloser
 	if rf, ok := ret.Get(0).(func(context.Context, string) io.ReadCloser); ok {
 		r0 = rf(ctx, sasURL)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(io.ReadCloser)
-		}
+	} else if ret.Get(0) != nil {
+		r0 = ret.Get(0).(io.ReadCloser)
 	}
 
 	var r1 error

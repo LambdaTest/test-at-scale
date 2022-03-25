@@ -63,13 +63,12 @@ func TestSkipSingleCharacterMask(t *testing.T) {
 }
 
 func TestReplaceMultilineJson(t *testing.T) {
-	key := `{
+	const random = `{
   "token":"dXNlcm5hbWU6cGFzc3dvcmQ="
 }`
+	key := random
 
-	line := `{
-  "token":"dXNlcm5hbWU6cGFzc3dvcmQ="
-}`
+	line := random
 
 	secrets := map[string]string{
 		"cipher": key,

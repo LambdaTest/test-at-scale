@@ -16,6 +16,8 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+const path = "tar"
+
 func TestNew(t *testing.T) {
 	execManager := new(mocks.ExecutionManager)
 	logger, err := testutils.GetLogger()
@@ -25,7 +27,7 @@ func TestNew(t *testing.T) {
 
 	_, err2 := New(execManager, logger)
 	if err2 != nil {
-		t.Errorf("Couldn't initialise a new zstdCompressor, error: %v", err2)
+		t.Errorf("Couldn't initialize a new zstdCompressor, error: %v", err2)
 	}
 }
 
@@ -35,8 +37,6 @@ func Test_zstdCompressor_createManifestFile(t *testing.T) {
 	if err != nil {
 		t.Errorf("Couldn't initialize logger, error: %v", err)
 	}
-
-	path := "tar"
 
 	type fields struct {
 		logger      lumber.Logger
@@ -53,7 +53,12 @@ func Test_zstdCompressor_createManifestFile(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		{"Test createManifestFile", fields{logger: logger, execManager: execManager, execPath: path}, args{"./", []string{"file1", "file2"}}, false},
+		{
+			"Test createManifestFile",
+			fields{logger: logger, execManager: execManager, execPath: path},
+			args{"./", []string{"file1", "file2"}},
+			false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -75,12 +80,13 @@ func Test_zstdCompressor_Compress(t *testing.T) {
 		t.Errorf("Couldn't initialize logger, error: %v", err)
 	}
 
-	path := "tar"
-
 	// ReceivedStringArg will have args passed to ExecuteInternalCommands
 	var ReceivedArgs []string
 	execManager := new(mocks.ExecutionManager)
-	execManager.On("ExecuteInternalCommands", mock.AnythingOfType("*context.emptyCtx"), mock.AnythingOfType("core.CommandType"), mock.AnythingOfType("[]string"), mock.AnythingOfType("string"), mock.AnythingOfType("map[string]string"), mock.AnythingOfType("map[string]string")).Return(
+	execManager.On("ExecuteInternalCommands", mock.AnythingOfType("*context.emptyCtx"),
+		mock.AnythingOfType("core.CommandType"), mock.AnythingOfType("[]string"),
+		mock.AnythingOfType("string"), mock.AnythingOfType("map[string]string"),
+		mock.AnythingOfType("map[string]string")).Return(
 		func(ctx context.Context, commandType core.CommandType, commands []string, cwd string, envMap, secretData map[string]string) error {
 			ReceivedArgs = commands
 			return nil
@@ -88,7 +94,10 @@ func Test_zstdCompressor_Compress(t *testing.T) {
 	)
 
 	execManagerErr := new(mocks.ExecutionManager)
-	execManagerErr.On("ExecuteInternalCommands", mock.AnythingOfType("*context.emptyCtx"), mock.AnythingOfType("core.CommandType"), mock.AnythingOfType("[]string"), mock.AnythingOfType("string"), mock.AnythingOfType("map[string]string"), mock.AnythingOfType("map[string]string")).Return(
+	execManagerErr.On("ExecuteInternalCommands", mock.AnythingOfType("*context.emptyCtx"),
+		mock.AnythingOfType("core.CommandType"), mock.AnythingOfType("[]string"),
+		mock.AnythingOfType("string"), mock.AnythingOfType("map[string]string"),
+		mock.AnythingOfType("map[string]string")).Return(
 		func(ctx context.Context, commandType core.CommandType, commands []string, cwd string, envMap, secretData map[string]string) error {
 			ReceivedArgs = commands
 			return errs.New("error from mocked interface")
@@ -113,11 +122,26 @@ func Test_zstdCompressor_Compress(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		{"Test Compress for success, with preservePath=true", fields{logger: logger, execManager: execManager, execPath: path}, args{context.TODO(), "compressedFileName", true, "./", []string{"f1", "f2"}}, false},
+		{
+			name:    "Test Compress for success, with preservePath=true",
+			fields:  fields{logger: logger, execManager: execManager, execPath: path},
+			args:    args{context.TODO(), "compressedFileName", true, "./", []string{"f1", "f2"}},
+			wantErr: false,
+		},
 
-		{"Test Compress for success, with preservePath=false", fields{logger: logger, execManager: execManager, execPath: path}, args{context.TODO(), "compressedFileName", false, "./", []string{"f1", "f2"}}, false},
+		{
+			name:    "Test Compress for success, with preservePath=false",
+			fields:  fields{logger: logger, execManager: execManager, execPath: path},
+			args:    args{context.TODO(), "compressedFileName", false, "./", []string{"f1", "f2"}},
+			wantErr: false,
+		},
 
-		{"Test Compress for error", fields{logger: logger, execManager: execManagerErr, execPath: path}, args{context.TODO(), "compressedFileName", true, "./", []string{"f1", "f2"}}, true},
+		{
+			name:    "Test Compress for error",
+			fields:  fields{logger: logger, execManager: execManagerErr, execPath: path},
+			args:    args{context.TODO(), "compressedFileName", true, "./", []string{"f1", "f2"}},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -132,7 +156,8 @@ func Test_zstdCompressor_Compress(t *testing.T) {
 				return
 			}
 
-			command := fmt.Sprintf("%s --posix -I 'zstd -5 -T0' -cf compressedFileName -C ./ -T %s", z.execPath, filepath.Join(os.TempDir(), manifestFileName))
+			command := fmt.Sprintf("%s --posix -I 'zstd -5 -T0' -cf compressedFileName -C ./ -T %s",
+				z.execPath, filepath.Join(os.TempDir(), manifestFileName))
 
 			if tt.args.preservePath {
 				command = fmt.Sprintf("%s -P", command)
@@ -146,25 +171,28 @@ func Test_zstdCompressor_Compress(t *testing.T) {
 }
 
 func Test_zstdCompressor_Decompress(t *testing.T) {
-
 	logger, err := testutils.GetLogger()
 	if err != nil {
 		t.Errorf("Couldn't initialize logger, error: %v", err)
 	}
 
-	path := "tar"
-
 	// ReceivedStringArg will have args passed to ExecuteInternalCommands
 	var ReceivedArgs []string
 	execManager := new(mocks.ExecutionManager)
-	execManager.On("ExecuteInternalCommands", mock.AnythingOfType("*context.emptyCtx"), mock.AnythingOfType("core.CommandType"), mock.AnythingOfType("[]string"), mock.AnythingOfType("string"), mock.AnythingOfType("map[string]string"), mock.AnythingOfType("map[string]string")).Return(
+	execManager.On("ExecuteInternalCommands", mock.AnythingOfType("*context.emptyCtx"),
+		mock.AnythingOfType("core.CommandType"), mock.AnythingOfType("[]string"),
+		mock.AnythingOfType("string"), mock.AnythingOfType("map[string]string"),
+		mock.AnythingOfType("map[string]string")).Return(
 		func(ctx context.Context, commandType core.CommandType, commands []string, cwd string, envMap, secretData map[string]string) error {
 			ReceivedArgs = commands
 			return nil
 		})
 
 	execManagerErr := new(mocks.ExecutionManager)
-	execManagerErr.On("ExecuteInternalCommands", mock.AnythingOfType("*context.emptyCtx"), mock.AnythingOfType("core.CommandType"), mock.AnythingOfType("[]string"), mock.AnythingOfType("string"), mock.AnythingOfType("map[string]string"), mock.AnythingOfType("map[string]string")).Return(
+	execManagerErr.On("ExecuteInternalCommands", mock.AnythingOfType("*context.emptyCtx"),
+		mock.AnythingOfType("core.CommandType"), mock.AnythingOfType("[]string"),
+		mock.AnythingOfType("string"), mock.AnythingOfType("map[string]string"),
+		mock.AnythingOfType("map[string]string")).Return(
 		func(ctx context.Context, commandType core.CommandType, commands []string, cwd string, envMap, secretData map[string]string) error {
 			ReceivedArgs = commands
 			return errs.New("error from mocked interface")
@@ -187,11 +215,25 @@ func Test_zstdCompressor_Decompress(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		{"Tests Decompress for success with preservePath=true", fields{logger: logger, execManager: execManager, execPath: path}, args{ctx: context.TODO(), filePath: "./", preservePath: true, workingDirectory: "./"}, false},
+		{
+			"Tests Decompress for success with preservePath=true",
+			fields{logger: logger, execManager: execManager, execPath: path},
+			args{ctx: context.TODO(), filePath: "./", preservePath: true, workingDirectory: "./"},
+			false,
+		},
 
-		{"Tests Decompress for success with preservePath=false", fields{logger: logger, execManager: execManager, execPath: path}, args{ctx: context.TODO(), filePath: "./", preservePath: false, workingDirectory: "./"}, false},
+		{
+			"Tests Decompress for success with preservePath=false",
+			fields{logger: logger, execManager: execManager, execPath: path},
+			args{ctx: context.TODO(), filePath: "./", preservePath: false, workingDirectory: "./"},
+			false,
+		},
 
-		{"Tests Decompress for error", fields{logger: logger, execManager: execManagerErr, execPath: path}, args{ctx: context.TODO(), filePath: "./", preservePath: true, workingDirectory: "./"}, true},
+		{
+			"Tests Decompress for error", fields{logger: logger, execManager: execManagerErr, execPath: path},
+			args{ctx: context.TODO(), filePath: "./", preservePath: true, workingDirectory: "./"},
+			true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

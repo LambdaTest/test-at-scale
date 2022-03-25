@@ -12,8 +12,9 @@ import (
 	"github.com/LambdaTest/synapse/testutils"
 )
 
-func TestTask_UpdateStatus(t *testing.T) {
+const non200Status = "non 200 status code"
 
+func TestTask_UpdateStatus(t *testing.T) {
 	check := func(t *testing.T, st int) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if r.URL.Path != "/task" {
@@ -40,7 +41,7 @@ func TestTask_UpdateStatus(t *testing.T) {
 		}
 		_, err2 := New(context.TODO(), requests, logger)
 		if err2 != nil {
-			t.Errorf("New task couldn't initialised, received: %v", err)
+			t.Errorf("New task couldn't initialized, received: %v", err)
 		}
 		tk := &task{
 			ctx:      context.TODO(),
@@ -52,7 +53,7 @@ func TestTask_UpdateStatus(t *testing.T) {
 		updateStatusErr := tk.UpdateStatus(taskPayload)
 
 		if st != 200 {
-			expectedErr := "non 200 status code"
+			expectedErr := non200Status
 			if updateStatusErr == nil {
 				t.Errorf("Expected: %s, Received: %s", expectedErr, updateStatusErr)
 			}
@@ -61,11 +62,10 @@ func TestTask_UpdateStatus(t *testing.T) {
 		if updateStatusErr != nil {
 			t.Errorf("Received: %v", updateStatusErr)
 		}
-
 	}
 
 	t.Run("TestUpdateStatus check for statusOK", func(t *testing.T) {
-		check(t, 200) // statusOk = 200
+		check(t, 200) // statusOk
 	})
 	t.Run("TestUpdateStatus check for non statusOK", func(t *testing.T) {
 		check(t, 404) // statusNotFound
@@ -73,15 +73,14 @@ func TestTask_UpdateStatus(t *testing.T) {
 }
 
 func TestTask_UpdateStatusForError(t *testing.T) {
-
+	const taskEndpoint = "/task"
 	checkErr := func(t *testing.T, st int) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if r.URL.Path != "/task" {
+			if r.URL.Path != taskEndpoint {
 				t.Errorf("Expected to request '/task', got: %v", r.URL)
 			}
 			w.WriteHeader(st)
 			w.Header().Set("Content-Type", "application/json")
-			// w.Write([]byte(`{"value":"fixed"}`))
 		}))
 		defer server.Close()
 
@@ -99,13 +98,13 @@ func TestTask_UpdateStatusForError(t *testing.T) {
 			ctx:      context.TODO(),
 			requests: requests,
 			logger:   logger,
-			endpoint: server.URL + "/task",
+			endpoint: server.URL + taskEndpoint,
 		}
 
 		updateStatusErr := tk.UpdateStatus(taskPayload)
 
 		if st != 200 {
-			expectedErr := "non 200 status code"
+			expectedErr := non200Status
 			if expectedErr != updateStatusErr.Error() {
 				t.Errorf("Expected: %s, Received: %s", expectedErr, updateStatusErr)
 			}
@@ -114,7 +113,6 @@ func TestTask_UpdateStatusForError(t *testing.T) {
 		if updateStatusErr != nil {
 			t.Errorf("Received: %v", updateStatusErr)
 		}
-
 	}
 	t.Run("TestUpdateStatus check for error", func(t *testing.T) {
 		checkErr(t, 404) // statusNotFound
