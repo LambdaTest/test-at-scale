@@ -102,10 +102,10 @@ func (tes *testExecutionService) Run(ctx context.Context,
 			if collectCoverage {
 				cmd = exec.CommandContext(ctx, "nyc", commandArgs...)
 			} else {
-				cmd = exec.CommandContext(ctx, commandArgs[0], commandArgs[1:]...)
+				cmd = exec.CommandContext(ctx, commandArgs[0], commandArgs[1:]...) //nolint:gosec
 			}
 		} else {
-			cmd = exec.CommandContext(ctx, commandArgs[0], commandArgs[1:]...)
+			cmd = exec.CommandContext(ctx, commandArgs[0], commandArgs[1:]...) //nolint:gosec
 			if collectCoverage {
 				envVars = append(envVars, "TAS_COLLECT_COVERAGE=true")
 			}
