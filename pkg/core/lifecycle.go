@@ -45,6 +45,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 
 	pl.Logger.Debugf("Starting pipeline.....")
 	pl.Logger.Debugf("Fetching config")
+
 	// fetch configuration
 	payload, err := pl.PayloadManager.FetchPayload(ctx, pl.Cfg.PayloadAddress)
 	if err != nil {

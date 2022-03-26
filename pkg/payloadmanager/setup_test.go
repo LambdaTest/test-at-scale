@@ -91,7 +91,7 @@ func Test_payloadManager_FetchPayload(t *testing.T) {
 			}
 
 			received, _ := json.Marshal(got)
-			receivedPayload := fmt.Sprintf("%+v", string(received))
+			receivedPayload := fmt.Sprintf("%+v\n", string(received))
 			if receivedPayload != tt.want {
 				t.Errorf("payloadManager.FetchPayload() = \n%v, \nwant: %v\n", receivedPayload, tt.want)
 			}

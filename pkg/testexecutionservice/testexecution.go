@@ -43,8 +43,7 @@ func (tes *testExecutionService) Run(ctx context.Context,
 	tasConfig *core.TASConfig,
 	payload *core.Payload,
 	coverageDir string,
-	secretData map[string]string,
-) (*core.ExecutionResults, error) {
+	secretData map[string]string) (*core.ExecutionResults, error) {
 
 	azureReader, azureWriter := io.Pipe()
 	defer azureWriter.Close()
