@@ -294,7 +294,7 @@ func (d *docker) WriteLogs(ctx context.Context, r *core.RunnerOptions) error {
 
 	buildLogsPath := fmt.Sprintf("%s/%s", global.ExecutionLogsPath, r.Label[synapse.BuildID])
 
-	if err := utils.CreateDirectory(buildLogsPath); err != nil {
+	if err = utils.CreateDirectory(buildLogsPath); err != nil {
 		return err
 	}
 
@@ -304,7 +304,7 @@ func (d *docker) WriteLogs(ctx context.Context, r *core.RunnerOptions) error {
 	}
 	defer f.Close()
 
-	if _, err := stdcopy.StdCopy(f, f, reader); err != nil {
+	if _, err = stdcopy.StdCopy(f, f, reader); err != nil {
 		return err
 	}
 
