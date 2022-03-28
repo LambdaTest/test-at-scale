@@ -45,7 +45,7 @@ func (s *secretParser) GetRepoSecret(path string) (map[string]string, error) {
 
 	if err = json.Unmarshal(body, &secretData); err != nil {
 		s.logger.Errorf("failed to unmarshal user env secrets, error %v", err)
-		return nil, err
+		return nil, errs.ErrUnMarshalJSON
 	}
 
 	// extract secretmap from data map[data: map[secretname:secretvalue]]
@@ -54,7 +54,9 @@ func (s *secretParser) GetRepoSecret(path string) (map[string]string, error) {
 
 // GetOauthSecret parses the oauth secret
 func (s *secretParser) GetOauthSecret(path string) (*core.Oauth, error) {
-	o := &core.Oauth{}
+	o := &core.Oauth{
+		Type: core.Bearer,
+	}
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		s.logger.Errorf("failed to find oauth secret in path %s", path)
 		return nil, err
@@ -66,12 +68,10 @@ func (s *secretParser) GetOauthSecret(path string) (*core.Oauth, error) {
 
 	if err = json.Unmarshal(body, o); err != nil {
 		s.logger.Errorf("failed to unmarshal oauth secret, error %v", err)
-		return nil, err
+		return nil, errs.ErrUnMarshalJSON
 	}
-
-	// If tokentype is not basic set it to bearer
-	if o.Type != core.Basic {
-		o.Type = core.Bearer
+	if o.AccessToken == "" {
+		return nil, errs.ErrMissingAccessToken
 	}
 
 	return o, err

@@ -1,13 +1,16 @@
 package secret
 
 import (
+	"errors"
 	"log"
+	"os"
 	"reflect"
 	"regexp"
 	"testing"
 	"time"
 
 	"github.com/LambdaTest/synapse/pkg/core"
+	"github.com/LambdaTest/synapse/pkg/errs"
 	"github.com/LambdaTest/synapse/pkg/global"
 	"github.com/LambdaTest/synapse/pkg/lumber"
 )
@@ -20,17 +23,22 @@ func TestGetRepoSecret(t *testing.T) {
 	secretParser := New(logger)
 
 	tests := []struct {
-		name string
-		path string
-		want map[string]string
+		name      string
+		path      string
+		want      map[string]string
+		errorType error
 	}{
-		{"Test for correct file", "../../testutils/testdata/secretTestData/secretfile.json", map[string]string{"abc": "val", "xyz": "val2"}},
+		{"Test for correct file", "../../testutils/testdata/secretTestData/secretfile.json", map[string]string{"abc": "val", "xyz": "val2"}, nil},
+		{"Test for invalid file", "../../testutils/testdata/secretTestData/invalidsecretfile.json", map[string]string{}, errs.ErrUnMarshalJSON},
+		{"Test for incorrect path", "", nil, os.ErrNotExist},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := secretParser.GetRepoSecret(tt.path)
 			if err != nil {
-				t.Error(err)
+				if !errors.Is(err, tt.errorType) {
+					t.Error(err)
+				}
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
@@ -51,22 +59,24 @@ func TestGetOauthSecret(t *testing.T) {
 	oauthToken := core.Oauth{AccessToken: "token", Expiry: time.Unix(1645527121, 0), RefreshToken: "refresh", Type: core.Bearer}
 
 	tests := []struct {
-		name string
-		path string
-		want *core.Oauth
+		name      string
+		path      string
+		want      *core.Oauth
+		errorType error
 	}{
-		{"Test for correct file", "../../testutils/testdata/secretTestData/secretOauthFile.json", &oauthToken},
-		// {"Test for incorrect path", path: "../../testutils/testdata/secretTestData/PathNotExist/a.json"}, nil, true},
-		// {"Test for invalid file", path: "../../testutils/testdata/secretTestData/invalidsecretfile"}, nil, true},
+		{"Test for correct file", "../../testutils/testdata/secretTestData/secretOauthFile.json", &oauthToken, nil},
+		{"Test for invalid file", "../../testutils/testdata/secretTestData/invalidsecretfile.json", nil, errs.ErrMissingAccessToken},
+		{"Test for incorrect path", "", nil, os.ErrNotExist},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := secretParser.GetOauthSecret(tt.path)
 			if err != nil {
-				t.Error(err)
+				if !errors.Is(err, tt.errorType) {
+					t.Error(err)
+				}
 				return
 			}
-
 			if got, want := got.AccessToken, tt.want.AccessToken; got != want {
 				t.Errorf("Want access_token %s, got %s", want, got)
 			}

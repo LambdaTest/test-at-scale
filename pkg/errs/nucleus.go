@@ -61,6 +61,12 @@ var (
 	ErrGitDiffNotFound = New("diff not found")
 	// GenericErrRemark returns a generic error message for user facing errors.
 	GenericErrRemark = New("Unexpected error")
+	// ErrMarshalJSON is returned when json marshal failed
+	ErrMarshalJSON = New("JSON marshal failed")
+	// ErrUnMarshalJSON is returned when json unmarshal failed
+	ErrUnMarshalJSON = New("JSON unmarshal failed")
+	// ErrMissingAccessToken is returned when Oauth token is missing
+	ErrMissingAccessToken = New("Missing OAuth access token")
 )
 
 type StatusFailed struct {
