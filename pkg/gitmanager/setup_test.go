@@ -11,7 +11,6 @@ import (
 	"os"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/LambdaTest/synapse/pkg/command"
 	"github.com/LambdaTest/synapse/pkg/core"
@@ -20,14 +19,6 @@ import (
 	"github.com/LambdaTest/synapse/testutils"
 	"github.com/LambdaTest/synapse/testutils/mocks"
 )
-
-//nolint unused
-type data struct {
-	AccessToken  string         `json:"access_token"`
-	Expiry       time.Time      `json:"expiry"`
-	RefreshToken string         `json:"refresh_token"`
-	Type         core.TokenType `json:"token_type,omitempty"`
-}
 
 func CreateDirectory(path string) {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
