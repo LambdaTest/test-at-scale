@@ -230,6 +230,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 				return err
 			}
 		}
+		time.Sleep(5 * time.Minute)
 		err = pl.ExecutionManager.ExecuteInternalCommands(ctx, InstallRunners, global.InstallRunnerCmds, global.RepoDir, nil, nil)
 		if err != nil {
 			pl.Logger.Errorf("Unable to install custom runners %v", err)
@@ -389,6 +390,6 @@ func (pl *Pipeline) getOauthSecret(repoID, gitProvider string) (*Oauth, error) {
 		pl.Logger.Errorf("error while unmarshaling json to oauth for RepoID %s : %s", repoID, err)
 	}
 
-	refreshedOauth.Data.Type = Bearer
+	refreshedOauth.Type = Bearer
 	return refreshedOauth, nil
 }

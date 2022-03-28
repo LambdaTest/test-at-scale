@@ -77,8 +77,8 @@ func (gm *gitManager) downloadFile(ctx context.Context, archiveURL, fileName str
 	if err != nil {
 		return err
 	}
-	if oauth.Data.AccessToken != "" {
-		req.Header.Add("Authorization", fmt.Sprintf("%s %s", oauth.Data.Type, oauth.Data.AccessToken))
+	if oauth.AccessToken != "" {
+		req.Header.Add("Authorization", fmt.Sprintf("%s %s", oauth.Type, oauth.AccessToken))
 	}
 	resp, err := gm.httpClient.Do(req)
 	if err != nil {
@@ -140,8 +140,8 @@ func (gm *gitManager) initGit(ctx context.Context, payload *core.Payload, oauth 
 		return perr
 	}
 
-	if oauth.Data.Type == core.Basic {
-		decodedToken, err := base64.StdEncoding.DecodeString(oauth.Data.AccessToken)
+	if oauth.Type == core.Basic {
+		decodedToken, err := base64.StdEncoding.DecodeString(oauth.AccessToken)
 		if err != nil {
 			gm.logger.Errorf("Failed to decode basic oauth token for RepoID %s: %s", payload.RepoID, err)
 			return err
@@ -150,7 +150,7 @@ func (gm *gitManager) initGit(ctx context.Context, payload *core.Payload, oauth 
 		creds := strings.Split(string(decodedToken), ":")
 		repoURL.User = url.UserPassword(creds[0], creds[1])
 	} else {
-		repoURL.User = url.UserPassword("x-token-auth", oauth.Data.AccessToken)
+		repoURL.User = url.UserPassword("x-token-auth", oauth.AccessToken)
 	}
 
 	urlWithToken := repoURL.String()

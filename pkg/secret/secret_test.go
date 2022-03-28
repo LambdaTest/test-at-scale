@@ -75,7 +75,7 @@ func Test_secretParser_GetOauthSecret(t *testing.T) {
 	if err != nil {
 		log.Fatalf("Could not parse time, error: %v", err)
 	}
-	Data := data{AccessToken: "token", Expiry: time, RefreshToken: "refresh", Type: core.Bearer}
+	oauthToken := core.Oauth{AccessToken: "token", Expiry: time, RefreshToken: "refresh", Type: core.Bearer}
 
 	type args struct {
 		path string
@@ -86,7 +86,7 @@ func Test_secretParser_GetOauthSecret(t *testing.T) {
 		want    *core.Oauth
 		wantErr bool
 	}{
-		{"Test for correct file", args{path: "../../testutils/testdata/secretTestData/secretOauthFile.json"}, &core.Oauth{Data: Data}, false},
+		{"Test for correct file", args{path: "../../testutils/testdata/secretTestData/secretOauthFile.json"}, &oauthToken, false},
 
 		{"Test for incorrect path", args{path: "../../testutils/testdata/secretTestData/PathNotExist/a.json"}, nil, true},
 
@@ -198,11 +198,9 @@ func Test_secretParser_Expired(t *testing.T) {
 			},
 			args: args{
 				token: &core.Oauth{
-					Data: data{
-						AccessToken:  "54321",
-						RefreshToken: "",
-						Expiry:       time.Now().Add(-time.Hour)},
-				},
+					AccessToken:  "54321",
+					RefreshToken: "",
+					Expiry:       time.Now().Add(-time.Hour)},
 			},
 			want: false,
 		},
@@ -214,10 +212,8 @@ func Test_secretParser_Expired(t *testing.T) {
 			},
 			args: args{
 				token: &core.Oauth{
-					Data: data{
-						AccessToken:  "",
-						RefreshToken: "54321"},
-				},
+					AccessToken:  "",
+					RefreshToken: "54321"},
 			},
 			want: true,
 		},
@@ -229,10 +225,8 @@ func Test_secretParser_Expired(t *testing.T) {
 			},
 			args: args{
 				token: &core.Oauth{
-					Data: data{
-						AccessToken:  "12345",
-						RefreshToken: "54321"},
-				},
+					AccessToken:  "12345",
+					RefreshToken: "54321"},
 			},
 			want: false,
 		},
@@ -244,11 +238,9 @@ func Test_secretParser_Expired(t *testing.T) {
 			},
 			args: args{
 				token: &core.Oauth{
-					Data: data{
-						AccessToken:  "12345",
-						RefreshToken: "54321",
-						Expiry:       time.Now().Add(time.Hour)},
-				},
+					AccessToken:  "12345",
+					RefreshToken: "54321",
+					Expiry:       time.Now().Add(time.Hour)},
 			},
 			want: false,
 		},
@@ -260,11 +252,9 @@ func Test_secretParser_Expired(t *testing.T) {
 			},
 			args: args{
 				token: &core.Oauth{
-					Data: data{
-						AccessToken:  "12345",
-						RefreshToken: "54321",
-						Expiry:       time.Now().Add(-time.Second)},
-				},
+					AccessToken:  "12345",
+					RefreshToken: "54321",
+					Expiry:       time.Now().Add(-time.Second)},
 			},
 			want: true,
 		},
@@ -276,11 +266,9 @@ func Test_secretParser_Expired(t *testing.T) {
 			},
 			args: args{
 				token: &core.Oauth{
-					Data: data{
-						AccessToken:  "12345",
-						RefreshToken: "54321",
-						Expiry:       time.Now().Add(time.Second * 600)},
-				},
+					AccessToken:  "12345",
+					RefreshToken: "54321",
+					Expiry:       time.Now().Add(time.Second * 600)},
 			},
 			want: true,
 		},

@@ -70,8 +70,8 @@ func (s *secretParser) GetOauthSecret(path string) (*core.Oauth, error) {
 	}
 
 	// If tokentype is not basic set it to bearer
-	if o.Data.Type != core.Basic {
-		o.Data.Type = core.Bearer
+	if o.Type != core.Basic {
+		o.Type = core.Bearer
 	}
 
 	return o, err
@@ -100,12 +100,12 @@ func (s *secretParser) SubstituteSecret(command string, secretData map[string]st
 }
 
 func (s *secretParser) Expired(token *core.Oauth) bool {
-	if len(token.Data.RefreshToken) == 0 {
+	if len(token.RefreshToken) == 0 {
 		return false
 	}
-	if token.Data.Expiry.IsZero() && len(token.Data.AccessToken) != 0 {
+	if token.Expiry.IsZero() && len(token.AccessToken) != 0 {
 		return false
 	}
-	return token.Data.Expiry.Add(-global.ExpiryDelta).
+	return token.Expiry.Add(-global.ExpiryDelta).
 		Before(time.Now())
 }
