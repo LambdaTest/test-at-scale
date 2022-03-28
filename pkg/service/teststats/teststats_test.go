@@ -53,7 +53,7 @@ func TestNew(t *testing.T) {
 					Timeout: global.DefaultHTTPTimeout,
 				},
 				ExecutionResultInputChannel:  make(chan core.ExecutionResults),
-				ExecutionResultOutputChannel: make(chan core.ExecutionResults),
+				ExecutionResultOutputChannel: make(chan *core.ExecutionResults),
 			}, false},
 	}
 	for _, tt := range tests {

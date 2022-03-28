@@ -89,7 +89,7 @@ func (gm *gitManager) downloadFile(ctx context.Context, archiveURL, fileName str
 
 	if resp.StatusCode != http.StatusOK {
 		gm.logger.Errorf("non 200 status while cloning from endpoint %s, status %d ", archiveURL, resp.StatusCode)
-		return errs.ErrApiStatus
+		return errs.ErrAPIStatus
 	}
 	err = gm.copyAndExtractFile(resp, fileName)
 	if err != nil {
