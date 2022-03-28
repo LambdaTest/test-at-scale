@@ -42,7 +42,6 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	var errRemark string
 	startTime := time.Now()
 
 	pl.Logger.Debugf("Starting pipeline.....")
@@ -106,12 +105,16 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 			taskPayload.Status = Error
 			taskPayload.Remark = errs.GenericErrRemark.Error()
 		} else if err != nil {
-			if err == context.Canceled {
+			if errors.Is(err, context.Canceled) {
 				taskPayload.Status = Aborted
 				taskPayload.Remark = "Task aborted"
 			} else {
-				taskPayload.Status = Error
-				taskPayload.Remark = errRemark
+				if _, ok := err.(*errs.StatusFailed); ok {
+					taskPayload.Status = Failed
+				} else {
+					taskPayload.Status = Error
+				}
+				taskPayload.Remark = err.Error()
 			}
 		}
 		if err := pl.Task.UpdateStatus(taskPayload); err != nil {
@@ -124,7 +127,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 		err = pl.GitManager.Clone(ctx, pl.Payload, oauth)
 		if err != nil {
 			pl.Logger.Errorf("Unable to clone repo '%s': %s", payload.RepoLink, err)
-			errRemark = fmt.Sprintf("Unable to clone repo: %s", payload.RepoLink)
+			err = &errs.StatusFailed{Remark: fmt.Sprintf("Unable to clone repo: %s", payload.RepoLink)}
 			return err
 		}
 	} else {
@@ -132,7 +135,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 		// Replicate workspace
 		if err = pl.CacheStore.ExtractWorkspace(ctx); err != nil {
 			pl.Logger.Errorf("Error replicating workspace: %+v", err)
-			errRemark = errs.GenericErrRemark.Error()
+			err = errs.New(errs.GenericErrRemark.Error())
 			return err
 		}
 	}
@@ -141,7 +144,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	tasConfig, err := pl.TASConfigManager.LoadAndValidate(ctx, payload.TasFileName, payload.EventType, payload.LicenseTier)
 	if err != nil {
 		pl.Logger.Errorf("Unable to load tas yaml file, error: %v", err)
-		errRemark = err.Error()
+		err = &errs.StatusFailed{Remark: err.Error()}
 		return err
 	}
 
@@ -181,7 +184,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 		err = pl.ExecutionManager.ExecuteInternalCommands(ctx, InstallNodeVer, commands, "", nil, nil)
 		if err != nil {
 			pl.Logger.Errorf("Unable to install user-defined nodeversion %v", err)
-			errRemark = errs.GenericErrRemark.Error()
+			err = errs.New(errs.GenericErrRemark.Error())
 			return err
 		}
 		origPath := os.Getenv("PATH")
@@ -191,7 +194,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	if payload.CollectCoverage {
 		if err = fileutils.CreateIfNotExists(coverageDir, true); err != nil {
 			pl.Logger.Errorf("failed to create coverage directory %v", err)
-			errRemark = errs.GenericErrRemark.Error()
+			err = errs.New(errs.GenericErrRemark.Error())
 			return err
 		}
 	}
@@ -200,7 +203,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	secretMap, err := pl.SecretParser.GetRepoSecret(global.RepoSecretPath)
 	if err != nil {
 		pl.Logger.Errorf("Error in fetching Repo secrets %v", err)
-		errRemark = errs.GenericErrRemark.Error()
+		err = errs.New(errs.GenericErrRemark.Error())
 		return err
 	}
 
@@ -208,13 +211,13 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 		err = pl.BlockTestService.GetBlockTests(ctx, tasConfig, payload.RepoID, payload.BranchName)
 		if err != nil {
 			pl.Logger.Errorf("Unable to fetch blocklisted tests: %v", err)
-			errRemark = errs.GenericErrRemark.Error()
+			err = errs.New(errs.GenericErrRemark.Error())
 			return err
 		}
 
 		if err = pl.CacheStore.Download(ctx, cacheKey); err != nil {
 			pl.Logger.Errorf("Unable to download cache: %v", err)
-			errRemark = errs.GenericErrRemark.Error()
+			err = errs.New(errs.GenericErrRemark.Error())
 			return err
 		}
 
@@ -223,14 +226,14 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 			err = pl.ExecutionManager.ExecuteUserCommands(ctx, PreRun, payload, tasConfig.Prerun, secretMap)
 			if err != nil {
 				pl.Logger.Errorf("Unable to run pre-run steps %v", err)
-				errRemark = "Error occurred in pre-run steps"
+				err = &errs.StatusFailed{Remark: "Failed in running pre-run steps"}
 				return err
 			}
 		}
 		err = pl.ExecutionManager.ExecuteInternalCommands(ctx, InstallRunners, global.InstallRunnerCmds, global.RepoDir, nil, nil)
 		if err != nil {
 			pl.Logger.Errorf("Unable to install custom runners %v", err)
-			errRemark = errs.GenericErrRemark.Error()
+			err = errs.New(errs.GenericErrRemark.Error())
 			return err
 		}
 
@@ -242,7 +245,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 				diffExists = false
 			} else {
 				pl.Logger.Errorf("Unable to identify changed files %s", err)
-				errRemark = "Error occurred in fetching diff from GitHub"
+				err = errs.New("Error occurred in fetching diff from GitHub")
 				return err
 			}
 		}
@@ -251,7 +254,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 		err = pl.TestDiscoveryService.Discover(ctx, tasConfig, pl.Payload, secretMap, diff, diffExists)
 		if err != nil {
 			pl.Logger.Errorf("Unable to perform test discovery: %+v", err)
-			errRemark = "Error occurred in discovering tests"
+			err = &errs.StatusFailed{Remark: "Failed in discovering tests"}
 			return err
 		}
 		// mark status as passed
@@ -261,33 +264,34 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 		// Persist workspace
 		if err = pl.CacheStore.CacheWorkspace(ctx); err != nil {
 			pl.Logger.Errorf("Error caching workspace: %+v", err)
-			errRemark = errs.GenericErrRemark.Error()
+			err = errs.New(errs.GenericErrRemark.Error())
 			return err
 		}
 
 		// Upload cache once for other builds
 		if err = pl.CacheStore.Upload(ctx, cacheKey, tasConfig.Cache.Paths...); err != nil {
 			pl.Logger.Errorf("Unable to upload cache: %v", err)
-			errRemark = errs.GenericErrRemark.Error()
+			err = errs.New(errs.GenericErrRemark.Error())
 			return err
 		}
 		pl.Logger.Debugf("Cache uploaded successfully")
 	}
 
 	if pl.Cfg.ExecuteMode {
-
 		pl.Logger.Debugf("execute Mode")
 		// execute test cases
 		executionResults, err := pl.TestExecutionService.Run(ctx, tasConfig, pl.Payload, coverageDir, secretMap)
 		if err != nil {
 			pl.Logger.Infof("Unable to perform test execution: %v", err)
-			errRemark = "Error occurred in executing tests"
-			return err
+			err = &errs.StatusFailed{Remark: "Failed in executing tests"}
+			if executionResults == nil {
+				return err
+			}
 		}
 
 		if err = pl.sendStats(*executionResults); err != nil {
 			pl.Logger.Errorf("error while sending test reports %v", err)
-			errRemark = errs.GenericErrRemark.Error()
+			err = errs.New(errs.GenericErrRemark.Error())
 			return err
 		}
 
@@ -298,7 +302,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 			err = pl.ExecutionManager.ExecuteUserCommands(ctx, PostRun, payload, tasConfig.Postrun, secretMap)
 			if err != nil {
 				pl.Logger.Errorf("Unable to run post-run steps %v", err)
-				errRemark = "Error occurred in post-run steps"
+				err = &errs.StatusFailed{Remark: "Failed in running post-run steps"}
 				return err
 			}
 		}

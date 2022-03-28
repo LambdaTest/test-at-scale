@@ -178,7 +178,7 @@ func (s *Store) GetSASURL(ctx context.Context, containerPath string, containerTy
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		s.logger.Errorf("error while getting SAS Token, status code %d", resp.StatusCode)
-		return "", errs.ErrApiStatus
+		return "", errs.ErrAPIStatus
 	}
 
 	rawBytes, err := ioutil.ReadAll(resp.Body)

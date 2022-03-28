@@ -65,8 +65,6 @@ func (s *ProcStats) CaptureTestStats(pid int32, collectStats bool) error {
 			// Can reach here in 2 cases (ie `/results` API wasn't called):
 			// 1. runner process exited with zero exit exitCode but no testFiles were run (changes in Readme.md etc)
 			// 2. runner process exited with non-zero exitCode
-			// In second case, non-zero exitCodes are already captured and sent as
-			// "Task error" when updating task status to neuron in lifeycle.go
 			s.logger.Warnf("No test results found, pid %d", pid)
 			s.ExecutionResultOutputChannel <- core.ExecutionResults{}
 		}
