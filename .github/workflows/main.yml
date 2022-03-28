@@ -145,6 +145,7 @@ jobs:
             echo "NUCLEUS_TAGS=${REGISTRY_NAME}/nucleus:base-${GITHUB_REF_SLUG}" >> $GITHUB_ENV
             echo "SYNAPSE_TAGS=${REGISTRY_NAME}/synapse:${GITHUB_REF_SLUG}" >> $GITHUB_ENV
           fi
+          echo "BOTNAME=Test-at-Scale bot ${GITHUB_REF_SLUG}" >> $GITHUB_ENV
 
       - name: Docker Login
         uses: docker/login-action@v1.13.0
@@ -171,3 +172,11 @@ jobs:
           file: build/synapse/Dockerfile
           push: true
 
+      - uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,message,commit,author,action,eventName,ref,workflow,job,took
+          author_name: ${{ env.BOTNAME }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        if: always()
