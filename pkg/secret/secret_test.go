@@ -152,6 +152,7 @@ func TestSubstituteSecret(t *testing.T) {
 	}
 }
 
+//nolint:funlen
 func TestExpired(t *testing.T) {
 	logger, err := lumber.NewLogger(lumber.LoggingConfig{EnableConsole: true}, true, lumber.InstanceZapLogger)
 	if err != nil {

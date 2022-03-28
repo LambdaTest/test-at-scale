@@ -100,10 +100,10 @@ func (s *secretParser) SubstituteSecret(command string, secretData map[string]st
 }
 
 func (s *secretParser) Expired(token *core.Oauth) bool {
-	if len(token.RefreshToken) == 0 {
+	if token.RefreshToken == "" {
 		return false
 	}
-	if token.Expiry.IsZero() && len(token.AccessToken) != 0 {
+	if token.Expiry.IsZero() && token.AccessToken != "" {
 		return false
 	}
 	return token.Expiry.Add(-global.ExpiryDelta).
