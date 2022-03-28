@@ -135,15 +135,6 @@ func (tes *testExecutionService) Run(ctx context.Context,
 	return &executionResults, errC
 }
 
-func (tes *testExecutionService) closeAndWriteLog(azureWriter *io.PipeWriter, errChan <-chan error) error {
-	azureWriter.Close()
-	if err := <-errChan; err != nil {
-		tes.logger.Errorf("failed to upload logs for test execution, error: %v", err)
-		return err
-	}
-	return nil
-}
-
 // func (tes *testExecutionService) createCoverageManifest(tasConfig *core.TASConfig, coverageDirectory string, removedFiles []string, executeAll bool) error {
 // 	manifestFile := core.CoverageManifest{
 // 		Removedfiles:     removedFiles,
@@ -201,4 +192,11 @@ func (tes *testExecutionService) GetLocatorsFile(ctx context.Context, locatorAdd
 		return "", err
 	}
 	return locatorFilePath, err
+}
+
+func (tes *testExecutionService) closeAndWriteLog(azureWriter *io.PipeWriter, errChan <-chan error) {
+	azureWriter.Close()
+	if err := <-errChan; err != nil {
+		tes.logger.Errorf("failed to upload logs for test execution, error: %v", err)
+	}
 }
