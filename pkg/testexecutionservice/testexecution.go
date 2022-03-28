@@ -132,7 +132,7 @@ func (tes *testExecutionService) Run(ctx context.Context,
 	// 		return nil, err
 	// 	}
 	// }
-	return &executionResults, errC
+	return executionResults, errC
 }
 
 // func (tes *testExecutionService) createCoverageManifest(tasConfig *core.TASConfig, coverageDirectory string, removedFiles []string, executeAll bool) error {
