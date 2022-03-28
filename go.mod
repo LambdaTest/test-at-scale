@@ -15,6 +15,7 @@ require (
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/websocket v1.4.2
 	github.com/joho/godotenv v1.4.0
+	github.com/lestrrat-go/backoff v1.0.1
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/shirou/gopsutil/v3 v3.21.1
 	github.com/sirupsen/logrus v1.8.1

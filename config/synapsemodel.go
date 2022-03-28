@@ -24,7 +24,8 @@ type LambdatestConfig struct {
 
 // GitConfig contains git token
 type GitConfig struct {
-	Token string
+	Token     string
+	TokenType string
 }
 
 // PullPolicyType defines when to pull docker image

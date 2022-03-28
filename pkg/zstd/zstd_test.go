@@ -2,6 +2,7 @@ package zstd
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -131,14 +132,14 @@ func Test_zstdCompressor_Compress(t *testing.T) {
 				return
 			}
 
-			expectedArgs := []string{z.execPath, "--posix", "-I", "'zstd -5 -T0'", "-cf", "compressedFileName", "-C", "./", "-T", filepath.Join(os.TempDir(), manifestFileName)}
+			command := fmt.Sprintf("%s --posix -I 'zstd -5 -T0' -cf compressedFileName -C ./ -T %s", z.execPath, filepath.Join(os.TempDir(), manifestFileName))
 
 			if tt.args.preservePath {
-				expectedArgs = append(expectedArgs, "-P")
+				command = fmt.Sprintf("%s -P", command)
 			}
-
-			if !reflect.DeepEqual(ReceivedArgs, expectedArgs) {
-				t.Errorf("Expected args: %v, got: %v", expectedArgs, ReceivedArgs)
+			commands := []string{command}
+			if !reflect.DeepEqual(ReceivedArgs, commands) {
+				t.Errorf("Expected commands: %v, got: %v", commands, ReceivedArgs)
 			}
 		})
 	}
@@ -204,14 +205,14 @@ func Test_zstdCompressor_Decompress(t *testing.T) {
 				return
 			}
 
-			expectedArgs := []string{z.execPath, "--posix", "-I", "'zstd -d'", "-xf", "./", "-C", "./"}
+			command := fmt.Sprintf("%s --posix -I 'zstd -d' -xf ./ -C ./", z.execPath)
 
 			if tt.args.preservePath {
-				expectedArgs = append(expectedArgs, "-P")
+				command = fmt.Sprintf("%s -P", command)
 			}
-
-			if !reflect.DeepEqual(ReceivedArgs, expectedArgs) {
-				t.Errorf("Expected args: %v, got: %v", expectedArgs, ReceivedArgs)
+			commands := []string{command}
+			if !reflect.DeepEqual(ReceivedArgs, commands) {
+				t.Errorf("Expected args: %v, got: %v", commands, ReceivedArgs)
 			}
 		})
 	}

@@ -4,13 +4,23 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/LambdaTest/synapse/pkg/core"
+	"github.com/LambdaTest/synapse/pkg/global"
 	"github.com/LambdaTest/synapse/pkg/lumber"
 )
+
+//nolint unused
+type data struct {
+	AccessToken  string         `json:"access_token"`
+	Expiry       time.Time      `json:"expiry"`
+	RefreshToken string         `json:"refresh_token"`
+	Type         core.TokenType `json:"token_type,omitempty"`
+}
 
 func Test_secretParser_GetRepoSecret(t *testing.T) {
 	logger, err := lumber.NewLogger(lumber.LoggingConfig{EnableConsole: true}, true, lumber.InstanceZapLogger)
@@ -61,16 +71,11 @@ func Test_secretParser_GetOauthSecret(t *testing.T) {
 		log.Fatalf("Could not instantiate logger %s", err.Error())
 	}
 	secretParser := New(logger)
-	type data struct {
-		AccessToken  string    `json:"access_token"`
-		Expiry       time.Time `json:"expiry"`
-		RefreshToken string    `json:"refresh_token"`
-	}
 	time, err := time.Parse("Mon, 02 Jan 2006 15:04:05 MST", "Tue, 22 Feb 2022 16:22:01 IST")
 	if err != nil {
 		log.Fatalf("Could not parse time, error: %v", err)
 	}
-	Data := data{AccessToken: "token", Expiry: time, RefreshToken: "refresh"}
+	Data := data{AccessToken: "token", Expiry: time, RefreshToken: "refresh", Type: core.Bearer}
 
 	type args struct {
 		path string
@@ -94,9 +99,9 @@ func Test_secretParser_GetOauthSecret(t *testing.T) {
 				t.Errorf("secretParser.GetOauthSecret() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			expected := "&{{token 2022-02-22 16:22:01 +0530 IST refresh}}"
+			expected := fmt.Sprintf("%v", tt.want)
 			received := fmt.Sprintf("%v", got)
-			if got != nil && !(strings.HasPrefix(received, "&{{token") && strings.HasSuffix(received, "refresh}}")) {
+			if got != nil && !(strings.HasPrefix(received, "&{{token") && strings.HasSuffix(received, "Bearer}}")) {
 				t.Errorf("Expected: %v, got: %v", expected, received)
 				return
 			}
@@ -161,6 +166,133 @@ func TestSubstituteSecret(t *testing.T) {
 					expr.input,
 					expr.output,
 					output)
+			}
+		})
+	}
+}
+
+func Test_secretParser_Expired(t *testing.T) {
+	logger, err := lumber.NewLogger(lumber.LoggingConfig{EnableConsole: true}, true, lumber.InstanceZapLogger)
+	if err != nil {
+		log.Fatalf("Could not instantiate logger %s", err.Error())
+	}
+
+	type fields struct {
+		logger      lumber.Logger
+		secretRegex *regexp.Regexp
+	}
+	type args struct {
+		token *core.Oauth
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   bool
+	}{
+		{
+			name: "Missing Refresh Token",
+			fields: fields{
+				logger:      logger,
+				secretRegex: regexp.MustCompile(global.SecretRegex),
+			},
+			args: args{
+				token: &core.Oauth{
+					Data: data{
+						AccessToken:  "54321",
+						RefreshToken: "",
+						Expiry:       time.Now().Add(-time.Hour)},
+				},
+			},
+			want: false,
+		},
+		{
+			name: "Missing Access Token",
+			fields: fields{
+				logger:      logger,
+				secretRegex: regexp.MustCompile(global.SecretRegex),
+			},
+			args: args{
+				token: &core.Oauth{
+					Data: data{
+						AccessToken:  "",
+						RefreshToken: "54321"},
+				},
+			},
+			want: true,
+		},
+		{
+			name: "Missing Time",
+			fields: fields{
+				logger:      logger,
+				secretRegex: regexp.MustCompile(global.SecretRegex),
+			},
+			args: args{
+				token: &core.Oauth{
+					Data: data{
+						AccessToken:  "12345",
+						RefreshToken: "54321"},
+				},
+			},
+			want: false,
+		},
+		{
+			name: "Token Valid",
+			fields: fields{
+				logger:      logger,
+				secretRegex: regexp.MustCompile(global.SecretRegex),
+			},
+			args: args{
+				token: &core.Oauth{
+					Data: data{
+						AccessToken:  "12345",
+						RefreshToken: "54321",
+						Expiry:       time.Now().Add(time.Hour)},
+				},
+			},
+			want: false,
+		},
+		{
+			name: "Token Expire",
+			fields: fields{
+				logger:      logger,
+				secretRegex: regexp.MustCompile(global.SecretRegex),
+			},
+			args: args{
+				token: &core.Oauth{
+					Data: data{
+						AccessToken:  "12345",
+						RefreshToken: "54321",
+						Expiry:       time.Now().Add(-time.Second)},
+				},
+			},
+			want: true,
+		},
+		{
+			name: "Token not Expiredn but in expiry buffer",
+			fields: fields{
+				logger:      logger,
+				secretRegex: regexp.MustCompile(global.SecretRegex),
+			},
+			args: args{
+				token: &core.Oauth{
+					Data: data{
+						AccessToken:  "12345",
+						RefreshToken: "54321",
+						Expiry:       time.Now().Add(time.Second * 600)},
+				},
+			},
+			want: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := &secretParser{
+				logger:      tt.fields.logger,
+				secretRegex: tt.fields.secretRegex,
+			}
+			if got := s.Expired(tt.args.token); got != tt.want {
+				t.Errorf("secretParser.Expired() = %v, want %v", got, tt.want)
 			}
 		})
 	}

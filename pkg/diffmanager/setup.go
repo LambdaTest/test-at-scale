@@ -62,7 +62,7 @@ func (dm *diffManager) updateWithOr(m map[string]int, key string, value int) {
 	m[key] = m[key] | value
 }
 
-func (dm *diffManager) getCommitDiff(gitprovider, repoURL string, cloneToken string, baseCommit, targetCommit string) ([]byte, error) {
+func (dm *diffManager) getCommitDiff(gitprovider, repoURL string, oauth *core.Oauth, baseCommit, targetCommit, forkSlug string) ([]byte, error) {
 	if baseCommit == "" {
 		dm.logger.Debugf("basecommit is empty for gitprovider %v error %v", gitprovider, errs.ErrGitDiffNotFound)
 		return nil, errs.ErrGitDiffNotFound
@@ -72,7 +72,7 @@ func (dm *diffManager) getCommitDiff(gitprovider, repoURL string, cloneToken str
 		return nil, err
 	}
 
-	apiURLString, err := urlmanager.GetCommitDiffURL(gitprovider, url.Path, baseCommit, targetCommit)
+	apiURLString, err := urlmanager.GetCommitDiffURL(gitprovider, url.Path, baseCommit, targetCommit, forkSlug)
 	if err != nil {
 		dm.logger.Errorf("failed to get api url for gitprovider: %v error: %v", gitprovider, err)
 		return nil, err
@@ -85,8 +85,8 @@ func (dm *diffManager) getCommitDiff(gitprovider, repoURL string, cloneToken str
 	if err != nil {
 		return nil, err
 	}
-	if cloneToken != "" {
-		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", cloneToken))
+	if oauth.Data.AccessToken != "" {
+		req.Header.Add("Authorization", fmt.Sprintf("%s %s", oauth.Data.Type, oauth.Data.AccessToken))
 	}
 	req.Header.Add("Accept", "application/vnd.github.v3.diff")
 	resp, err := dm.client.Do(req)
@@ -102,7 +102,7 @@ func (dm *diffManager) getCommitDiff(gitprovider, repoURL string, cloneToken str
 	return ioutil.ReadAll(resp.Body)
 }
 
-func (dm *diffManager) getPRDiff(gitprovider, repoURL string, prNumber int, cloneToken string) ([]byte, error) {
+func (dm *diffManager) getPRDiff(gitprovider, repoURL string, prNumber int, oauth *core.Oauth) ([]byte, error) {
 	parsedUrl, err := url.Parse(repoURL)
 	if err != nil {
 		return nil, err
@@ -123,7 +123,7 @@ func (dm *diffManager) getPRDiff(gitprovider, repoURL string, prNumber int, clon
 		dm.logger.Errorf("failed to create http request for changelist url error: %v", err)
 		return nil, err
 	}
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", cloneToken))
+	req.Header.Add("Authorization", fmt.Sprintf("%s %s", oauth.Data.Type, oauth.Data.AccessToken))
 	req.Header.Set("Accept", "application/vnd.github.v3.diff")
 
 	resp, err := dm.client.Do(req)
@@ -197,20 +197,20 @@ func (dm *diffManager) parseGitDiff(gitprovider string, eventType core.EventType
 }
 
 // GetChangedFiles Figure out changed files
-func (dm *diffManager) GetChangedFiles(ctx context.Context, payload *core.Payload, cloneToken string) (map[string]int, error) {
+func (dm *diffManager) GetChangedFiles(ctx context.Context, payload *core.Payload, oauth *core.Oauth) (map[string]int, error) {
 	// map to store file and type of change (added, removed, modified)
 	var m map[string]int
 
 	var diff []byte
 	var err error
 	if payload.EventType == core.EventPullRequest {
-		diff, err = dm.getPRDiff(payload.GitProvider, payload.RepoLink, payload.PullRequestNumber, cloneToken)
+		diff, err = dm.getPRDiff(payload.GitProvider, payload.RepoLink, payload.PullRequestNumber, oauth)
 		if err != nil {
 			dm.logger.Errorf("failed to parse pr diff for gitprovider: %s error: %v", payload.GitProvider, err)
 			return nil, err
 		}
 	} else {
-		diff, err = dm.getCommitDiff(payload.GitProvider, payload.RepoLink, cloneToken, payload.BuildBaseCommit, payload.BuildTargetCommit)
+		diff, err = dm.getCommitDiff(payload.GitProvider, payload.RepoLink, oauth, payload.BuildBaseCommit, payload.BuildTargetCommit, payload.ForkSlug)
 		if err != nil {
 			dm.logger.Errorf("failed to get commit diff for gitprovider: %s error: %v", payload.GitProvider, err)
 			return nil, err

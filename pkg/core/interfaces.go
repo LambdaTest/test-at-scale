@@ -15,19 +15,19 @@ type PayloadManager interface {
 
 // TASConfigManager defines operations for tas config
 type TASConfigManager interface {
-	// LoadConfig loads the TASConfig from the given path
-	LoadConfig(ctx context.Context, path string, eventType EventType, parseMode bool) (*TASConfig, error)
+	// LoadAndValidate loads the TASConfig from the given path
+	LoadAndValidate(ctx context.Context, path string, eventType EventType, licenseTier Tier) (*TASConfig, error)
 }
 
 // GitManager manages the cloning of git repositories
 type GitManager interface {
 	// Clone repository from TAS config
-	Clone(ctx context.Context, payload *Payload, cloneToken string) error
+	Clone(ctx context.Context, payload *Payload, oauth *Oauth) error
 }
 
 // DiffManager manages the diff findings for the given payload
 type DiffManager interface {
-	GetChangedFiles(ctx context.Context, payload *Payload, cloneToken string) (map[string]int, error)
+	GetChangedFiles(ctx context.Context, payload *Payload, oauth *Oauth) (map[string]int, error)
 }
 
 // TestDiscoveryService services discovery of tests
@@ -50,12 +50,6 @@ type TestExecutionService interface {
 // CoverageService services coverage of tests
 type CoverageService interface {
 	MergeAndUpload(ctx context.Context, payload *Payload) error
-}
-
-// YMLParserService parses the .tas.yml files
-type YMLParserService interface {
-	// ParseAndValidate the YML file and validades it
-	ParseAndValidate(ctx context.Context, payload *Payload) error
 }
 
 // TestStats is used for servicing stat collection
@@ -107,9 +101,14 @@ type CacheStore interface {
 
 // SecretParser defines operation for parsing the vault secrets in given path
 type SecretParser interface {
+	// GetOauthSecret parses the oauth secret for given path
 	GetOauthSecret(filepath string) (*Oauth, error)
+	// GetRepoSecret parses the repo secret for given path
 	GetRepoSecret(string) (map[string]string, error)
+	// SubstituteSecret replace secret placeholders with their respective values
 	SubstituteSecret(command string, secretData map[string]string) (string, error)
+	// Expired reports whether the token is expired.
+	Expired(token *Oauth) bool
 }
 
 // ExecutionManager has responsibility for executing the preRun, postRun and internal commands
@@ -122,4 +121,9 @@ type ExecutionManager interface {
 	GetEnvVariables(envMap, secretData map[string]string) ([]string, error)
 	// StoreCommandLogs stores the command logs in the azure.
 	StoreCommandLogs(ctx context.Context, blobPath string, reader io.Reader) <-chan error
+}
+
+// Requests is a util interface for making API Requests
+type Requests interface {
+	MakeAPIRequest(ctx context.Context, httpMethod, endpoint string, body []byte) error
 }

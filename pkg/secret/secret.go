@@ -6,6 +6,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/LambdaTest/synapse/pkg/core"
 	"github.com/LambdaTest/synapse/pkg/errs"
@@ -68,9 +69,15 @@ func (s *secretParser) GetOauthSecret(path string) (*core.Oauth, error) {
 		return nil, err
 	}
 
+	// If tokentype is not basic set it to bearer
+	if o.Data.Type != core.Basic {
+		o.Data.Type = core.Bearer
+	}
+
 	return o, err
 }
 
+// SubstituteSecret replace secret placeholders with their respective values
 func (s *secretParser) SubstituteSecret(command string, secretData map[string]string) (string, error) {
 	matches := s.secretRegex.FindAllStringSubmatch(command, -1)
 	if matches == nil {
@@ -90,4 +97,15 @@ func (s *secretParser) SubstituteSecret(command string, secretData map[string]st
 	}
 
 	return result, nil
+}
+
+func (s *secretParser) Expired(token *core.Oauth) bool {
+	if len(token.Data.RefreshToken) == 0 {
+		return false
+	}
+	if token.Data.Expiry.IsZero() && len(token.Data.AccessToken) != 0 {
+		return false
+	}
+	return token.Data.Expiry.Add(-global.ExpiryDelta).
+		Before(time.Now())
 }

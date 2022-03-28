@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
 	"github.com/LambdaTest/synapse/pkg/lumber"
+	"github.com/LambdaTest/synapse/pkg/requestutils"
 	"github.com/LambdaTest/synapse/testutils"
 )
 
@@ -29,26 +29,22 @@ func TestTask_UpdateStatus(t *testing.T) {
 		defer server.Close()
 
 		logger, err := lumber.NewLogger(lumber.LoggingConfig{ConsoleLevel: lumber.Debug}, true, 1)
+		requests := requestutils.New(logger)
 		if err != nil {
 			fmt.Println("Logger can't be established")
-		}
-
-		cfg, err := testutils.GetConfig()
-		if err != nil {
-			fmt.Printf("Unable to get config, received: %v", err)
 		}
 
 		taskPayload, err := testutils.GetTaskPayload()
 		if err != nil {
 			t.Errorf("Couldn't get task payload, received: %v", err)
 		}
-		_, err2 := New(context.TODO(), cfg, logger)
+		_, err2 := New(context.TODO(), requests, logger)
 		if err2 != nil {
 			t.Errorf("New task couldn't initialised, received: %v", err)
 		}
 		tk := &task{
 			ctx:      context.TODO(),
-			client:   http.Client{Timeout: 30 * time.Second},
+			requests: requests,
 			logger:   logger,
 			endpoint: server.URL + "/task",
 		}
@@ -90,6 +86,7 @@ func TestTask_UpdateStatusForError(t *testing.T) {
 		defer server.Close()
 
 		logger, err := lumber.NewLogger(lumber.LoggingConfig{ConsoleLevel: lumber.Debug}, true, 1)
+		requests := requestutils.New(logger)
 		if err != nil {
 			fmt.Println("Logger can't be established")
 		}
@@ -100,7 +97,7 @@ func TestTask_UpdateStatusForError(t *testing.T) {
 		}
 		tk := &task{
 			ctx:      context.TODO(),
-			client:   http.Client{Timeout: 30 * time.Second},
+			requests: requests,
 			logger:   logger,
 			endpoint: server.URL + "/task",
 		}

@@ -32,6 +32,14 @@ const (
 	packageJSON        = "package.json"
 )
 
+var tierEnumMapping = map[core.Tier]int{
+	core.XSmall: 1,
+	core.Small:  2,
+	core.Medium: 3,
+	core.Large:  4,
+	core.XLarge: 5,
+}
+
 // tasConfigManager represents an instance of TASConfigManager instance
 type tasConfigManager struct {
 	logger     lumber.Logger
@@ -52,12 +60,10 @@ func NewTASConfigManager(logger lumber.Logger) core.TASConfigManager {
 	return &tasConfigManager{logger: logger, uni: uni, validate: validate, translator: trans}
 }
 
-// LoadConfig used for loading and validating the  tas configuration values provided by user
-func (tc *tasConfigManager) LoadConfig(ctx context.Context,
+func (tc *tasConfigManager) LoadAndValidate(ctx context.Context,
 	path string,
 	eventType core.EventType,
-	parseMode bool) (*core.TASConfig, error) {
-
+	licenseTier core.Tier) (*core.TASConfig, error) {
 	path, err := utils.GetConfigFileName(path)
 	if err != nil {
 		return nil, err
@@ -92,10 +98,9 @@ func (tc *tasConfigManager) LoadConfig(ctx context.Context,
 
 		tc.logger.Errorf("Error while validating yaml file, error %v", validateErr)
 		return nil, errors.New(errMsg)
-
 	}
 
-	if !parseMode && tasConfig.Cache == nil {
+	if tasConfig.Cache == nil {
 		checksum, err := utils.ComputeChecksum(fmt.Sprintf("%s/%s", global.RepoDir, packageJSON))
 		if err != nil {
 			tc.logger.Errorf("Error while computing checksum, error %v", err)
@@ -121,6 +126,10 @@ func (tc *tasConfigManager) LoadConfig(ctx context.Context,
 			return nil, errs.New("`postMerge` is not configured in configuration file")
 		}
 	}
+	if err := isValidLicenseTier(tasConfig.Tier, licenseTier); err != nil {
+		tc.logger.Errorf("LicenseTier validation failed. error: %v", err)
+		return nil, err
+	}
 	return tasConfig, nil
 }
 
@@ -141,4 +150,11 @@ func configureValidator(validate *validator.Validate, trans ut.Translator) {
 		t, _ := ut.T(requiredTagName, fe.Namespace()[i+1:])
 		return t
 	})
+}
+
+func isValidLicenseTier(yamlLicense, currentLicense core.Tier) error {
+	if tierEnumMapping[yamlLicense] > tierEnumMapping[currentLicense] {
+		return fmt.Errorf("Tier must not exceed max tier in license %v", currentLicense)
+	}
+	return nil
 }

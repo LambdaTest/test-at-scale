@@ -6,9 +6,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 	"strconv"
 	"time"
 
@@ -21,10 +23,8 @@ import (
 
 const (
 	endpointPostTestResults = "http://localhost:9876/results"
+	endpointPostTestList    = "http://localhost:9876/test-list"
 )
-
-var endpointPostTestList string
-var endpointNeuronReport string
 
 // NewPipeline creates and returns a new Pipeline instance
 func NewPipeline(cfg *config.NucleusConfig, logger lumber.Logger) (*Pipeline, error) {
@@ -48,8 +48,6 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	pl.Logger.Debugf("Starting pipeline.....")
 	pl.Logger.Debugf("Fetching config")
 
-	endpointPostTestList = global.NeuronHost + "/test-list"
-	endpointNeuronReport = global.NeuronHost + "/report"
 	// fetch configuration
 	payload, err := pl.PayloadManager.FetchPayload(ctx, pl.Cfg.PayloadAddress)
 	if err != nil {
@@ -70,23 +68,13 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 		os.Exit(0)
 	}
 
-	oauth, err := pl.SecretParser.GetOauthSecret(global.OauthSecretPath)
+	oauth, err := pl.getOauthSecret(payload.RepoID, payload.GitProvider)
 	if err != nil {
 		pl.Logger.Fatalf("failed to get oauth secret %v", err)
 	}
 
 	// set payload on pipeline object
 	pl.Payload = payload
-	if pl.Cfg.ParseMode {
-		err = pl.GitManager.Clone(ctx, payload, oauth.Data.AccessToken)
-		if err != nil {
-			pl.Logger.Fatalf("failed to clone YML for build ID: %s, error: %v", payload.BuildID, err)
-		}
-		if err = pl.ParserService.ParseAndValidate(ctx, payload); err != nil {
-			pl.Logger.Fatalf("error while parsing YML for build ID: %s, error: %v", payload.BuildID, err)
-		}
-		os.Exit(0)
-	}
 
 	taskPayload := &TaskPayload{
 		TaskID:      payload.TaskID,
@@ -114,7 +102,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	defer func() {
 		taskPayload.EndTime = time.Now()
 		if p := recover(); p != nil {
-			pl.Logger.Errorf("panic stack trace: %v", p)
+			pl.Logger.Errorf("panic stack trace: %v\n%s", p, string(debug.Stack()))
 			taskPayload.Status = Error
 			taskPayload.Remark = errs.GenericErrRemark.Error()
 		} else if err != nil {
@@ -133,7 +121,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 
 	if pl.Cfg.DiscoverMode {
 		pl.Logger.Infof("Cloning repo ...")
-		err = pl.GitManager.Clone(ctx, pl.Payload, oauth.Data.AccessToken)
+		err = pl.GitManager.Clone(ctx, pl.Payload, oauth)
 		if err != nil {
 			pl.Logger.Errorf("Unable to clone repo '%s': %s", payload.RepoLink, err)
 			errRemark = fmt.Sprintf("Unable to clone repo: %s", payload.RepoLink)
@@ -150,7 +138,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	}
 
 	// load tas yaml file
-	tasConfig, err := pl.TASConfigManager.LoadConfig(ctx, payload.TasFileName, payload.EventType, false)
+	tasConfig, err := pl.TASConfigManager.LoadAndValidate(ctx, payload.TasFileName, payload.EventType, payload.LicenseTier)
 	if err != nil {
 		pl.Logger.Errorf("Unable to load tas yaml file, error: %v", err)
 		errRemark = err.Error()
@@ -182,13 +170,15 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 
 	if tasConfig.NodeVersion != nil {
 		nodeVersion := tasConfig.NodeVersion.String()
-		// Running the `source` command in a directory where .nvmrc is present, exits with exitCode 3
+		// Running the `source` commands in a directory where .nvmrc is present, exits with exitCode 3
 		// https://github.com/nvm-sh/nvm/issues/1985
 		// TODO [good-to-have]: Auto-read and install from .nvmrc file, if present
-		command := []string{"source", "/home/nucleus/.nvm/nvm.sh",
-			"&&", "nvm", "install", nodeVersion}
+		commands := []string{
+			"source /home/nucleus/.nvm/nvm.sh",
+			fmt.Sprintf("nvm install %s", nodeVersion),
+		}
 		pl.Logger.Infof("Using user-defined node version: %v", nodeVersion)
-		err = pl.ExecutionManager.ExecuteInternalCommands(ctx, InstallNodeVer, command, "", nil, nil)
+		err = pl.ExecutionManager.ExecuteInternalCommands(ctx, InstallNodeVer, commands, "", nil, nil)
 		if err != nil {
 			pl.Logger.Errorf("Unable to install user-defined nodeversion %v", err)
 			errRemark = errs.GenericErrRemark.Error()
@@ -237,7 +227,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 				return err
 			}
 		}
-		err = pl.ExecutionManager.ExecuteInternalCommands(ctx, InstallRunners, global.InstallRunnerCmd, global.RepoDir, nil, nil)
+		err = pl.ExecutionManager.ExecuteInternalCommands(ctx, InstallRunners, global.InstallRunnerCmds, global.RepoDir, nil, nil)
 		if err != nil {
 			pl.Logger.Errorf("Unable to install custom runners %v", err)
 			errRemark = errs.GenericErrRemark.Error()
@@ -246,7 +236,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 
 		pl.Logger.Infof("Identifying changed files ...")
 		diffExists := true
-		diff, err := pl.DiffManager.GetChangedFiles(ctx, payload, oauth.Data.AccessToken)
+		diff, err := pl.DiffManager.GetChangedFiles(ctx, payload, oauth)
 		if err != nil {
 			if errors.Is(err, errs.ErrGitDiffNotFound) {
 				diffExists = false
@@ -308,7 +298,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 			err = pl.ExecutionManager.ExecuteUserCommands(ctx, PostRun, payload, tasConfig.Postrun, secretMap)
 			if err != nil {
 				pl.Logger.Errorf("Unable to run post-run steps %v", err)
-				errRemark = "Error occurred in pre-run steps"
+				errRemark = "Error occurred in post-run steps"
 				return err
 			}
 		}
@@ -331,6 +321,7 @@ func findTaskPayloadStatus(executionResults *ExecutionResults) Status {
 }
 
 func (pl *Pipeline) sendStats(payload ExecutionResults) error {
+	endpointNeuronReport := global.NeuronHost + "/report"
 	reqBody, err := json.Marshal(payload)
 	if err != nil {
 		pl.Logger.Errorf("failed to marshal request body %v", err)
@@ -357,4 +348,43 @@ func (pl *Pipeline) sendStats(payload ExecutionResults) error {
 		return errors.New("non 200 status")
 	}
 	return nil
+}
+
+// getOauthSecret returns a valid oauth token
+func (pl *Pipeline) getOauthSecret(repoID, gitProvider string) (*Oauth, error) {
+	oauth, err := pl.SecretParser.GetOauthSecret(global.OauthSecretPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if gitProvider != Bitbucket || !pl.SecretParser.Expired(oauth) {
+		return oauth, nil
+	}
+
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/%s", global.NeuronHost+global.RefreshTokenEndpoint, repoID), nil)
+	if err != nil {
+		pl.Logger.Errorf("failed to create new request %v", err)
+	}
+
+	res, err := pl.HttpClient.Do(req)
+	if err != nil {
+		pl.Logger.Errorf("error while refreshing token for RepoID %s : %s", repoID, err)
+	}
+	if res.Body != nil {
+		defer res.Body.Close()
+	}
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		pl.Logger.Errorf("error while reading token response body for RepoID %s : %s", repoID, err)
+	}
+
+	refreshedOauth := new(Oauth)
+	err = json.Unmarshal(body, &refreshedOauth)
+	if err != nil {
+		pl.Logger.Errorf("error while unmarshaling json to oauth for RepoID %s : %s", repoID, err)
+	}
+
+	refreshedOauth.Data.Type = Bearer
+	return refreshedOauth, nil
 }
