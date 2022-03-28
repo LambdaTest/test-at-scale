@@ -49,8 +49,8 @@ func (tes *testExecutionService) Run(ctx context.Context,
 	defer azureWriter.Close()
 	blobPath := fmt.Sprintf("%s/%s/%s/%s.log", payload.OrgID, payload.BuildID, payload.TaskID, core.Execution)
 	errChan := tes.execManager.StoreCommandLogs(ctx, blobPath, azureReader)
+	defer tes.closeAndWriteLog(azureWriter, errChan)
 	logWriter := lumber.NewWriter(tes.logger)
-	defer logWriter.Close()
 	multiWriter := io.MultiWriter(logWriter, azureWriter)
 	maskWriter := logstream.NewMasker(multiWriter, secretData)
 
@@ -118,9 +118,10 @@ func (tes *testExecutionService) Run(ctx context.Context,
 		tes.logger.Errorf("failed to find process for command %s with pid %d %v", cmd.String(), pid, err)
 		return nil, err
 	}
-	if err := cmd.Wait(); err != nil {
-		tes.logger.Errorf("Error in executing []: %+v\n", err)
-		return nil, err
+
+	errC := cmd.Wait()
+	if errC != nil {
+		tes.logger.Errorf("Error in executing []: %+v\n", errC)
 	}
 	executionResults := <-tes.ts.ExecutionResultOutputChannel
 
@@ -131,12 +132,7 @@ func (tes *testExecutionService) Run(ctx context.Context,
 	// 		return nil, err
 	// 	}
 	// }
-	azureWriter.Close()
-	if uploadErr := <-errChan; uploadErr != nil {
-		tes.logger.Errorf("failed to upload logs for test execution, error: %v", uploadErr)
-		return nil, uploadErr
-	}
-	return &executionResults, nil
+	return executionResults, errC
 }
 
 // func (tes *testExecutionService) createCoverageManifest(tasConfig *core.TASConfig, coverageDirectory string, removedFiles []string, executeAll bool) error {
@@ -196,4 +192,11 @@ func (tes *testExecutionService) GetLocatorsFile(ctx context.Context, locatorAdd
 		return "", err
 	}
 	return locatorFilePath, err
+}
+
+func (tes *testExecutionService) closeAndWriteLog(azureWriter *io.PipeWriter, errChan <-chan error) {
+	azureWriter.Close()
+	if err := <-errChan; err != nil {
+		tes.logger.Errorf("failed to upload logs for test execution, error: %v", err)
+	}
 }
