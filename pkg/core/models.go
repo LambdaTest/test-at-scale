@@ -347,6 +347,7 @@ type TaskType string
 const (
 	DiscoveryTask TaskType = "discover"
 	ExecutionTask TaskType = "execute"
+	FlakyTask     TaskType = "flaky"
 )
 
 // TestStatus stores tests status

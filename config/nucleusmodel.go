@@ -14,6 +14,7 @@ type NucleusConfig struct {
 	CoverageMode   bool   `json:"coverage" yaml:"coverageOnly"`
 	DiscoverMode   bool   `json:"discover" yaml:"discoverOnly"`
 	ExecuteMode    bool   `json:"execute" yaml:"executeOnly"`
+	FlakyMode      bool   `json:"flaky" yaml:"flakyOnly"`
 	TaskID         string `json:"taskID" env:"TASK_ID"`
 	BuildID        string `json:"buildID" env:"BUILD_ID"`
 	Locators       string `json:"locators"`

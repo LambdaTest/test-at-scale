@@ -80,7 +80,7 @@ func (tbs *TestBlockTestService) fetchBlockListFromNeuron(ctx context.Context, r
 	q := u.Query()
 	q.Set("repoID", repoID)
 	q.Set("branch", branch)
-	q.Set("buildID", tbs.cfg.BuildID)
+	q.Set("taskID", tbs.cfg.TaskID)
 	u.RawQuery = q.Encode()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)

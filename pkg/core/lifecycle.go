@@ -87,11 +87,17 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 		StartTime:   startTime,
 		Status:      Running,
 	}
+	mode := "discovery"
 	if pl.Cfg.DiscoverMode {
 		taskPayload.Type = DiscoveryTask
+	} else if pl.Cfg.FlakyMode {
+		mode = "flaky"
+		taskPayload.Type = FlakyTask
 	} else {
+		mode = "execution"
 		taskPayload.Type = ExecutionTask
 	}
+	pl.Logger.Infof("Running nucleus in %s mode", mode)
 
 	// marking task to running state
 	if err := pl.Task.UpdateStatus(taskPayload); err != nil {
@@ -274,9 +280,8 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 		pl.Logger.Debugf("Cache uploaded successfully")
 	}
 
-	if pl.Cfg.ExecuteMode {
+	if pl.Cfg.ExecuteMode || pl.Cfg.FlakyMode {
 
-		pl.Logger.Debugf("execute Mode")
 		// execute test cases
 		executionResults, err := pl.TestExecutionService.Run(ctx, tasConfig, pl.Payload, coverageDir, secretMap)
 		if err != nil {
