@@ -294,7 +294,7 @@ func (d *docker) WriteLogs(ctx context.Context, r *core.RunnerOptions) error {
 
 	buildLogsPath := fmt.Sprintf("%s/%s", global.ExecutionLogsPath, r.Label[synapse.BuildID])
 
-	if err = utils.CreateDirectory(buildLogsPath); err != nil {
+	if err := utils.CreateDirectory(buildLogsPath); err != nil {
 		return err
 	}
 
