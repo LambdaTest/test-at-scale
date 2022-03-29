@@ -14,9 +14,12 @@ import (
 	"github.com/LambdaTest/synapse/pkg/errs"
 	"github.com/LambdaTest/synapse/pkg/global"
 	"github.com/LambdaTest/synapse/pkg/lumber"
+	"github.com/LambdaTest/synapse/pkg/synapse"
+	"github.com/LambdaTest/synapse/pkg/utils"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/stdcopy"
 )
 
 const (
@@ -149,6 +152,10 @@ func (d *docker) Run(ctx context.Context, r *core.RunnerOptions) core.ContainerS
 	}
 	d.RunningContainers = append(d.RunningContainers, r)
 
+	if err := d.writeLogs(ctx, r); err != nil {
+		d.logger.Errorf("error writing logs to stdout: %+v", err)
+	}
+
 	return containerStatus
 }
 
@@ -269,5 +276,38 @@ func (d *docker) PullImage(containerImageConfig *core.ContainerImageConfig, r *c
 	if _, err := io.Copy(os.Stdout, reader); err != nil {
 		return err
 	}
+	return nil
+}
+
+// writeLogs writes container logs to a file
+func (d *docker) writeLogs(ctx context.Context, r *core.RunnerOptions) error {
+	reader, err := d.client.ContainerLogs(ctx,
+		r.ContainerID,
+		types.ContainerLogsOptions{
+			ShowStdout: true,
+			ShowStderr: true,
+			Follow:     true,
+		})
+	if err != nil {
+		return err
+	}
+	defer reader.Close()
+
+	buildLogsPath := fmt.Sprintf("%s/%s", global.ExecutionLogsPath, r.Label[synapse.BuildID])
+
+	if errDir := utils.CreateDirectory(buildLogsPath); err != nil {
+		return errDir
+	}
+
+	f, err := os.Create(fmt.Sprintf("%s/%s-%s.log", buildLogsPath, r.ContainerName, r.PodType))
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	if _, errCopy := stdcopy.StdCopy(f, f, reader); err != nil {
+		return errCopy
+	}
+
 	return nil
 }

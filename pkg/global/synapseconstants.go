@@ -21,6 +21,7 @@ const (
 	AutoRemove            = true
 	Local                 = true
 	MaxConnectionAttempts = 10
+	ExecutionLogsPath     = "/var/log/synapse"
 )
 
 // SocketURL lambdatest url for synapse socket
