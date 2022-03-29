@@ -152,7 +152,7 @@ func (d *docker) Run(ctx context.Context, r *core.RunnerOptions) core.ContainerS
 	}
 	d.RunningContainers = append(d.RunningContainers, r)
 
-	if err := d.WriteLogs(ctx, r); err != nil {
+	if err := d.writeLogs(ctx, r); err != nil {
 		d.logger.Errorf("error writing logs to stdout: %+v", err)
 	}
 
@@ -279,7 +279,8 @@ func (d *docker) PullImage(containerImageConfig *core.ContainerImageConfig, r *c
 	return nil
 }
 
-func (d *docker) WriteLogs(ctx context.Context, r *core.RunnerOptions) error {
+// writeLogs writes container logs to a file
+func (d *docker) writeLogs(ctx context.Context, r *core.RunnerOptions) error {
 	reader, err := d.client.ContainerLogs(ctx,
 		r.ContainerID,
 		types.ContainerLogsOptions{

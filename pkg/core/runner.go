@@ -62,9 +62,6 @@ type DockerRunner interface {
 
 	// KillRunningDocker kills  container spawn by synapse
 	KillRunningDocker(ctx context.Context)
-
-	// WriteLogs writes container logs to a file
-	WriteLogs(ctx context.Context, r *RunnerOptions) error
 }
 
 // RunnerOptions provides the the required instructions for execution engine.
