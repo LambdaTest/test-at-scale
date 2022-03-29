@@ -7,9 +7,9 @@ import (
 	"path"
 	"runtime"
 
-	"github.com/LambdaTest/synapse/config"
-	"github.com/LambdaTest/synapse/pkg/core"
-	"github.com/LambdaTest/synapse/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/config"
+	"github.com/LambdaTest/test-at-scale/pkg/core"
+	"github.com/LambdaTest/test-at-scale/pkg/lumber"
 )
 
 // getCurrentWorkingDir give the file path of this file
@@ -86,6 +86,15 @@ func GetGitDiff() map[string]int {
 func GetGitlabCommitDiff() ([]byte, error) {
 	cwd := getCurrentWorkingDir()
 	data, err := ioutil.ReadFile(cwd + GitlabCommitDiff) // GitLabCommitDiff points to json file containing dummy GitLabCommitDiff
+	if err != nil {
+		return nil, err
+	}
+	return data, err
+}
+
+func LoadFile(relativePath string) ([]byte, error) {
+	absPath := fmt.Sprintf("%s/%s", getCurrentWorkingDir(), relativePath)
+	data, err := ioutil.ReadFile(absPath)
 	if err != nil {
 		return nil, err
 	}

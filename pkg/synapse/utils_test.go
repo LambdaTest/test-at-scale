@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/LambdaTest/synapse/pkg/core"
+	"github.com/LambdaTest/test-at-scale/pkg/core"
 	"github.com/stretchr/testify/assert"
 )
 

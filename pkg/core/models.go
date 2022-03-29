@@ -7,9 +7,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/LambdaTest/synapse/config"
-	"github.com/LambdaTest/synapse/pkg/lumber"
-	"github.com/coreos/go-semver/semver"
+	"github.com/LambdaTest/test-at-scale/config"
+	"github.com/LambdaTest/test-at-scale/pkg/lumber"
 )
 
 // ExecutionID type
@@ -296,7 +295,7 @@ type TASConfig struct {
 	ConfigFile        string             `yaml:"configFile" validate:"omitempty"`
 	CoverageThreshold *CoverageThreshold `yaml:"coverageThreshold" validate:"omitempty"`
 	Tier              Tier               `yaml:"tier" validate:"oneof=xsmall small medium large xlarge"`
-	NodeVersion       *semver.Version    `yaml:"nodeVersion"`
+	NodeVersion       string             `yaml:"nodeVersion" validate:"semver"`
 	ContainerImage    string             `yaml:"containerImage"`
 }
 
