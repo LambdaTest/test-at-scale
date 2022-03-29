@@ -140,11 +140,6 @@ func (tes *testExecutionService) Run(ctx context.Context,
 	// 		return nil, err
 	// 	}
 	// }
-	azureWriter.Close()
-	if uploadErr := <-errChan; uploadErr != nil {
-		tes.logger.Errorf("failed to upload logs for test execution, error: %v", uploadErr)
-		return nil, uploadErr
-	}
 	return executionResults, nil
 }
 
