@@ -74,6 +74,7 @@ func (tes *testExecutionService) Run(ctx context.Context,
 
 	if payload.LocatorAddress != "" {
 		locatorFile, err := tes.GetLocatorsFile(ctx, payload.LocatorAddress)
+		tes.logger.Debugf("locators : %v\n", locatorFile)
 		if err != nil {
 			tes.logger.Errorf("failed to get locator file, error: %v", err)
 			return nil, err
@@ -126,9 +127,10 @@ func (tes *testExecutionService) Run(ctx context.Context,
 			tes.logger.Errorf("failed to find process for command %s with pid %d %v", cmd.String(), pid, err)
 			return nil, err
 		}
+		// not returning error because runner like jest will return error in case of test failure
+		// and we want to run test multiple times
 		if err := cmd.Wait(); err != nil {
 			tes.logger.Errorf("Error in executing []: %+v\n", err)
-			return nil, err
 		}
 		result := <-tes.ts.ExecutionResultOutputChannel
 		executionResults.Results = append(executionResults.Results, result.Results...)
