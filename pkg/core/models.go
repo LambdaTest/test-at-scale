@@ -198,6 +198,7 @@ type TestSuitePayload struct {
 	Duration        int                `json:"duration"`
 	Status          string             `json:"status"`
 	Stats           []TestProcessStats `json:"stats"`
+	TotalTests      int                `json:"totalTests"`
 }
 
 // TestProcessStats process stats associated with each test
