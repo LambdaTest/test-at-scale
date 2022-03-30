@@ -246,10 +246,10 @@ func TestProcStats_appendStatsToTestSuites(t *testing.T) {
 	}{
 		{"Test appendStatsToTests",
 			args{[]core.TestSuitePayload{
-				{SuiteID: "testSuite1", StartTime: timeMap["tpast1"], EndTime: timeMap["tfuture1"], TotalTests: 0},
+				{SuiteID: "testSuite1", StartTime: timeMap["tpast1"], EndTime: timeMap["tfuture1"], TotalTests: 2},
 			},
 				[]*procfs.Stats{}},
-			"[{SuiteID:testSuite1 SuiteName: ParentSuiteID: BlocklistSource: Blocklisted:false StartTime:2021-02-22 16:23:01 +0000 UTC EndTime:2021-02-22 16:23:01 +0000 UTC Duration:0 Status: Stats:[] TotalTests:0}]", // nolint
+			"[{SuiteID:testSuite1 SuiteName: ParentSuiteID: BlocklistSource: Blocklisted:false StartTime:2021-02-22 16:23:01 +0000 UTC EndTime:2021-02-22 16:23:01 +0000 UTC Duration:0 Status: Stats:[] TotalTests:2}]", // nolint
 		},
 
 		{"Test appendStatsToTests",
@@ -260,7 +260,7 @@ func TestProcStats_appendStatsToTestSuites(t *testing.T) {
 					Duration:   100,
 					EndTime:    timeMap["tfuture1"],
 					Stats:      []core.TestProcessStats{},
-					TotalTests: 0,
+					TotalTests: 3,
 				},
 				{
 					SuiteID:    "testSuite3",
@@ -268,7 +268,7 @@ func TestProcStats_appendStatsToTestSuites(t *testing.T) {
 					Duration:   200,
 					EndTime:    timeMap["tfuture2"],
 					Stats:      []core.TestProcessStats{{Memory: 100, CPU: 25.4, Storage: 250, RecordTime: timeMap["tpast2"]}},
-					TotalTests: 0,
+					TotalTests: 5,
 				},
 			},
 				[]*procfs.Stats{
@@ -298,7 +298,7 @@ func TestProcStats_appendStatsToTestSuites(t *testing.T) {
 					},
 				},
 			},
-			"[{SuiteID:testSuite2 SuiteName: ParentSuiteID: BlocklistSource: Blocklisted:false StartTime:2021-02-22 16:23:01 +0000 UTC EndTime:2021-02-22 16:23:01.1 +0000 UTC Duration:100 Status: Stats:[{Memory:131 CPU:1.2 Storage:0 RecordTime:2021-02-22 16:23:01 +0000 UTC}] TotalTests:0} {SuiteID:testSuite3 SuiteName: ParentSuiteID: BlocklistSource: Blocklisted:false StartTime:2021-02-22 16:22:05 +0000 UTC EndTime:2021-02-22 16:22:05.2 +0000 UTC Duration:200 Status: Stats:[{Memory:100 CPU:25.4 Storage:250 RecordTime:2021-02-22 16:22:05 +0000 UTC}] TotalTests:0}]", //nolint
+			"[{SuiteID:testSuite2 SuiteName: ParentSuiteID: BlocklistSource: Blocklisted:false StartTime:2021-02-22 16:23:01 +0000 UTC EndTime:2021-02-22 16:23:01.1 +0000 UTC Duration:100 Status: Stats:[{Memory:131 CPU:1.2 Storage:0 RecordTime:2021-02-22 16:23:01 +0000 UTC}] TotalTests:3} {SuiteID:testSuite3 SuiteName: ParentSuiteID: BlocklistSource: Blocklisted:false StartTime:2021-02-22 16:22:05 +0000 UTC EndTime:2021-02-22 16:22:05.2 +0000 UTC Duration:200 Status: Stats:[{Memory:100 CPU:25.4 Storage:250 RecordTime:2021-02-22 16:22:05 +0000 UTC}] TotalTests:5}]", //nolint
 		},
 	}
 	for _, tt := range tests {
