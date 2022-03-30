@@ -22,6 +22,8 @@ const (
 	Local                 = true
 	MaxConnectionAttempts = 10
 	ExecutionLogsPath     = "/var/log/synapse"
+	PingWait              = 30 * time.Second
+	MaxMessageSize        = 4096
 )
 
 // SocketURL lambdatest url for synapse socket

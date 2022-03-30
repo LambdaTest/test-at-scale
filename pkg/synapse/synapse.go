@@ -153,14 +153,21 @@ func (s *synapse) connectionHandler(ctx context.Context, conn *websocket.Conn, c
 messageReader reads websocket messages and acts upon it
 */
 func (s *synapse) messageReader(normalCloser chan struct{}, conn *websocket.Conn) {
-
-	// s.conn.SetReadLimit(maxMessageSize)
-	// s.conn.SetReadDeadline(time.Now().Add(pingWait))
+	conn.SetReadLimit(global.MaxMessageSize)
+	if err := conn.SetReadDeadline(time.Now().Add(global.PingWait)); err != nil {
+		s.logger.Errorf("Error in setting read deadline , error: %v", err)
+		s.MsgErrChan <- struct{}{}
+		close(s.MsgErrChan)
+		return
+	}
 	conn.SetPingHandler(func(string) error {
 		if err := conn.WriteMessage(websocket.PongMessage, nil); err != nil {
-			s.logger.Errorf("Error in writing pong msg %s", err.Error())
-			s.MsgErrChan <- struct{}{}
-			close(s.MsgErrChan)
+			s.logger.Errorf("Error in writing pong msg , error: %v", err)
+			return err
+		}
+		if err := conn.SetReadDeadline(time.Now().Add(global.PingWait)); err != nil {
+			s.logger.Errorf("Error in setting read deadline , error: %v", err)
+
 			return err
 		}
 		return nil
@@ -183,7 +190,7 @@ func (s *synapse) messageReader(normalCloser chan struct{}, conn *websocket.Conn
 	}
 }
 
-// processMessage process messages recieved via websocket
+// processMessage process messages received via websocket
 func (s *synapse) processMessage(msg []byte) {
 	var message core.Message
 	err := json.Unmarshal(msg, &message)
