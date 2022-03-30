@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -67,11 +66,6 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 		os.Exit(0)
 	}
 
-	oauth, err := pl.getOauthSecret(payload.RepoID, payload.GitProvider)
-	if err != nil {
-		pl.Logger.Fatalf("failed to get oauth secret %v", err)
-	}
-
 	// set payload on pipeline object
 	pl.Payload = payload
 
@@ -122,6 +116,11 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 		}
 	}()
 
+	oauth, err := pl.SecretParser.GetOauthSecret(global.OauthSecretPath)
+	if err != nil {
+		pl.Logger.Errorf("failed to get oauth secret %v", err)
+		return err
+	}
 	if pl.Cfg.DiscoverMode {
 		pl.Logger.Infof("Cloning repo ...")
 		err = pl.GitManager.Clone(ctx, pl.Payload, oauth)
@@ -352,43 +351,4 @@ func (pl *Pipeline) sendStats(payload ExecutionResults) error {
 		return errors.New("non 200 status")
 	}
 	return nil
-}
-
-// getOauthSecret returns a valid oauth token
-func (pl *Pipeline) getOauthSecret(repoID, gitProvider string) (*Oauth, error) {
-	oauth, err := pl.SecretParser.GetOauthSecret(global.OauthSecretPath)
-	if err != nil {
-		return nil, err
-	}
-
-	if gitProvider != Bitbucket || !pl.SecretParser.Expired(oauth) {
-		return oauth, nil
-	}
-
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/%s", global.NeuronHost+global.RefreshTokenEndpoint, repoID), nil)
-	if err != nil {
-		pl.Logger.Errorf("failed to create new request %v", err)
-	}
-
-	res, err := pl.HttpClient.Do(req)
-	if err != nil {
-		pl.Logger.Errorf("error while refreshing token for RepoID %s : %s", repoID, err)
-	}
-	if res.Body != nil {
-		defer res.Body.Close()
-	}
-
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		pl.Logger.Errorf("error while reading token response body for RepoID %s : %s", repoID, err)
-	}
-
-	refreshedOauth := new(Oauth)
-	err = json.Unmarshal(body, &refreshedOauth)
-	if err != nil {
-		pl.Logger.Errorf("error while unmarshaling json to oauth for RepoID %s : %s", repoID, err)
-	}
-
-	refreshedOauth.Type = Bearer
-	return refreshedOauth, nil
 }
