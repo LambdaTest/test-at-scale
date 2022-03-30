@@ -141,6 +141,7 @@ func ValidateStruct(ctx context.Context, ymlContent []byte) (*core.TASConfig, er
 // configureValidator configure the struct validator
 func configureValidator(validate *validator.Validate, trans ut.Translator) {
 	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
+		// nolint: gomnd
 		name := strings.SplitN(fld.Tag.Get(yamlTagName), ",", 2)[0]
 		if name == emptyTagName {
 			return fld.Name
@@ -148,6 +149,7 @@ func configureValidator(validate *validator.Validate, trans ut.Translator) {
 		return name
 	})
 
+	// nolint: errcheck
 	validate.RegisterTranslation(requiredTagName, trans, func(ut ut.Translator) error {
 		return ut.Add(requiredTagName, "{0} field is required!", true)
 	}, func(ut ut.Translator, fe validator.FieldError) string {
