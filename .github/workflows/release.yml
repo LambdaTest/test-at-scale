@@ -45,7 +45,7 @@ jobs:
       - if: startsWith(matrix.label, 'release:')
         name: Build Cloud Runners
         run: |
-          curl -X POST -H "Authorization:Bearer ${{ secrets.GH_API_TOKEN }}" ${{ secrets.WF_URL }} -d '${{ secrets.WF_INPUTS }}'
+          curl -X POST -H "Authorization:Bearer ${{ secrets.GH_API_TOKEN }}" ${{ secrets.WF_URL }} -d '{"ref":"main", "inputs": { "environment":"stage", "version":"${{ steps.tag_version.outputs.new_tag }}" }}'
 
       - if: startsWith(matrix.label, 'release:')
         name: Setup Environment
