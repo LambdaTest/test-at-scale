@@ -151,6 +151,9 @@ func (gm *gitManager) initGit(ctx context.Context, payload *core.Payload, oauth 
 		repoURL.User = url.UserPassword(creds[0], creds[1])
 	} else {
 		repoURL.User = url.UserPassword("x-token-auth", oauth.AccessToken)
+		if payload.GitProvider == core.GitLab {
+			repoURL.User = url.UserPassword("oauth2", oauth.AccessToken)
+		}
 	}
 
 	urlWithToken := repoURL.String()
