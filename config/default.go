@@ -20,7 +20,7 @@ func setNucleusDefaultConfig() {
 
 func setSynapseDefaultConfig() {
 	viper.SetDefault("LogConfig.EnableConsole", true)
-	viper.SetDefault("LogConfig.ConsoleJSONFormat", true)
+	viper.SetDefault("LogConfig.ConsoleJSONFormat", false)
 	viper.SetDefault("LogConfig.ConsoleLevel", "info")
 	viper.SetDefault("LogConfig.EnableFile", true)
 	viper.SetDefault("LogConfig.FileJSONFormat", true)

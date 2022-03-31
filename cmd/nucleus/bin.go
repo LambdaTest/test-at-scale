@@ -16,6 +16,7 @@ import (
 	"github.com/LambdaTest/synapse/config"
 	"github.com/LambdaTest/synapse/pkg/api"
 	"github.com/LambdaTest/synapse/pkg/azure"
+	"github.com/LambdaTest/synapse/pkg/blocktestservice"
 	"github.com/LambdaTest/synapse/pkg/cachemanager"
 	"github.com/LambdaTest/synapse/pkg/command"
 	"github.com/LambdaTest/synapse/pkg/core"
@@ -24,14 +25,13 @@ import (
 	"github.com/LambdaTest/synapse/pkg/global"
 	"github.com/LambdaTest/synapse/pkg/lumber"
 	"github.com/LambdaTest/synapse/pkg/payloadmanager"
+	"github.com/LambdaTest/synapse/pkg/requestutils"
 	"github.com/LambdaTest/synapse/pkg/secret"
 	"github.com/LambdaTest/synapse/pkg/server"
 	"github.com/LambdaTest/synapse/pkg/service/coverage"
-	"github.com/LambdaTest/synapse/pkg/service/parser"
 	"github.com/LambdaTest/synapse/pkg/service/teststats"
 	"github.com/LambdaTest/synapse/pkg/tasconfigmanager"
 	"github.com/LambdaTest/synapse/pkg/task"
-	"github.com/LambdaTest/synapse/pkg/testblocklistservice"
 	"github.com/LambdaTest/synapse/pkg/testdiscoveryservice"
 	"github.com/LambdaTest/synapse/pkg/testexecutionservice"
 	"github.com/LambdaTest/synapse/pkg/zstd"
@@ -114,18 +114,21 @@ func run(cmd *cobra.Command, args []string) {
 	pm := payloadmanager.NewPayloadManger(azureClient, logger, cfg)
 	secretParser := secret.New(logger)
 	tcm := tasconfigmanager.NewTASConfigManager(logger)
-	gm := gitmanager.NewGitManager(logger)
-	dm := diffmanager.NewDiffManager(cfg, logger)
+	requests := requestutils.New(logger)
 	execManager := command.NewExecutionManager(secretParser, azureClient, logger)
-	tds := testdiscoveryservice.NewTestDiscoveryService(execManager, logger)
+	gm := gitmanager.NewGitManager(logger, execManager)
+	dm := diffmanager.NewDiffManager(cfg, logger)
+
+	tdResChan := make(chan core.DiscoveryResult)
+	tds := testdiscoveryservice.NewTestDiscoveryService(ctx, tdResChan, execManager, requests, logger)
 	tes := testexecutionservice.NewTestExecutionService(execManager, azureClient, ts, logger)
-	tbs, err := testblocklistservice.NewTestBlockListService(cfg, logger)
+	tbs, err := blocktestservice.NewTestBlockTestService(cfg, logger)
 	if err != nil {
 		logger.Fatalf("failed to initialize test blocklist service: %v", err)
 	}
-	router := api.NewRouter(logger, ts)
+	router := api.NewRouter(logger, ts, tdResChan)
 
-	t, err := task.New(ctx, cfg, logger)
+	t, err := task.New(ctx, requests, logger)
 	if err != nil {
 		logger.Fatalf("failed to initialize task: %v", err)
 	}
@@ -139,8 +142,6 @@ func run(cmd *cobra.Command, args []string) {
 		logger.Fatalf("failed to initialize cache manager: %v", err)
 	}
 
-	parserService := parser.New(tcm, logger)
-
 	coverageService, err := coverage.New(execManager, azureClient, zstd, cfg, logger)
 	if err != nil {
 		logger.Fatalf("failed to initialize coverage service: %v", err)
@@ -151,10 +152,9 @@ func run(cmd *cobra.Command, args []string) {
 	pl.GitManager = gm
 	pl.DiffManager = dm
 	pl.TestDiscoveryService = tds
-	pl.TestBlockListService = tbs
+	pl.BlockTestService = tbs
 	pl.TestExecutionService = tes
 	pl.ExecutionManager = execManager
-	pl.ParserService = parserService
 	pl.CoverageService = coverageService
 	pl.TestStats = ts
 	pl.Task = t

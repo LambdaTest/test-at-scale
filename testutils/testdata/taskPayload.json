@@ -1,0 +1,14 @@
+{
+    "task_id": "axgubjynae",
+    "status": "open",
+    "repo_slug": "",
+    "repo_link": "https://xyz123.com/qwerty/nexe",
+    "repo_id": "35338247",
+    "org_id": "",
+    "git_provider": "github",
+    "commit_id,omitempty": "a8cdf48146d0360251cc113394c26fa91e1b0e24",
+    "build_id": "29d327a4f29842cdbc6cd7e8b0a1ba5d",
+    "start_time": "2022-02-06T16:20:30+05:30",
+    "end_time,omitempty": "2022-02-06T16:22:01+05:30",
+    "remark,omitempty": "dummy_remark"
+}

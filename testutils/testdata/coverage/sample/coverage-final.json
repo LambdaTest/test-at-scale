@@ -1,0 +1,7 @@
+{
+    "build_id" : "dummyBuildID",
+    "repo_id" : "dummyRepoID",
+    "commit_id" : "dummyCommitID",
+    "blob_link" : "dummy://BlobLink.com",
+    "total" : "80%"
+}

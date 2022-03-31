@@ -29,7 +29,7 @@ type ContainerStatus struct {
 	Error errs.Err
 }
 
-// ContainerImageConfig contains config which contains the registry for docker
+// ContainerImageConfig contains registry config for docker
 type ContainerImageConfig struct {
 	AuthRegistry string
 	Image        string
@@ -45,6 +45,9 @@ type DockerRunner interface {
 	// Run runs the execution engine
 	Run(context.Context, *RunnerOptions) ContainerStatus
 
+	//WaitForRunning waits for runner to get completed
+	WaitForCompletion(ctx context.Context, r *RunnerOptions) error
+
 	// Destroy the execution engine
 	Destroy(ctx context.Context, r *RunnerOptions) error
 
@@ -55,7 +58,7 @@ type DockerRunner interface {
 	Initiate(context.Context, *RunnerOptions, chan ContainerStatus)
 
 	// PullImage will pull image from remote
-	PullImage(containerImageConfig *ContainerImageConfig) error
+	PullImage(containerImageConfig *ContainerImageConfig, r *RunnerOptions) error
 
 	// KillRunningDocker kills  container spawn by synapse
 	KillRunningDocker(ctx context.Context)
@@ -102,6 +105,5 @@ type PodType string
 // Values that PodType can take
 const (
 	NucleusPod  PodType = "nucleus"
-	ParsingPod  PodType = "parse"
 	CoveragePod PodType = "coverage"
 )

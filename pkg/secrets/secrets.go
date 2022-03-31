@@ -40,6 +40,7 @@ func (s *secertManager) WriteGitSecrets(path string) error {
 			"access_token":  s.cfg.Git.Token,
 			"expiry":        "0001-01-01T00:00:00Z",
 			"refresh_token": "",
+			"token_type":    s.cfg.Git.TokenType,
 		},
 	}
 	gitSecretsJSON, err := json.Marshal(gitSecrets)

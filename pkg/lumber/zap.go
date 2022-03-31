@@ -21,10 +21,6 @@ func getEncoder(isJSON bool) zapcore.Encoder {
 	if isJSON {
 		return zapcore.NewJSONEncoder(encoderConfig)
 	}
-	// customize console logger
-	encoderConfig.LevelKey = ""
-	encoderConfig.TimeKey = ""
-	encoderConfig.CallerKey = ""
 	return zapcore.NewConsoleEncoder(encoderConfig)
 }
 

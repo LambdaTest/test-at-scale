@@ -43,14 +43,14 @@ func (tes *testExecutionService) Run(ctx context.Context,
 	tasConfig *core.TASConfig,
 	payload *core.Payload,
 	coverageDir string,
-	secretData map[string]string) (*core.ExecutionResult, error) {
+	secretData map[string]string) (*core.ExecutionResults, error) {
 
 	azureReader, azureWriter := io.Pipe()
 	defer azureWriter.Close()
 	blobPath := fmt.Sprintf("%s/%s/%s/%s.log", payload.OrgID, payload.BuildID, payload.TaskID, core.Execution)
 	errChan := tes.execManager.StoreCommandLogs(ctx, blobPath, azureReader)
+	defer tes.closeAndWriteLog(azureWriter, errChan)
 	logWriter := lumber.NewWriter(tes.logger)
-	defer logWriter.Close()
 	multiWriter := io.MultiWriter(logWriter, azureWriter)
 	maskWriter := logstream.NewMasker(multiWriter, secretData)
 
@@ -80,23 +80,12 @@ func (tes *testExecutionService) Run(ctx context.Context,
 		}
 		args = append(args, "--locator-file", locatorFile)
 	}
-	// use locators only if there is no locator address
-	if payload.Locators != "" && payload.LocatorAddress == "" {
-		locators := strings.Split(payload.Locators, global.TestLocatorsDelimiter)
-		for _, locator := range locators {
-			if locator != "" {
-				args = append(args, "--locator", locator)
-			}
-		}
-	}
-	collectCoverage := payload.CollectCoverage
-	testResults := make([]core.TestPayload, 0)
-	testSuiteResults := make([]core.TestSuitePayload, 0)
 
+	collectCoverage := payload.CollectCoverage
 	commandArgs := args
 	envVars, err := tes.execManager.GetEnvVariables(envMap, secretData)
 	if err != nil {
-		tes.logger.Errorf("failed to parsed env variables, error: %v", err)
+		tes.logger.Errorf("failed to parse env variables, error: %v", err)
 		return nil, err
 	}
 	var cmd *exec.Cmd
@@ -125,17 +114,16 @@ func (tes *testExecutionService) Run(ctx context.Context,
 	pid := int32(cmd.Process.Pid)
 	tes.logger.Debugf("execution command started with pid %d", pid)
 
-	if err := tes.ts.CaptureTestStats(pid); err != nil {
+	if err := tes.ts.CaptureTestStats(pid, payload.CollectStats); err != nil {
 		tes.logger.Errorf("failed to find process for command %s with pid %d %v", cmd.String(), pid, err)
 		return nil, err
 	}
-	if err := cmd.Wait(); err != nil {
-		tes.logger.Errorf("Error in executing []: %+v\n", err)
-		return nil, err
+
+	errC := cmd.Wait()
+	if errC != nil {
+		tes.logger.Errorf("Error in executing []: %+v\n", errC)
 	}
-	execResultsWithStats := <-tes.ts.ExecutionResultOutputChannel
-	testResults = append(testResults, execResultsWithStats.TestPayload...)
-	testSuiteResults = append(testSuiteResults, execResultsWithStats.TestSuitePayload...)
+	executionResults := <-tes.ts.ExecutionResultOutputChannel
 
 	// FIXME:  commenting this out as we will need to rework on coverage logic after test parallelization
 	// if collectCoverage {
@@ -144,20 +132,7 @@ func (tes *testExecutionService) Run(ctx context.Context,
 	// 		return nil, err
 	// 	}
 	// }
-	azureWriter.Close()
-	if uploadErr := <-errChan; uploadErr != nil {
-		tes.logger.Errorf("failed to upload logs for test execution, error: %v", uploadErr)
-		return nil, uploadErr
-	}
-	return &core.ExecutionResult{
-		OrgID:            payload.OrgID,
-		RepoID:           payload.RepoID,
-		BuildID:          payload.BuildID,
-		TaskID:           payload.TaskID,
-		CommitID:         payload.BuildTargetCommit,
-		TestPayload:      testResults,
-		TestSuitePayload: testSuiteResults,
-	}, nil
+	return executionResults, errC
 }
 
 // func (tes *testExecutionService) createCoverageManifest(tasConfig *core.TASConfig, coverageDirectory string, removedFiles []string, executeAll bool) error {
@@ -217,4 +192,11 @@ func (tes *testExecutionService) GetLocatorsFile(ctx context.Context, locatorAdd
 		return "", err
 	}
 	return locatorFilePath, err
+}
+
+func (tes *testExecutionService) closeAndWriteLog(azureWriter *io.PipeWriter, errChan <-chan error) {
+	azureWriter.Close()
+	if err := <-errChan; err != nil {
+		tes.logger.Errorf("failed to upload logs for test execution, error: %v", err)
+	}
 }

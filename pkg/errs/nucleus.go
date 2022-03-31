@@ -51,8 +51,8 @@ var (
 	ErrSASToken = New("azure client requires SAS Token")
 	// ErrAzureCredentials is returned when the azure credentials are invalid.
 	ErrAzureCredentials = New("azure client requires credentials")
-	// ErrApiStatus is returned when the api status is not 200.
-	ErrApiStatus = New("non OK status")
+	// ErrAPIStatus is returned when the api status is not 200.
+	ErrAPIStatus = New("non OK status")
 	// ErrInvalidLoggerInstance is returned when logger instance is not supported.
 	ErrInvalidLoggerInstance = New("Invalid logger instance")
 	// ErrUnsupportedGitProvider is returned when try to integrate unsupported provider repo
@@ -62,3 +62,11 @@ var (
 	// GenericErrRemark returns a generic error message for user facing errors.
 	GenericErrRemark = New("Unexpected error")
 )
+
+type StatusFailed struct {
+	Remark string
+}
+
+func (e *StatusFailed) Error() string {
+	return e.Remark
+}

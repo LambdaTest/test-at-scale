@@ -3,10 +3,9 @@ package docker
 import (
 	"context"
 	"fmt"
-	"io"
 	"os"
+	"strconv"
 
-	"github.com/LambdaTest/synapse/config"
 	"github.com/LambdaTest/synapse/pkg/core"
 	"github.com/LambdaTest/synapse/pkg/global"
 	"github.com/LambdaTest/synapse/pkg/synapse"
@@ -19,7 +18,6 @@ import (
 )
 
 const (
-	networkName      = "test-at-scale"
 	defaultVaultPath = "/vault/secrets"
 	repoSourcePath   = "/tmp/synapse/%s/nucleus"
 	nanoCPUUnit      = 1e9
@@ -27,29 +25,7 @@ const (
 	GB int64 = 1e+9
 )
 
-func (d *docker) getContainerConfiguration(r *core.RunnerOptions) (*container.Config, error) {
-	containerImageConfig, err := d.secretsManager.GetDockerSecrets(r)
-	if err != nil {
-		d.logger.Errorf("Something went wrong while seeking container config %+v", err)
-	}
-
-	r.ContainerArgs = append(r.ContainerArgs, "--local", "true")
-	localIp := utils.GetOutboundIP()
-	r.ContainerArgs = append(r.ContainerArgs, "--synapsehost", localIp)
-	if containerImageConfig.PullPolicy == config.PullNever && r.PodType == core.NucleusPod {
-		d.logger.Infof("pull policy %s, not pulling any image", containerImageConfig.PullPolicy)
-		return &container.Config{
-			Image:   r.DockerImage,
-			Env:     r.Env,
-			Tty:     false,
-			Cmd:     r.ContainerArgs,
-			Volumes: make(map[string]struct{}),
-		}, nil
-	}
-	if err := d.PullImage(&containerImageConfig); err != nil {
-		d.logger.Errorf("Something went wrong while pulling image %s", err)
-		return nil, err
-	}
+func (d *docker) getContainerConfiguration(r *core.RunnerOptions) *container.Config {
 
 	return &container.Config{
 		Image:   r.DockerImage,
@@ -57,33 +33,7 @@ func (d *docker) getContainerConfiguration(r *core.RunnerOptions) (*container.Co
 		Tty:     false,
 		Cmd:     r.ContainerArgs,
 		Volumes: make(map[string]struct{}),
-	}, nil
-}
-
-func (d *docker) PullImage(containerImageConfig *core.ContainerImageConfig) error {
-	dockerImage := containerImageConfig.Image
-
-	d.logger.Infof("Pulling image : %s", dockerImage)
-	ImagePullOptions := types.ImagePullOptions{}
-	ImagePullOptions.RegistryAuth = containerImageConfig.AuthRegistry
-	reader, err := d.client.ImagePull(context.TODO(), dockerImage, ImagePullOptions)
-	defer func() {
-		if reader == nil {
-			d.logger.Errorf("Reader returned by docker pull is null")
-			return
-		}
-		if err := reader.Close(); err != nil {
-			d.logger.Errorf(err.Error())
-		}
-	}()
-
-	if err != nil {
-		return err
 	}
-	if _, err := io.Copy(os.Stdout, reader); err != nil {
-		return err
-	}
-	return nil
 }
 
 func (d *docker) getContainerHostConfiguration(r *core.RunnerOptions) *container.HostConfig {
@@ -112,12 +62,21 @@ func (d *docker) getContainerHostConfiguration(r *core.RunnerOptions) *container
 			Target: global.WorkspaceCacheDir,
 		})
 	}
-	return &container.HostConfig{
+	hostConfig := container.HostConfig{
 		Mounts:      mounts,
 		AutoRemove:  true,
 		SecurityOpt: []string{"seccomp=unconfined"},
 		Resources:   container.Resources{Memory: specs.RAM * GB, NanoCPUs: nanoCPU},
 	}
+
+	autoRemove, err := strconv.ParseBool(os.Getenv(global.AutoRemoveEnv))
+	if err != nil {
+		d.logger.Errorf("Error reading os env AutoRemove with error: %v \n returning default host config", err)
+		return &hostConfig
+
+	}
+	hostConfig.AutoRemove = autoRemove
+	return &hostConfig
 }
 
 func (d *docker) getContainerNetworkConfiguration() (*network.NetworkingConfig, error) {

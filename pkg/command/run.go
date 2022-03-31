@@ -84,8 +84,8 @@ func (m *manager) ExecuteInternalCommands(ctx context.Context,
 	commands []string,
 	cwd string,
 	envMap, secretData map[string]string) error {
-	argsString := strings.Join(commands, " ")
-	cmd := exec.CommandContext(ctx, "/bin/bash", "-c", argsString)
+	bashCommands := strings.Join(commands, " && ")
+	cmd := exec.CommandContext(ctx, "/bin/bash", "-c", bashCommands)
 	if cwd != "" {
 		cmd.Dir = cwd
 	}
@@ -93,9 +93,9 @@ func (m *manager) ExecuteInternalCommands(ctx context.Context,
 	defer logWriter.Close()
 	cmd.Stderr = logWriter
 	cmd.Stdout = logWriter
-	m.logger.Debugf("Executing command: %s, of type %s", cmd.String(), commandType)
+	m.logger.Debugf("Executing command of type %s", commandType)
 	if err := cmd.Run(); err != nil {
-		m.logger.Errorf("command %s of type %s failed with error: %v", cmd.String(), commandType, err)
+		m.logger.Errorf("command of type %s failed with error: %v", commandType, err)
 		return err
 	}
 	return nil

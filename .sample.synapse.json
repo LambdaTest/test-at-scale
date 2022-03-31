@@ -1,14 +1,14 @@
 {
     "logConfig": {
       "enableConsole": true,
-      "consoleJSONFormat": true,
       "consolelevel": "debug"
     },
     "Lambdatest": {
       "SecretKey": "SecretKeyForLambdaTest"
     },
     "Git": {
-      "Token": ""
+      "Token": "",
+      "TokenType": "Bearer"
     },
     "ContainerRegistry": {
       "PullPolicy": "always",

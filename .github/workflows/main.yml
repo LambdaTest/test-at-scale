@@ -4,11 +4,20 @@ on:
   push:
     branches:
       - main
+      - beta
+      - dev
+    tags: [ 'v*.*.*' ]
 
-      
   pull_request:
     branches:
       - main
+      - beta
+      - dev
+
+  workflow_dispatch:
+
+env:
+  REGISTRY_NAME: lambdatest
 
 jobs:
   Unit_Test_Cases:
@@ -55,6 +64,7 @@ jobs:
         run: |
           go test -parallel 4 -coverpkg=./... -coverprofile=profile.cov ./...
           go tool cover -func profile.cov
+
   Go_Report_Card:
     runs-on: ubuntu-latest
     needs: [ Unit_Test_Cases, Performance_Test_Cases ]
@@ -109,3 +119,55 @@ jobs:
           else
             exit 0
           fi
+  
+  Build_To_Deploy:
+    if: ${{ github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/beta' || github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    needs: [ Test_Coverage, Go_Report_Card ]
+    steps:
+      - name: Inject slug/short variables
+        uses: rlespinasse/github-slug-action@v3.x
+        
+      - name: Checkout
+        uses: actions/checkout@v2.4.0
+
+      - name: Build Cloud Runners
+        if: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/beta' || github.ref == 'refs/heads/dev' }}
+        run: |
+          curl -X  POST "https://api.github.com/repos/LambdaTest/test-at-scale-deployment/actions/workflows/main.yml/dispatches" -H "Authorization:Bearer ${{ secrets.GH_API_TOKEN }}" -d '{"ref":"${{env.GITHUB_REF_SLUG}}"}'
+
+      - name: Setup Docker Image Tags
+        run: |
+          if [ ${GITHUB_REF_SLUG} == "main" ] ; then
+            echo "NUCLEUS_TAGS=${REGISTRY_NAME}/nucleus:base" >> $GITHUB_ENV
+            echo "SYNAPSE_TAGS=${REGISTRY_NAME}/synapse:latest","${REGISTRY_NAME}/synapse:prod" >> $GITHUB_ENV
+          else
+            echo "NUCLEUS_TAGS=${REGISTRY_NAME}/nucleus:base-${GITHUB_REF_SLUG}" >> $GITHUB_ENV
+            echo "SYNAPSE_TAGS=${REGISTRY_NAME}/synapse:${GITHUB_REF_SLUG}" >> $GITHUB_ENV
+          fi
+
+      - name: Docker Login
+        uses: docker/login-action@v1.13.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+          logout: true
+
+      - name: Build and push Nucleus images
+        if: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/beta' || github.ref == 'refs/heads/dev' || startsWith(github.ref, 'refs/tags/v') }}
+        uses: docker/build-push-action@v2.9.0
+        with:
+          context: .
+          tags: ${{ env.NUCLEUS_TAGS }}
+          file: build/nucleus/Dockerfile
+          push: true
+
+      - name: Build and push Synapse images
+        if: ${{ github.ref == 'refs/heads/beta' || github.ref == 'refs/heads/dev' ||  github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') }}
+        uses: docker/build-push-action@v2.9.0
+        with:
+          context: .
+          tags: ${{ env.SYNAPSE_TAGS }}
+          file: build/synapse/Dockerfile
+          push: true
+

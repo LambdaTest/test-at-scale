@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 
 	"github.com/LambdaTest/synapse/pkg/core"
-	"github.com/gorilla/websocket"
 )
 
 // CreateLoginMessage creates message of type login
@@ -66,19 +65,6 @@ func CreateResourceStatsMessage(resourceStats core.ResourceStats) core.Message {
 		Content: resourceStatsJson,
 		Success: true,
 	}
-}
-
-// SendMessage sends message to the server
-func SendMessage(ws *websocket.Conn, message core.Message) error {
-	messageJson, err := json.Marshal(message)
-	if err != nil {
-		return err
-	}
-	err = ws.WriteMessage(websocket.TextMessage, messageJson)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 // GetResources returns dummy resources based on pod type

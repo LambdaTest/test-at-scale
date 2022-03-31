@@ -2,6 +2,7 @@ package zstd
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -44,11 +45,12 @@ func (z *zstdCompressor) Compress(ctx context.Context, compressedFileName string
 		z.logger.Errorf("failed to create manifest file %v", err)
 		return err
 	}
-	args := []string{z.execPath, "--posix", "-I", "'zstd -5 -T0'", "-cf", compressedFileName, "-C", workingDirectory, "-T", filepath.Join(os.TempDir(), manifestFileName)}
+	command := fmt.Sprintf("%s --posix -I 'zstd -5 -T0' -cf %s -C %s -T %s", z.execPath, compressedFileName, workingDirectory, filepath.Join(os.TempDir(), manifestFileName))
 	if preservePath {
-		args = append(args, "-P")
+		command = fmt.Sprintf("%s -P", command)
 	}
-	if err := z.execManager.ExecuteInternalCommands(ctx, core.Zstd, args, workingDirectory, nil, nil); err != nil {
+	commands := []string{command}
+	if err := z.execManager.ExecuteInternalCommands(ctx, core.Zstd, commands, workingDirectory, nil, nil); err != nil {
 		z.logger.Errorf("error while zstd compression %v", err)
 		return err
 	}
@@ -57,11 +59,12 @@ func (z *zstdCompressor) Compress(ctx context.Context, compressedFileName string
 
 //Decompress performs the decompression operation for the given file
 func (z *zstdCompressor) Decompress(ctx context.Context, filePath string, preservePath bool, workingDirectory string) error {
-	args := []string{z.execPath, "--posix", "-I", "'zstd -d'", "-xf", filePath, "-C", workingDirectory}
+	command := fmt.Sprintf("%s --posix -I 'zstd -d' -xf %s -C %s", z.execPath, filePath, workingDirectory)
 	if preservePath {
-		args = append(args, "-P")
+		command = fmt.Sprintf("%s -P", command)
 	}
-	if err := z.execManager.ExecuteInternalCommands(ctx, core.Zstd, args, workingDirectory, nil, nil); err != nil {
+	commands := []string{command}
+	if err := z.execManager.ExecuteInternalCommands(ctx, core.Zstd, commands, workingDirectory, nil, nil); err != nil {
 		z.logger.Errorf("error while zstd decompression %v", err)
 		return err
 	}
