@@ -14,6 +14,7 @@ services:
       - "/tmp/synapse:/tmp/synapse"
       - ".synapse.json:/home/synapse/.synapse.json"
       - "/etc/machine-id:/etc/machine-id"
+      - "./logs/synapse:/var/log/synapse"
 
 networks:
   test-at-scale:

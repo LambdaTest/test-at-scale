@@ -119,7 +119,7 @@ func (gm *gitManager) copyAndExtractFile(resp *http.Response, path string) error
 	if filepath.Ext(path) == ".zip" {
 		zip := archiver.NewZip()
 		zip.OverwriteExisting = true
-		if err := zip.Unarchive(path, filepath.Dir(path)); err != nil {
+		if err = zip.Unarchive(path, filepath.Dir(path)); err != nil {
 			gm.logger.Errorf("failed to unarchive file %v", err)
 			return err
 
@@ -151,6 +151,9 @@ func (gm *gitManager) initGit(ctx context.Context, payload *core.Payload, oauth 
 		repoURL.User = url.UserPassword(creds[0], creds[1])
 	} else {
 		repoURL.User = url.UserPassword("x-token-auth", oauth.AccessToken)
+		if payload.GitProvider == core.GitLab {
+			repoURL.User = url.UserPassword("oauth2", oauth.AccessToken)
+		}
 	}
 
 	urlWithToken := repoURL.String()
