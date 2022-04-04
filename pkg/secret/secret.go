@@ -73,6 +73,10 @@ func (s *secretParser) GetOauthSecret(path string) (*core.Oauth, error) {
 	if o.AccessToken == "" {
 		return nil, errs.ErrMissingAccessToken
 	}
+	// If tokentype is not basic set it to bearer
+	if o.Type != core.Basic {
+		o.Type = core.Bearer
+	}
 
 	return o, err
 }

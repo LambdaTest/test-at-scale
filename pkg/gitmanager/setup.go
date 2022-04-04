@@ -119,7 +119,7 @@ func (gm *gitManager) copyAndExtractFile(resp *http.Response, path string) error
 	if filepath.Ext(path) == ".zip" {
 		zip := archiver.NewZip()
 		zip.OverwriteExisting = true
-		if err := zip.Unarchive(path, filepath.Dir(path)); err != nil {
+		if err = zip.Unarchive(path, filepath.Dir(path)); err != nil {
 			gm.logger.Errorf("failed to unarchive file %v", err)
 			return err
 
