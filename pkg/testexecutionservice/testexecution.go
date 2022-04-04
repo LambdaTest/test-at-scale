@@ -121,7 +121,7 @@ func (tes *testExecutionService) Run(ctx context.Context,
 
 	errC := cmd.Wait()
 	if errC != nil {
-		tes.logger.Errorf("Error in executing []: %+v\n", errC)
+		tes.logger.Errorf("Error in executing: %+v\n", errC)
 	}
 	executionResults := <-tes.ts.ExecutionResultOutputChannel
 

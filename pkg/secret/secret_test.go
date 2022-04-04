@@ -1,109 +1,90 @@
 package secret
 
 import (
-	"fmt"
+	"errors"
 	"log"
+	"os"
 	"reflect"
 	"regexp"
-	"strings"
 	"testing"
 	"time"
 
 	"github.com/LambdaTest/synapse/pkg/core"
+	"github.com/LambdaTest/synapse/pkg/errs"
 	"github.com/LambdaTest/synapse/pkg/global"
 	"github.com/LambdaTest/synapse/pkg/lumber"
 )
 
-//nolint unused
-type data struct {
-	AccessToken  string         `json:"access_token"`
-	Expiry       time.Time      `json:"expiry"`
-	RefreshToken string         `json:"refresh_token"`
-	Type         core.TokenType `json:"token_type,omitempty"`
-}
-
-func Test_secretParser_GetRepoSecret(t *testing.T) {
+func TestGetRepoSecret(t *testing.T) {
 	logger, err := lumber.NewLogger(lumber.LoggingConfig{EnableConsole: true}, true, lumber.InstanceZapLogger)
 	if err != nil {
-		log.Fatalf("Could not instantiate logger %s", err.Error())
+		log.Fatalf("could not instantiate logger %s", err.Error())
 	}
 	secretParser := New(logger)
 
-	type args struct {
-		path string
-	}
 	tests := []struct {
-		name    string
-		args    args
-		want    map[string]string
-		wantErr bool
+		name      string
+		path      string
+		want      map[string]string
+		errorType error
 	}{
-		{"Test for correct file", args{path: "../../testutils/testdata/secretTestData/secretfile.json"}, map[string]string{"abc": "val", "xyz": "val2"}, false},
-
-		{"Test for incorrect path", args{path: "../../testutils/testdata/secretTestData/PathNotExist/a.json"}, map[string]string{}, false},
-
-		{"Test for invalid file", args{path: "../../testutils/testdata/secretTestData/invalidsecretfile"}, map[string]string{}, true},
+		{"Test for correct file", "../../testutils/testdata/secretTestData/secretfile.json", map[string]string{"abc": "val", "xyz": "val2"}, nil},
+		{"Test for invalid file", "../../testutils/testdata/secretTestData/invalidsecretfile.json", map[string]string{}, errs.ErrUnMarshalJSON},
+		{"Test for incorrect path", "", nil, os.ErrNotExist},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := secretParser.GetRepoSecret(tt.args.path)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("secretParser.GetRepoSecret() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if len(tt.want) == 0 {
-				if len(got) != 0 {
-					t.Errorf("secretParser.GetRepoSecret() = %v, want %v", got, tt.want)
+			got, err := secretParser.GetRepoSecret(tt.path)
+			if err != nil {
+				if !errors.Is(err, tt.errorType) {
+					t.Error(err)
 				}
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("secretParser.GetRepoSecret() = %v, want %v", got, tt.want)
+				t.Errorf("expected: %v, got: %v", tt.want, got)
 				return
 			}
 		})
 	}
 }
 
-func Test_secretParser_GetOauthSecret(t *testing.T) {
+func TestGetOauthSecret(t *testing.T) {
 	logger, err := lumber.NewLogger(lumber.LoggingConfig{EnableConsole: true}, true, lumber.InstanceZapLogger)
 	if err != nil {
-		log.Fatalf("Could not instantiate logger %s", err.Error())
+		log.Fatalf("could not instantiate logger %s", err.Error())
 	}
 	secretParser := New(logger)
-	time, err := time.Parse("Mon, 02 Jan 2006 15:04:05 MST", "Tue, 22 Feb 2022 16:22:01 IST")
-	if err != nil {
-		log.Fatalf("Could not parse time, error: %v", err)
-	}
-	Data := data{AccessToken: "token", Expiry: time, RefreshToken: "refresh", Type: core.Bearer}
 
-	type args struct {
-		path string
-	}
+	oauthToken := core.Oauth{AccessToken: "token", Expiry: time.Unix(1645527121, 0), RefreshToken: "refresh", Type: core.Bearer}
+
 	tests := []struct {
-		name    string
-		args    args
-		want    *core.Oauth
-		wantErr bool
+		name      string
+		path      string
+		want      *core.Oauth
+		errorType error
 	}{
-		{"Test for correct file", args{path: "../../testutils/testdata/secretTestData/secretOauthFile.json"}, &core.Oauth{Data: Data}, false},
-
-		{"Test for incorrect path", args{path: "../../testutils/testdata/secretTestData/PathNotExist/a.json"}, nil, true},
-
-		{"Test for invalid file", args{path: "../../testutils/testdata/secretTestData/invalidsecretfile"}, nil, true},
+		{"Test for correct file", "../../testutils/testdata/secretTestData/secretOauthFile.json", &oauthToken, nil},
+		{"Test for invalid file", "../../testutils/testdata/secretTestData/invalidsecretfile.json", nil, errs.ErrMissingAccessToken},
+		{"Test for incorrect path", "", nil, os.ErrNotExist},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := secretParser.GetOauthSecret(tt.args.path)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("secretParser.GetOauthSecret() error = %v, wantErr %v", err, tt.wantErr)
+			got, err := secretParser.GetOauthSecret(tt.path)
+			if err != nil {
+				if !errors.Is(err, tt.errorType) {
+					t.Error(err)
+				}
 				return
 			}
-			expected := fmt.Sprintf("%v", tt.want)
-			received := fmt.Sprintf("%v", got)
-			if got != nil && !(strings.HasPrefix(received, "&{{token") && strings.HasSuffix(received, "Bearer}}")) {
-				t.Errorf("Expected: %v, got: %v", expected, received)
-				return
+			if got, want := got.AccessToken, tt.want.AccessToken; got != want {
+				t.Errorf("Want access_token %s, got %s", want, got)
+			}
+			if got, want := got.Type, tt.want.Type; got != want {
+				t.Errorf("Want type %s, got %s", want, got)
+			}
+			if got, want := got.Expiry.Unix(), tt.want.Expiry.Unix(); got != want {
+				t.Errorf("Want expiry %d, got %d", want, got)
 			}
 		})
 	}
@@ -171,7 +152,8 @@ func TestSubstituteSecret(t *testing.T) {
 	}
 }
 
-func Test_secretParser_Expired(t *testing.T) {
+//nolint:funlen
+func TestExpired(t *testing.T) {
 	logger, err := lumber.NewLogger(lumber.LoggingConfig{EnableConsole: true}, true, lumber.InstanceZapLogger)
 	if err != nil {
 		log.Fatalf("Could not instantiate logger %s", err.Error())
@@ -198,11 +180,9 @@ func Test_secretParser_Expired(t *testing.T) {
 			},
 			args: args{
 				token: &core.Oauth{
-					Data: data{
-						AccessToken:  "54321",
-						RefreshToken: "",
-						Expiry:       time.Now().Add(-time.Hour)},
-				},
+					AccessToken:  "54321",
+					RefreshToken: "",
+					Expiry:       time.Now().Add(-time.Hour)},
 			},
 			want: false,
 		},
@@ -214,10 +194,8 @@ func Test_secretParser_Expired(t *testing.T) {
 			},
 			args: args{
 				token: &core.Oauth{
-					Data: data{
-						AccessToken:  "",
-						RefreshToken: "54321"},
-				},
+					AccessToken:  "",
+					RefreshToken: "54321"},
 			},
 			want: true,
 		},
@@ -229,10 +207,8 @@ func Test_secretParser_Expired(t *testing.T) {
 			},
 			args: args{
 				token: &core.Oauth{
-					Data: data{
-						AccessToken:  "12345",
-						RefreshToken: "54321"},
-				},
+					AccessToken:  "12345",
+					RefreshToken: "54321"},
 			},
 			want: false,
 		},
@@ -244,11 +220,9 @@ func Test_secretParser_Expired(t *testing.T) {
 			},
 			args: args{
 				token: &core.Oauth{
-					Data: data{
-						AccessToken:  "12345",
-						RefreshToken: "54321",
-						Expiry:       time.Now().Add(time.Hour)},
-				},
+					AccessToken:  "12345",
+					RefreshToken: "54321",
+					Expiry:       time.Now().Add(time.Hour)},
 			},
 			want: false,
 		},
@@ -260,11 +234,9 @@ func Test_secretParser_Expired(t *testing.T) {
 			},
 			args: args{
 				token: &core.Oauth{
-					Data: data{
-						AccessToken:  "12345",
-						RefreshToken: "54321",
-						Expiry:       time.Now().Add(-time.Second)},
-				},
+					AccessToken:  "12345",
+					RefreshToken: "54321",
+					Expiry:       time.Now().Add(-time.Second)},
 			},
 			want: true,
 		},
@@ -276,11 +248,9 @@ func Test_secretParser_Expired(t *testing.T) {
 			},
 			args: args{
 				token: &core.Oauth{
-					Data: data{
-						AccessToken:  "12345",
-						RefreshToken: "54321",
-						Expiry:       time.Now().Add(time.Second * 600)},
-				},
+					AccessToken:  "12345",
+					RefreshToken: "54321",
+					Expiry:       time.Now().Add(time.Second * 600)},
 			},
 			want: true,
 		},

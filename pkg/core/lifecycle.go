@@ -389,6 +389,6 @@ func (pl *Pipeline) getOauthSecret(repoID, gitProvider string) (*Oauth, error) {
 		pl.Logger.Errorf("error while unmarshaling json to oauth for RepoID %s : %s", repoID, err)
 	}
 
-	refreshedOauth.Data.Type = Bearer
+	refreshedOauth.Type = Bearer
 	return refreshedOauth, nil
 }
