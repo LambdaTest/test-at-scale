@@ -1,6 +1,6 @@
 package core
 
-import "github.com/LambdaTest/synapse/config"
+import "github.com/LambdaTest/test-at-scale/config"
 
 // Secret struct for holding secret data
 type Secret map[string]string

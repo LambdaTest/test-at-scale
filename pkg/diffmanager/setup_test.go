@@ -9,9 +9,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/LambdaTest/synapse/pkg/core"
-	"github.com/LambdaTest/synapse/pkg/global"
-	"github.com/LambdaTest/synapse/testutils"
+	"github.com/LambdaTest/test-at-scale/pkg/core"
+	"github.com/LambdaTest/test-at-scale/pkg/global"
+	"github.com/LambdaTest/test-at-scale/testutils"
 )
 
 func Test_updateWithOr(t *testing.T) {

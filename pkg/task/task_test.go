@@ -7,9 +7,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/LambdaTest/synapse/pkg/lumber"
-	"github.com/LambdaTest/synapse/pkg/requestutils"
-	"github.com/LambdaTest/synapse/testutils"
+	"github.com/LambdaTest/test-at-scale/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/pkg/requestutils"
+	"github.com/LambdaTest/test-at-scale/testutils"
 )
 
 func TestTask_UpdateStatus(t *testing.T) {

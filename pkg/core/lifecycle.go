@@ -13,11 +13,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/LambdaTest/synapse/config"
-	"github.com/LambdaTest/synapse/pkg/errs"
-	"github.com/LambdaTest/synapse/pkg/fileutils"
-	"github.com/LambdaTest/synapse/pkg/global"
-	"github.com/LambdaTest/synapse/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/config"
+	"github.com/LambdaTest/test-at-scale/pkg/errs"
+	"github.com/LambdaTest/test-at-scale/pkg/fileutils"
+	"github.com/LambdaTest/test-at-scale/pkg/global"
+	"github.com/LambdaTest/test-at-scale/pkg/lumber"
 )
 
 const (
@@ -36,7 +36,7 @@ func NewPipeline(cfg *config.NucleusConfig, logger lumber.Logger) (*Pipeline, er
 	}, nil
 }
 
-//Start starts pipeline lifecycle
+// Start starts pipeline lifecycle
 func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -156,11 +156,11 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	os.Setenv("TASK_ID", payload.TaskID)
 	os.Setenv("ORG_ID", payload.OrgID)
 	os.Setenv("BUILD_ID", payload.BuildID)
-	//set target commit_id as environment variable
+	// set target commit_id as environment variable
 	os.Setenv("COMMIT_ID", payload.BuildTargetCommit)
-	//set repo_id as environment variable
+	// set repo_id as environment variable
 	os.Setenv("REPO_ID", payload.RepoID)
-	//set coverage_dir as environment variable
+	// set coverage_dir as environment variable
 	os.Setenv("CODE_COVERAGE_DIR", coverageDir)
 	os.Setenv("BRANCH_NAME", payload.BranchName)
 	os.Setenv("ENV", pl.Cfg.Env)
@@ -170,8 +170,8 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	os.Setenv("REPO_ROOT", global.RepoDir)
 	os.Setenv("BLOCK_TESTS_FILE", global.BlockTestFileLocation)
 
-	if tasConfig.NodeVersion != nil {
-		nodeVersion := tasConfig.NodeVersion.String()
+	if tasConfig.NodeVersion != "" {
+		nodeVersion := tasConfig.NodeVersion
 		// Running the `source` commands in a directory where .nvmrc is present, exits with exitCode 3
 		// https://github.com/nvm-sh/nvm/issues/1985
 		// TODO [good-to-have]: Auto-read and install from .nvmrc file, if present

@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/LambdaTest/synapse/pkg/global"
+	"github.com/LambdaTest/test-at-scale/pkg/global"
 	"github.com/stretchr/testify/assert"
 )
 

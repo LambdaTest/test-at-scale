@@ -4,9 +4,9 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/LambdaTest/synapse/config"
-	"github.com/LambdaTest/synapse/pkg/api"
-	"github.com/LambdaTest/synapse/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/config"
+	"github.com/LambdaTest/test-at-scale/pkg/api"
+	"github.com/LambdaTest/test-at-scale/pkg/lumber"
 	"github.com/gin-gonic/gin"
 )
 

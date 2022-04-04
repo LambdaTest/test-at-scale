@@ -7,12 +7,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/LambdaTest/synapse/config"
-	"github.com/LambdaTest/synapse/pkg/core"
-	"github.com/LambdaTest/synapse/pkg/global"
-	"github.com/LambdaTest/synapse/pkg/lumber"
-	"github.com/LambdaTest/synapse/pkg/procfs"
-	"github.com/LambdaTest/synapse/testutils"
+	"github.com/LambdaTest/test-at-scale/config"
+	"github.com/LambdaTest/test-at-scale/pkg/core"
+	"github.com/LambdaTest/test-at-scale/pkg/global"
+	"github.com/LambdaTest/test-at-scale/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/pkg/procfs"
+	"github.com/LambdaTest/test-at-scale/testutils"
 )
 
 func getDummyTimeMap() map[string]time.Time {
