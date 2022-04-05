@@ -295,7 +295,7 @@ type TASConfig struct {
 	ConfigFile        string             `yaml:"configFile" validate:"omitempty"`
 	CoverageThreshold *CoverageThreshold `yaml:"coverageThreshold" validate:"omitempty"`
 	Tier              Tier               `yaml:"tier" validate:"oneof=xsmall small medium large xlarge"`
-	NodeVersion       string             `yaml:"nodeVersion" validate:"semver"`
+	NodeVersion       string             `yaml:"nodeVersion" validate:"omitempty,semver"`
 	ContainerImage    string             `yaml:"containerImage"`
 }
 

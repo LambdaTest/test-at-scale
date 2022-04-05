@@ -192,6 +192,16 @@ func TestValidateStruct(t *testing.T) {
 				Tier:        "small",
 			},
 		},
+		{
+			"Valid Config - Only Framework",
+			"testutils/testdata/tasyml/framework_only_required.yml",
+			nil,
+			&core.TASConfig{
+				SmartRun:  true,
+				Framework: "mocha",
+				Tier:      "small",
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
