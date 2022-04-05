@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -14,11 +13,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/LambdaTest/synapse/config"
-	"github.com/LambdaTest/synapse/pkg/errs"
-	"github.com/LambdaTest/synapse/pkg/fileutils"
-	"github.com/LambdaTest/synapse/pkg/global"
-	"github.com/LambdaTest/synapse/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/config"
+	"github.com/LambdaTest/test-at-scale/pkg/errs"
+	"github.com/LambdaTest/test-at-scale/pkg/fileutils"
+	"github.com/LambdaTest/test-at-scale/pkg/global"
+	"github.com/LambdaTest/test-at-scale/pkg/lumber"
 )
 
 const (
@@ -37,7 +36,7 @@ func NewPipeline(cfg *config.NucleusConfig, logger lumber.Logger) (*Pipeline, er
 	}, nil
 }
 
-//Start starts pipeline lifecycle
+// Start starts pipeline lifecycle
 func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -65,11 +64,6 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 			pl.Logger.Fatalf("error while merge and upload coverage files %v", err)
 		}
 		os.Exit(0)
-	}
-
-	oauth, err := pl.getOauthSecret(payload.RepoID, payload.GitProvider)
-	if err != nil {
-		pl.Logger.Fatalf("failed to get oauth secret %v", err)
 	}
 
 	// set payload on pipeline object
@@ -122,6 +116,11 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 		}
 	}()
 
+	oauth, err := pl.SecretParser.GetOauthSecret(global.OauthSecretPath)
+	if err != nil {
+		pl.Logger.Errorf("failed to get oauth secret %v", err)
+		return err
+	}
 	if pl.Cfg.DiscoverMode {
 		pl.Logger.Infof("Cloning repo ...")
 		err = pl.GitManager.Clone(ctx, pl.Payload, oauth)
@@ -157,11 +156,11 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	os.Setenv("TASK_ID", payload.TaskID)
 	os.Setenv("ORG_ID", payload.OrgID)
 	os.Setenv("BUILD_ID", payload.BuildID)
-	//set target commit_id as environment variable
+	// set target commit_id as environment variable
 	os.Setenv("COMMIT_ID", payload.BuildTargetCommit)
-	//set repo_id as environment variable
+	// set repo_id as environment variable
 	os.Setenv("REPO_ID", payload.RepoID)
-	//set coverage_dir as environment variable
+	// set coverage_dir as environment variable
 	os.Setenv("CODE_COVERAGE_DIR", coverageDir)
 	os.Setenv("BRANCH_NAME", payload.BranchName)
 	os.Setenv("ENV", pl.Cfg.Env)
@@ -171,8 +170,8 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	os.Setenv("REPO_ROOT", global.RepoDir)
 	os.Setenv("BLOCK_TESTS_FILE", global.BlockTestFileLocation)
 
-	if tasConfig.NodeVersion != nil {
-		nodeVersion := tasConfig.NodeVersion.String()
+	if tasConfig.NodeVersion != "" {
+		nodeVersion := tasConfig.NodeVersion
 		// Running the `source` commands in a directory where .nvmrc is present, exits with exitCode 3
 		// https://github.com/nvm-sh/nvm/issues/1985
 		// TODO [good-to-have]: Auto-read and install from .nvmrc file, if present
@@ -352,43 +351,4 @@ func (pl *Pipeline) sendStats(payload ExecutionResults) error {
 		return errors.New("non 200 status")
 	}
 	return nil
-}
-
-// getOauthSecret returns a valid oauth token
-func (pl *Pipeline) getOauthSecret(repoID, gitProvider string) (*Oauth, error) {
-	oauth, err := pl.SecretParser.GetOauthSecret(global.OauthSecretPath)
-	if err != nil {
-		return nil, err
-	}
-
-	if gitProvider != Bitbucket || !pl.SecretParser.Expired(oauth) {
-		return oauth, nil
-	}
-
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/%s", global.NeuronHost+global.RefreshTokenEndpoint, repoID), nil)
-	if err != nil {
-		pl.Logger.Errorf("failed to create new request %v", err)
-	}
-
-	res, err := pl.HttpClient.Do(req)
-	if err != nil {
-		pl.Logger.Errorf("error while refreshing token for RepoID %s : %s", repoID, err)
-	}
-	if res.Body != nil {
-		defer res.Body.Close()
-	}
-
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		pl.Logger.Errorf("error while reading token response body for RepoID %s : %s", repoID, err)
-	}
-
-	refreshedOauth := new(Oauth)
-	err = json.Unmarshal(body, &refreshedOauth)
-	if err != nil {
-		pl.Logger.Errorf("error while unmarshaling json to oauth for RepoID %s : %s", repoID, err)
-	}
-
-	refreshedOauth.Type = Bearer
-	return refreshedOauth, nil
 }

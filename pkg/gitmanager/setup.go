@@ -12,11 +12,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/LambdaTest/synapse/pkg/core"
-	"github.com/LambdaTest/synapse/pkg/errs"
-	"github.com/LambdaTest/synapse/pkg/global"
-	"github.com/LambdaTest/synapse/pkg/lumber"
-	"github.com/LambdaTest/synapse/pkg/urlmanager"
+	"github.com/LambdaTest/test-at-scale/pkg/core"
+	"github.com/LambdaTest/test-at-scale/pkg/errs"
+	"github.com/LambdaTest/test-at-scale/pkg/global"
+	"github.com/LambdaTest/test-at-scale/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/pkg/urlmanager"
 	"github.com/mholt/archiver/v3"
 )
 

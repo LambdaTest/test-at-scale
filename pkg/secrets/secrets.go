@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/LambdaTest/synapse/config"
-	"github.com/LambdaTest/synapse/pkg/core"
-	errs "github.com/LambdaTest/synapse/pkg/errs"
-	"github.com/LambdaTest/synapse/pkg/global"
-	"github.com/LambdaTest/synapse/pkg/lumber"
-	"github.com/LambdaTest/synapse/pkg/utils"
+	"github.com/LambdaTest/test-at-scale/config"
+	"github.com/LambdaTest/test-at-scale/pkg/core"
+	errs "github.com/LambdaTest/test-at-scale/pkg/errs"
+	"github.com/LambdaTest/test-at-scale/pkg/global"
+	"github.com/LambdaTest/test-at-scale/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/pkg/utils"
 )
 
 type secertManager struct {

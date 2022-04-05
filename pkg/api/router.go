@@ -1,12 +1,12 @@
 package api
 
 import (
-	"github.com/LambdaTest/synapse/pkg/api/health"
-	"github.com/LambdaTest/synapse/pkg/api/results"
-	"github.com/LambdaTest/synapse/pkg/api/testlist"
-	"github.com/LambdaTest/synapse/pkg/core"
-	"github.com/LambdaTest/synapse/pkg/lumber"
-	"github.com/LambdaTest/synapse/pkg/service/teststats"
+	"github.com/LambdaTest/test-at-scale/pkg/api/health"
+	"github.com/LambdaTest/test-at-scale/pkg/api/results"
+	"github.com/LambdaTest/test-at-scale/pkg/api/testlist"
+	"github.com/LambdaTest/test-at-scale/pkg/core"
+	"github.com/LambdaTest/test-at-scale/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/pkg/service/teststats"
 	"github.com/gin-gonic/gin"
 )
 
