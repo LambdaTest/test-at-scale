@@ -42,6 +42,7 @@ type Message struct {
 
 // LoginDetails struct
 type LoginDetails struct {
+	Name      string  `json:"name"`
 	SynapseID string  `json:"synapse_id"`
 	SecretKey string  `json:"secret_key"`
 	CPU       float32 `json:"cpu"`

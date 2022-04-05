@@ -15,7 +15,7 @@ type PayloadManager interface {
 
 // TASConfigManager defines operations for tas config
 type TASConfigManager interface {
-	// LoadAndValidate loads the TASConfig from the given path
+	// LoadAndValidate loads and validates the TASConfig from the given path
 	LoadAndValidate(ctx context.Context, path string, eventType EventType, licenseTier Tier) (*TASConfig, error)
 }
 

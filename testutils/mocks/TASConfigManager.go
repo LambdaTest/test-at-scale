@@ -5,7 +5,7 @@ package mocks
 import (
 	context "context"
 
-	core "github.com/LambdaTest/synapse/pkg/core"
+	core "github.com/LambdaTest/test-at-scale/pkg/core"
 	mock "github.com/stretchr/testify/mock"
 )
 

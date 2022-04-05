@@ -1,7 +1,7 @@
 package tests
 
 import (
-	"github.com/LambdaTest/synapse/config"
+	"github.com/LambdaTest/test-at-scale/config"
 )
 
 // MockConfig creates new dummy config

@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/LambdaTest/synapse/pkg/core"
-	"github.com/LambdaTest/synapse/pkg/global"
-	"github.com/LambdaTest/synapse/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/pkg/core"
+	"github.com/LambdaTest/test-at-scale/pkg/global"
+	"github.com/LambdaTest/test-at-scale/pkg/lumber"
 )
 
 // task represents each instance of nucleus spawned by neuron

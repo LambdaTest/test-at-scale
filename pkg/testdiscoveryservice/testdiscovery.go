@@ -7,11 +7,11 @@ import (
 	"net/http"
 	"os/exec"
 
-	"github.com/LambdaTest/synapse/pkg/core"
-	"github.com/LambdaTest/synapse/pkg/global"
-	"github.com/LambdaTest/synapse/pkg/logstream"
-	"github.com/LambdaTest/synapse/pkg/lumber"
-	"github.com/LambdaTest/synapse/pkg/utils"
+	"github.com/LambdaTest/test-at-scale/pkg/core"
+	"github.com/LambdaTest/test-at-scale/pkg/global"
+	"github.com/LambdaTest/test-at-scale/pkg/logstream"
+	"github.com/LambdaTest/test-at-scale/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/pkg/utils"
 )
 
 type testDiscoveryService struct {

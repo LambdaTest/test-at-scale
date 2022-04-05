@@ -13,11 +13,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/LambdaTest/synapse/config"
-	"github.com/LambdaTest/synapse/pkg/core"
-	"github.com/LambdaTest/synapse/pkg/errs"
-	"github.com/LambdaTest/synapse/pkg/lumber"
-	"github.com/LambdaTest/synapse/pkg/urlmanager"
+	"github.com/LambdaTest/test-at-scale/config"
+	"github.com/LambdaTest/test-at-scale/pkg/core"
+	"github.com/LambdaTest/test-at-scale/pkg/errs"
+	"github.com/LambdaTest/test-at-scale/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/pkg/urlmanager"
 )
 
 //TODO: add logger
@@ -85,8 +85,8 @@ func (dm *diffManager) getCommitDiff(gitprovider, repoURL string, oauth *core.Oa
 	if err != nil {
 		return nil, err
 	}
-	if oauth.Data.AccessToken != "" {
-		req.Header.Add("Authorization", fmt.Sprintf("%s %s", oauth.Data.Type, oauth.Data.AccessToken))
+	if oauth.AccessToken != "" {
+		req.Header.Add("Authorization", fmt.Sprintf("%s %s", oauth.Type, oauth.AccessToken))
 	}
 	req.Header.Add("Accept", "application/vnd.github.v3.diff")
 	resp, err := dm.client.Do(req)
@@ -123,7 +123,7 @@ func (dm *diffManager) getPRDiff(gitprovider, repoURL string, prNumber int, oaut
 		dm.logger.Errorf("failed to create http request for changelist url error: %v", err)
 		return nil, err
 	}
-	req.Header.Add("Authorization", fmt.Sprintf("%s %s", oauth.Data.Type, oauth.Data.AccessToken))
+	req.Header.Add("Authorization", fmt.Sprintf("%s %s", oauth.Type, oauth.AccessToken))
 	req.Header.Set("Accept", "application/vnd.github.v3.diff")
 
 	resp, err := dm.client.Do(req)
