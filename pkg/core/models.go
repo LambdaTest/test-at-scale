@@ -7,9 +7,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/LambdaTest/synapse/config"
-	"github.com/LambdaTest/synapse/pkg/lumber"
-	"github.com/coreos/go-semver/semver"
+	"github.com/LambdaTest/test-at-scale/config"
+	"github.com/LambdaTest/test-at-scale/pkg/lumber"
 )
 
 // ExecutionID type
@@ -107,6 +106,7 @@ type Payload struct {
 	LicenseTier                Tier               `json:"license_tier"`
 	CollectCoverage            bool               `json:"collect_coverage"`
 	CollectStats               bool               `json:"collect_stats"`
+	NumberOfExecutions         int                `json:"number_of_executions"`
 }
 
 // Pipeline defines all attributes of Pipeline
@@ -275,12 +275,10 @@ const (
 
 // Oauth represents the sructure of Oauth
 type Oauth struct {
-	Data struct {
-		AccessToken  string    `json:"access_token"`
-		Expiry       time.Time `json:"expiry"`
-		RefreshToken string    `json:"refresh_token"`
-		Type         TokenType `json:"token_type,omitempty"`
-	} `json:"data"`
+	AccessToken  string    `json:"access_token"`
+	Expiry       time.Time `json:"expiry"`
+	RefreshToken string    `json:"refresh_token"`
+	Type         TokenType `json:"token_type,omitempty"`
 }
 
 // TASConfig represents the .tas.yml file
@@ -298,7 +296,7 @@ type TASConfig struct {
 	ConfigFile        string             `yaml:"configFile" validate:"omitempty"`
 	CoverageThreshold *CoverageThreshold `yaml:"coverageThreshold" validate:"omitempty"`
 	Tier              Tier               `yaml:"tier" validate:"oneof=xsmall small medium large xlarge"`
-	NodeVersion       *semver.Version    `yaml:"nodeVersion"`
+	NodeVersion       string             `yaml:"nodeVersion" validate:"omitempty,semver"`
 	ContainerImage    string             `yaml:"containerImage"`
 }
 

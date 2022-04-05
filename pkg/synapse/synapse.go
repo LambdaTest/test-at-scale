@@ -7,10 +7,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/LambdaTest/synapse/pkg/core"
-	"github.com/LambdaTest/synapse/pkg/global"
-	"github.com/LambdaTest/synapse/pkg/lumber"
-	"github.com/LambdaTest/synapse/pkg/utils"
+	"github.com/LambdaTest/test-at-scale/pkg/core"
+	"github.com/LambdaTest/test-at-scale/pkg/global"
+	"github.com/LambdaTest/test-at-scale/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/pkg/utils"
 	"github.com/denisbrodbeck/machineid"
 	"github.com/gorilla/websocket"
 	"github.com/lestrrat-go/backoff"
@@ -118,7 +118,7 @@ func (s *synapse) openAndMaintainConnection(ctx context.Context, connectionFaile
 
 /*
  connectionHandler handles the connection by listening to any connection closer
- also it returns boolean value which repersents whether we can retry to connect
+ also it returns boolean value which represents whether we can retry to connect
 */
 func (s *synapse) connectionHandler(ctx context.Context, conn *websocket.Conn, connectionFailed chan struct{}) bool {
 	normalCloser := make(chan struct{})
@@ -286,6 +286,7 @@ func (s *synapse) login() {
 	}
 	lambdatestConfig := s.secretsManager.GetLambdatestSecrets()
 	loginDetails := core.LoginDetails{
+		Name:      s.secretsManager.GetSynapseName(),
 		SecretKey: lambdatestConfig.SecretKey,
 		CPU:       cpu,
 		RAM:       ram,

@@ -61,6 +61,14 @@ var (
 	ErrGitDiffNotFound = New("diff not found")
 	// GenericErrRemark returns a generic error message for user facing errors.
 	GenericErrRemark = New("Unexpected error")
+	// ErrMarshalJSON is returned when json marshal failed
+	ErrMarshalJSON = New("JSON marshal failed")
+	// ErrUnMarshalJSON is returned when json unmarshal failed
+	ErrUnMarshalJSON = New("JSON unmarshal failed")
+	// ErrMissingAccessToken is returned when Oauth token is missing
+	ErrMissingAccessToken = New("Missing OAuth access token")
+	// ErrInvalidConfFileFormat is returned when TAS configuration file is invalid
+	ErrInvalidConfFileFormat = New("Invalid format of configuration file")
 )
 
 type StatusFailed struct {
@@ -69,4 +77,18 @@ type StatusFailed struct {
 
 func (e *StatusFailed) Error() string {
 	return e.Remark
+}
+
+// ErrInvalidConf represents field validation failures of TAS configuration
+type ErrInvalidConf struct {
+	Fields []string
+	Values []interface{}
+}
+
+func (e ErrInvalidConf) Error() string {
+	errMsg := "Invalid values provided for the following fields in configuration file: \n"
+	for idx, field := range e.Fields {
+		errMsg += fmt.Sprintf("%s: %s\n", field, e.Values[idx])
+	}
+	return errMsg
 }

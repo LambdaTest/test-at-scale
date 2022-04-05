@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/LambdaTest/synapse/pkg/core"
-	"github.com/LambdaTest/synapse/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/pkg/core"
+	"github.com/LambdaTest/test-at-scale/pkg/lumber"
 )
 
 type requests struct {

@@ -3,8 +3,8 @@ package testlist
 import (
 	"net/http"
 
-	"github.com/LambdaTest/synapse/pkg/core"
-	"github.com/LambdaTest/synapse/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/pkg/core"
+	"github.com/LambdaTest/test-at-scale/pkg/lumber"
 	"github.com/gin-gonic/gin"
 )
 

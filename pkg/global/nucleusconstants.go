@@ -24,7 +24,6 @@ const (
 	SecretRegex              = `\${{\s*secrets\.(.*?)\s*}}`
 	ExecutionResultChunkSize = 50
 	TestLocatorsDelimiter    = "#TAS#"
-	RefreshTokenEndpoint     = "/internal/refresh-token"
 	ExpiryDelta              = 15 * time.Minute
 )
 

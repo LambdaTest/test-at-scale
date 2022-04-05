@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/LambdaTest/synapse/config"
-	"github.com/LambdaTest/synapse/pkg/core"
-	errs "github.com/LambdaTest/synapse/pkg/errs"
-	"github.com/LambdaTest/synapse/pkg/global"
-	"github.com/LambdaTest/synapse/pkg/lumber"
-	"github.com/LambdaTest/synapse/pkg/utils"
+	"github.com/LambdaTest/test-at-scale/config"
+	"github.com/LambdaTest/test-at-scale/pkg/core"
+	errs "github.com/LambdaTest/test-at-scale/pkg/errs"
+	"github.com/LambdaTest/test-at-scale/pkg/global"
+	"github.com/LambdaTest/test-at-scale/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/pkg/utils"
 )
 
 type secertManager struct {
@@ -32,6 +32,11 @@ func New(cfg *config.SynapseConfig, logger lumber.Logger) core.SecretsManager {
 
 func (s *secertManager) GetLambdatestSecrets() *config.LambdatestConfig {
 	return &s.cfg.Lambdatest
+}
+
+// GetSynapseName returns the name of synapse if mentioned in config
+func (s *secertManager) GetSynapseName() string {
+	return s.cfg.Name
 }
 
 func (s *secertManager) WriteGitSecrets(path string) error {

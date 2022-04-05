@@ -11,11 +11,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/LambdaTest/synapse/pkg/core"
-	"github.com/LambdaTest/synapse/pkg/global"
-	"github.com/LambdaTest/synapse/pkg/logstream"
-	"github.com/LambdaTest/synapse/pkg/lumber"
-	"github.com/LambdaTest/synapse/pkg/service/teststats"
+	"github.com/LambdaTest/test-at-scale/pkg/core"
+	"github.com/LambdaTest/test-at-scale/pkg/global"
+	"github.com/LambdaTest/test-at-scale/pkg/logstream"
+	"github.com/LambdaTest/test-at-scale/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/pkg/service/teststats"
 )
 
 const locatorFile = "locators"
@@ -74,6 +74,7 @@ func (tes *testExecutionService) Run(ctx context.Context,
 
 	if payload.LocatorAddress != "" {
 		locatorFile, err := tes.GetLocatorsFile(ctx, payload.LocatorAddress)
+		tes.logger.Debugf("locators : %v\n", locatorFile)
 		if err != nil {
 			tes.logger.Errorf("failed to get locator file, error: %v", err)
 			return nil, err
@@ -88,43 +89,52 @@ func (tes *testExecutionService) Run(ctx context.Context,
 		tes.logger.Errorf("failed to parse env variables, error: %v", err)
 		return nil, err
 	}
-	var cmd *exec.Cmd
-	if tasConfig.Framework == "jasmine" || tasConfig.Framework == "mocha" {
-		if collectCoverage {
-			cmd = exec.CommandContext(ctx, "nyc", commandArgs...)
+
+	executionResults := &core.ExecutionResults{
+		TaskID:   payload.TaskID,
+		BuildID:  payload.BuildID,
+		RepoID:   payload.RepoID,
+		OrgID:    payload.OrgID,
+		CommitID: payload.BuildTargetCommit,
+	}
+	for i := 1; i <= payload.NumberOfExecutions; i++ {
+		var cmd *exec.Cmd
+		if tasConfig.Framework == "jasmine" || tasConfig.Framework == "mocha" {
+			if collectCoverage {
+				cmd = exec.CommandContext(ctx, "nyc", commandArgs...)
+			} else {
+				cmd = exec.CommandContext(ctx, commandArgs[0], commandArgs[1:]...) //nolint:gosec
+			}
 		} else {
-			cmd = exec.CommandContext(ctx, commandArgs[0], commandArgs[1:]...)
+			cmd = exec.CommandContext(ctx, commandArgs[0], commandArgs[1:]...) //nolint:gosec
+			if collectCoverage {
+				envVars = append(envVars, "TAS_COLLECT_COVERAGE=true")
+			}
 		}
-	} else {
-		cmd = exec.CommandContext(ctx, commandArgs[0], commandArgs[1:]...)
-		if collectCoverage {
-			envVars = append(envVars, "TAS_COLLECT_COVERAGE=true")
+		cmd.Dir = global.RepoDir
+		cmd.Env = envVars
+		cmd.Stdout = maskWriter
+		cmd.Stderr = maskWriter
+		tes.logger.Debugf("Executing test execution command: %s", cmd.String())
+		if err := cmd.Start(); err != nil {
+			tes.logger.Errorf("failed to execute test %s %v", cmd.String(), err)
+			return nil, err
 		}
-	}
-	cmd.Dir = global.RepoDir
-	cmd.Env = envVars
-	cmd.Stdout = maskWriter
-	cmd.Stderr = maskWriter
+		pid := int32(cmd.Process.Pid)
+		tes.logger.Debugf("execution command started with pid %d", pid)
 
-	tes.logger.Debugf("Executing test execution command: %s", cmd.String())
-	if err := cmd.Start(); err != nil {
-		tes.logger.Errorf("failed to execute test %s %v", cmd.String(), err)
-		return nil, err
+		if err := tes.ts.CaptureTestStats(pid, payload.CollectStats); err != nil {
+			tes.logger.Errorf("failed to find process for command %s with pid %d %v", cmd.String(), pid, err)
+			return nil, err
+		}
+		// not returning error because runner like jest will return error in case of test failure
+		// and we want to run test multiple times
+		if err := cmd.Wait(); err != nil {
+			tes.logger.Errorf("Error in executing []: %+v\n", err)
+		}
+		result := <-tes.ts.ExecutionResultOutputChannel
+		executionResults.Results = append(executionResults.Results, result.Results...)
 	}
-	pid := int32(cmd.Process.Pid)
-	tes.logger.Debugf("execution command started with pid %d", pid)
-
-	if err := tes.ts.CaptureTestStats(pid, payload.CollectStats); err != nil {
-		tes.logger.Errorf("failed to find process for command %s with pid %d %v", cmd.String(), pid, err)
-		return nil, err
-	}
-
-	errC := cmd.Wait()
-	if errC != nil {
-		tes.logger.Errorf("Error in executing []: %+v\n", errC)
-	}
-	executionResults := <-tes.ts.ExecutionResultOutputChannel
-
 	// FIXME:  commenting this out as we will need to rework on coverage logic after test parallelization
 	// if collectCoverage {
 	// 	if err := tes.createCoverageManifest(tasConfig, coverageDir, removedfiles, executeAll); err != nil {
@@ -132,7 +142,7 @@ func (tes *testExecutionService) Run(ctx context.Context,
 	// 		return nil, err
 	// 	}
 	// }
-	return executionResults, errC
+	return executionResults, nil
 }
 
 // func (tes *testExecutionService) createCoverageManifest(tasConfig *core.TASConfig, coverageDirectory string, removedFiles []string, executeAll bool) error {

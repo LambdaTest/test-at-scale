@@ -1,6 +1,6 @@
 package core
 
-import "github.com/LambdaTest/synapse/config"
+import "github.com/LambdaTest/test-at-scale/config"
 
 // Secret struct for holding secret data
 type Secret map[string]string
@@ -23,4 +23,6 @@ type SecretsManager interface {
 
 	// GetDockerSecrets returns Mode , RegistryAuth, and URL for pulling remote docker image
 	GetDockerSecrets(r *RunnerOptions) (ContainerImageConfig, error)
+	// GetSynapseName returns synapse name mentioned in config
+	GetSynapseName() string
 }
