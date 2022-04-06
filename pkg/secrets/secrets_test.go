@@ -25,7 +25,7 @@ func TestGetLambdatestSecrets(t *testing.T) {
 func TestWriteGitSecrets(t *testing.T) {
 	expectedFile := fmt.Sprintf("%s/%s", testdDataDir, global.GitConfigFileName)
 	defer removeCreatedPath(testdDataDir)
-	expectedFileContent := `{"data":{"access_token":"dummytoken","expiry":"0001-01-01T00:00:00Z","refresh_token":"","token_type":"Bearer"}}`
+	expectedFileContent := `{"access_token":"dummytoken","expiry":"0001-01-01T00:00:00Z","refresh_token":"","token_type":"Bearer"}`
 	err := secretsManager.WriteGitSecrets(testdDataDir)
 	if err != nil {
 		t.Errorf("error while writing secrets: %v", err)

@@ -18,10 +18,6 @@ type secertManager struct {
 	cfg    *config.SynapseConfig
 }
 
-type secretsFile struct {
-	Secrets core.Secret `json:"data"`
-}
-
 // New returns new secretManager
 func New(cfg *config.SynapseConfig, logger lumber.Logger) core.SecretsManager {
 	return &secertManager{
@@ -40,13 +36,11 @@ func (s *secertManager) GetSynapseName() string {
 }
 
 func (s *secertManager) WriteGitSecrets(path string) error {
-	gitSecrets := secretsFile{
-		Secrets: core.Secret{
-			"access_token":  s.cfg.Git.Token,
-			"expiry":        "0001-01-01T00:00:00Z",
-			"refresh_token": "",
-			"token_type":    s.cfg.Git.TokenType,
-		},
+	gitSecrets := core.Secret{
+		"access_token":  s.cfg.Git.Token,
+		"expiry":        "0001-01-01T00:00:00Z",
+		"refresh_token": "",
+		"token_type":    s.cfg.Git.TokenType,
 	}
 	gitSecretsJSON, err := json.Marshal(gitSecrets)
 	if err != nil {
@@ -69,10 +63,8 @@ func (s *secertManager) WriteRepoSecrets(repo string, path string) error {
 	if !ok {
 		return errors.New("no secrets found in configuration file")
 	}
-	repoSecrets := secretsFile{
-		Secrets: val,
-	}
-	repoSecretsJSON, err := json.Marshal(repoSecrets)
+
+	repoSecretsJSON, err := json.Marshal(val)
 	if err != nil {
 		return errs.ERR_JSON_MAR(err.Error())
 	}
@@ -108,7 +100,6 @@ func (s *secertManager) GetDockerSecrets(r *core.RunnerOptions) (core.ContainerI
 	}
 	// for private repo check whether creds are empty
 	if s.cfg.ContainerRegistry.Username == "" || s.cfg.ContainerRegistry.Password == "" {
-
 		return containerImageConfig, errs.CR_AUTH_NF
 	}
 	jsonBytes, _ := json.Marshal(map[string]string{
