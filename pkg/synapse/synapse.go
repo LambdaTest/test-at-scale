@@ -279,7 +279,7 @@ func (s *synapse) runAndUpdateJobStatus(runnerOpts core.RunnerOptions) {
 	// post job completion steps
 	s.logger.Debugf("jobID %s, buildID %s  status  %+v", runnerOpts.Label[JobID], runnerOpts.Label[BuildID], status)
 
-	s.sendResourceUpdates(core.ResourceRelease, &runnerOpts)
+	s.sendResourceUpdates(core.ResourceRelease, &runnerOpts, runnerOpts.Label[JobID], runnerOpts.Label[BuildID])
 	jobStatus := core.JobFailed
 	if status.Done {
 		jobStatus = core.JobCompleted
@@ -331,6 +331,7 @@ func (s *synapse) logout() {
 func (s *synapse) sendResourceUpdates(
 	status core.StatType,
 	runnerOpts *core.RunnerOptions,
+	jobID, buildID string,
 ) {
 	specs := GetResources(runnerOpts.Tier)
 	resourceStats := core.ResourceStats{
@@ -338,7 +339,7 @@ func (s *synapse) sendResourceUpdates(
 		CPU:    specs.CPU,
 		RAM:    specs.RAM,
 	}
-	s.logger.Debugf("sending resource update to lambdatest %+v", resourceStats)
+	s.logger.Debugf("sending resource update for jobID %s buildID %s to lambdatest %+v", jobID, buildID, resourceStats)
 	resourceStatsMessage := CreateResourceStatsMessage(resourceStats)
 	s.writeMessageToBuffer(&resourceStatsMessage)
 }
