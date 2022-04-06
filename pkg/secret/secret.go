@@ -19,10 +19,6 @@ type secretParser struct {
 	secretRegex *regexp.Regexp
 }
 
-type secretData struct {
-	SecretMap map[string]string `json:"data"`
-}
-
 // New return new secret parser
 func New(logger lumber.Logger) core.SecretParser {
 	return &secretParser{
@@ -33,7 +29,7 @@ func New(logger lumber.Logger) core.SecretParser {
 
 // GetRepoSecret read repo secrets from given path
 func (s *secretParser) GetRepoSecret(path string) (map[string]string, error) {
-	var secretData secretData
+	var secretData map[string]string
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		s.logger.Debugf("failed to find user env secrets in path %s, as path does not exists", path)
 		return nil, nil
@@ -49,7 +45,7 @@ func (s *secretParser) GetRepoSecret(path string) (map[string]string, error) {
 	}
 
 	// extract secretmap from data map[data: map[secretname:secretvalue]]
-	return secretData.SecretMap, nil
+	return secretData, nil
 }
 
 // GetOauthSecret parses the oauth secret
