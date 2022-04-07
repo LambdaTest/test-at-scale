@@ -134,7 +134,7 @@ func (tes *testExecutionService) Run(ctx context.Context,
 		// not returning error because runner like jest will return error in case of test failure
 		// and we want to run test multiple times
 		if err := cmd.Wait(); err != nil {
-			tes.logger.Errorf("Error in executing []: %+v\n", err)
+			tes.logger.Errorf("error in test execution: %+v", err)
 		}
 		result := <-tes.ts.ExecutionResultOutputChannel
 		executionResults.Results = append(executionResults.Results, result.Results...)
