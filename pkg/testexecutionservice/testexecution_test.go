@@ -25,7 +25,7 @@ func TestNewTestExecutionService(t *testing.T) {
 	if err != nil {
 		t.Errorf("Couldn't initialise logger, error: %v", err)
 	}
-	cfg := config.GlobalNucleusConfig
+	cfg := new(config.NucleusConfig)
 	cfg.ConsecutiveRuns = 1
 	cfg.CollectStats = true
 	var ts *teststats.ProcStats
