@@ -43,11 +43,14 @@ func TestNewTestExecutionService(t *testing.T) {
 		args args
 		want *testExecutionService
 	}{
-		{"TestNewTestExecutionService", args{execManager, azureClient, ts, logger}, &testExecutionService{logger, azureClient, cfg, ts, execManager}},
+		{"TestNewTestExecutionService",
+			args{execManager, azureClient, ts, logger},
+			&testExecutionService{logger, azureClient, cfg, ts, execManager}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewTestExecutionService(cfg, tt.args.execManager, tt.args.azureClient, tt.args.ts, tt.args.logger); !reflect.DeepEqual(got, tt.want) {
+			if got := NewTestExecutionService(cfg, tt.args.execManager,
+				tt.args.azureClient, tt.args.ts, tt.args.logger); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewTestExecutionService() = %v, want %v", got, tt.want)
 			}
 		})
