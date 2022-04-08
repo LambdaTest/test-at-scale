@@ -8,15 +8,15 @@ import "github.com/LambdaTest/test-at-scale/pkg/lumber"
 type NucleusConfig struct {
 	Config          string
 	Port            string
-	PayloadAddress  string `json:"payloadAddress" yaml:"payloadAddress"`
+	PayloadAddress  string `json:"payloadAddress"`
 	CollectStats    bool   `json:"collectStats"`
 	ConsecutiveRuns int    `json:"consecutiveRuns"`
 	LogFile         string
 	LogConfig       lumber.LoggingConfig
-	CoverageMode    bool   `json:"coverage" yaml:"coverageOnly"`
-	DiscoverMode    bool   `json:"discover" yaml:"discoverOnly"`
-	ExecuteMode     bool   `json:"execute" yaml:"executeOnly"`
-	FlakyMode       bool   `json:"flaky" yaml:"flakyOnly"`
+	CoverageMode    bool   `json:"coverage"`
+	DiscoverMode    bool   `json:"discover"`
+	ExecuteMode     bool   `json:"execute"`
+	FlakyMode       bool   `json:"flaky"`
 	TaskID          string `json:"taskID" env:"TASK_ID"`
 	BuildID         string `json:"buildID" env:"BUILD_ID"`
 	Locators        string `json:"locators"`
