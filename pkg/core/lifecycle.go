@@ -80,20 +80,17 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 		StartTime:   startTime,
 		Status:      Running,
 	}
-	mode := "discovery"
 	if pl.Cfg.DiscoverMode {
 		taskPayload.Type = DiscoveryTask
 	} else if pl.Cfg.FlakyMode {
-		mode = "flaky"
 		taskPayload.Type = FlakyTask
 	} else {
-		mode = "execution"
 		taskPayload.Type = ExecutionTask
 	}
-	pl.Logger.Infof("Running nucleus in %s mode", mode)
+	pl.Logger.Infof("Running nucleus in %s mode", taskPayload.Type)
 
 	// marking task to running state
-	if err := pl.Task.UpdateStatus(taskPayload); err != nil {
+	if err = pl.Task.UpdateStatus(taskPayload); err != nil {
 		pl.Logger.Fatalf("failed to update task status %v", err)
 	}
 
