@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/LambdaTest/synapse/pkg/global"
+	"github.com/LambdaTest/test-at-scale/pkg/global"
 )
 
 // Main function just executes root command `ts`

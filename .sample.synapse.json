@@ -1,4 +1,5 @@
 {
+    "name": "synapse-1",
     "logConfig": {
       "enableConsole": true,
       "consolelevel": "debug"

@@ -4,7 +4,7 @@ import (
 	context "context"
 	io "io"
 
-	core "github.com/LambdaTest/synapse/pkg/core"
+	core "github.com/LambdaTest/test-at-scale/pkg/core"
 
 	mock "github.com/stretchr/testify/mock"
 )

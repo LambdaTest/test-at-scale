@@ -12,11 +12,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/LambdaTest/synapse/pkg/core"
-	"github.com/LambdaTest/synapse/pkg/errs"
-	"github.com/LambdaTest/synapse/pkg/global"
-	"github.com/LambdaTest/synapse/pkg/lumber"
-	"github.com/LambdaTest/synapse/pkg/urlmanager"
+	"github.com/LambdaTest/test-at-scale/pkg/core"
+	"github.com/LambdaTest/test-at-scale/pkg/errs"
+	"github.com/LambdaTest/test-at-scale/pkg/global"
+	"github.com/LambdaTest/test-at-scale/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/pkg/urlmanager"
 	"github.com/mholt/archiver/v3"
 )
 
@@ -77,8 +77,8 @@ func (gm *gitManager) downloadFile(ctx context.Context, archiveURL, fileName str
 	if err != nil {
 		return err
 	}
-	if oauth.Data.AccessToken != "" {
-		req.Header.Add("Authorization", fmt.Sprintf("%s %s", oauth.Data.Type, oauth.Data.AccessToken))
+	if oauth.AccessToken != "" {
+		req.Header.Add("Authorization", fmt.Sprintf("%s %s", oauth.Type, oauth.AccessToken))
 	}
 	resp, err := gm.httpClient.Do(req)
 	if err != nil {
@@ -119,7 +119,7 @@ func (gm *gitManager) copyAndExtractFile(resp *http.Response, path string) error
 	if filepath.Ext(path) == ".zip" {
 		zip := archiver.NewZip()
 		zip.OverwriteExisting = true
-		if err := zip.Unarchive(path, filepath.Dir(path)); err != nil {
+		if err = zip.Unarchive(path, filepath.Dir(path)); err != nil {
 			gm.logger.Errorf("failed to unarchive file %v", err)
 			return err
 
@@ -140,8 +140,8 @@ func (gm *gitManager) initGit(ctx context.Context, payload *core.Payload, oauth 
 		return perr
 	}
 
-	if oauth.Data.Type == core.Basic {
-		decodedToken, err := base64.StdEncoding.DecodeString(oauth.Data.AccessToken)
+	if oauth.Type == core.Basic {
+		decodedToken, err := base64.StdEncoding.DecodeString(oauth.AccessToken)
 		if err != nil {
 			gm.logger.Errorf("Failed to decode basic oauth token for RepoID %s: %s", payload.RepoID, err)
 			return err
@@ -150,9 +150,9 @@ func (gm *gitManager) initGit(ctx context.Context, payload *core.Payload, oauth 
 		creds := strings.Split(string(decodedToken), ":")
 		repoURL.User = url.UserPassword(creds[0], creds[1])
 	} else {
-		repoURL.User = url.UserPassword("x-token-auth", oauth.Data.AccessToken)
+		repoURL.User = url.UserPassword("x-token-auth", oauth.AccessToken)
 		if payload.GitProvider == core.GitLab {
-			repoURL.User = url.UserPassword("oauth2", oauth.Data.AccessToken)
+			repoURL.User = url.UserPassword("oauth2", oauth.AccessToken)
 		}
 	}
 

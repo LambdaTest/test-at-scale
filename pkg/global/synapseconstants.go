@@ -37,10 +37,12 @@ func init() {
 		"stage": "wss://stage-api.tas.lambdatest.com/ws/",
 		"dev":   "ws://host.docker.internal/ws/",
 		"prod":  "wss://api.tas.lambdatest.com/ws/",
+		"pi":    "wss://api.tas-pi.lambdatest.com/ws/",
 	}
 	TASCloudURL = map[string]string{
 		"stage": "https://stage-api.tas.lambdatest.com",
 		"dev":   "http://host.docker.internal",
 		"prod":  "https://api.tas.lambdatest.com",
+		"pi":    "https://api.tas-pi.lambdatest.com",
 	}
 }

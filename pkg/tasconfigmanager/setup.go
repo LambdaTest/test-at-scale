@@ -7,30 +7,16 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"reflect"
-	"strings"
 
-	"github.com/LambdaTest/synapse/pkg/errs"
-	"github.com/LambdaTest/synapse/pkg/global"
+	"github.com/LambdaTest/test-at-scale/pkg/errs"
+	"github.com/LambdaTest/test-at-scale/pkg/global"
 
-	"github.com/LambdaTest/synapse/pkg/core"
-	"github.com/LambdaTest/synapse/pkg/lumber"
-	"github.com/LambdaTest/synapse/pkg/utils"
-	"github.com/go-playground/locales/en"
-	ut "github.com/go-playground/universal-translator"
-	"github.com/go-playground/validator/v10"
-	en_translations "github.com/go-playground/validator/v10/translations/en"
-
-	"gopkg.in/yaml.v2"
+	"github.com/LambdaTest/test-at-scale/pkg/core"
+	"github.com/LambdaTest/test-at-scale/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/pkg/utils"
 )
 
-const (
-	namespaceSeparator = "."
-	emptyTagName       = "-"
-	yamlTagName        = "yaml"
-	requiredTagName    = "required"
-	packageJSON        = "package.json"
-)
+const packageJSON = "package.json"
 
 var tierEnumMapping = map[core.Tier]int{
 	core.XSmall: 1,
@@ -42,22 +28,12 @@ var tierEnumMapping = map[core.Tier]int{
 
 // tasConfigManager represents an instance of TASConfigManager instance
 type tasConfigManager struct {
-	logger     lumber.Logger
-	uni        *ut.UniversalTranslator
-	validate   *validator.Validate
-	translator ut.Translator
+	logger lumber.Logger
 }
 
 // NewTASConfigManager creates and returns a new TASConfigManager instance
 func NewTASConfigManager(logger lumber.Logger) core.TASConfigManager {
-	en := en.New()
-	uni := ut.New(en, en)
-	trans, _ := uni.GetTranslator("en")
-	validate := validator.New()
-	en_translations.RegisterDefaultTranslations(validate, trans)
-	configureValidator(validate, trans)
-
-	return &tasConfigManager{logger: logger, uni: uni, validate: validate, translator: trans}
+	return &tasConfigManager{logger: logger}
 }
 
 func (tc *tasConfigManager) LoadAndValidate(ctx context.Context,
@@ -78,26 +54,9 @@ func (tc *tasConfigManager) LoadAndValidate(ctx context.Context,
 		return nil, errs.New(fmt.Sprintf("Error while reading configuration file at path: %s", path))
 	}
 
-	tasConfig := &core.TASConfig{SmartRun: true, Tier: core.Small}
-	err = yaml.Unmarshal(yamlFile, tasConfig)
+	tasConfig, err := utils.ValidateStruct(ctx, yamlFile)
 	if err != nil {
-		tc.logger.Errorf("Error while unmarshalling yaml file, path %s, error %v", path, err)
-		return nil, errs.New("Invalid format of configuration file")
-	}
-
-	validateErr := tc.validate.Struct(tasConfig)
-	if validateErr != nil {
-		// translate all error at once
-		errs := validateErr.(validator.ValidationErrors)
-
-		errMsg := "Invalid values provided for the following fields in configuration file: \n"
-		for _, e := range errs {
-			// can translate each error one at a time.
-			errMsg += fmt.Sprintf("%s: %s\n", e.Field(), e.Value())
-		}
-
-		tc.logger.Errorf("Error while validating yaml file, error %v", validateErr)
-		return nil, errors.New(errMsg)
+		return nil, err
 	}
 
 	if tasConfig.Cache == nil {
@@ -133,28 +92,9 @@ func (tc *tasConfigManager) LoadAndValidate(ctx context.Context,
 	return tasConfig, nil
 }
 
-// configureValidator configure the struct validator
-func configureValidator(validate *validator.Validate, trans ut.Translator) {
-	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
-		name := strings.SplitN(fld.Tag.Get(yamlTagName), ",", 2)[0]
-		if name == emptyTagName {
-			return fld.Name
-		}
-		return name
-	})
-
-	validate.RegisterTranslation(requiredTagName, trans, func(ut ut.Translator) error {
-		return ut.Add(requiredTagName, "{0} field is required!", true)
-	}, func(ut ut.Translator, fe validator.FieldError) string {
-		i := strings.Index(fe.Namespace(), namespaceSeparator)
-		t, _ := ut.T(requiredTagName, fe.Namespace()[i+1:])
-		return t
-	})
-}
-
 func isValidLicenseTier(yamlLicense, currentLicense core.Tier) error {
 	if tierEnumMapping[yamlLicense] > tierEnumMapping[currentLicense] {
-		return fmt.Errorf("Tier must not exceed max tier in license %v", currentLicense)
+		return fmt.Errorf("tier must not exceed max tier in license %v", currentLicense)
 	}
 	return nil
 }

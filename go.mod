@@ -1,11 +1,10 @@
-module github.com/LambdaTest/synapse
+module github.com/LambdaTest/test-at-scale
 
 go 1.17
 
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v0.3.0
 	github.com/bmatcuk/doublestar/v4 v4.0.2
-	github.com/coreos/go-semver v0.3.0
 	github.com/denisbrodbeck/machineid v1.0.1
 	github.com/docker/docker v20.10.12+incompatible
 	github.com/gin-gonic/gin v1.7.7

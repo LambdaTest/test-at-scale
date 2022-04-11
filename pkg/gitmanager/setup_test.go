@@ -11,23 +11,14 @@ import (
 	"os"
 	"strings"
 	"testing"
-	"time"
 
-	"github.com/LambdaTest/synapse/pkg/command"
-	"github.com/LambdaTest/synapse/pkg/core"
-	"github.com/LambdaTest/synapse/pkg/global"
-	"github.com/LambdaTest/synapse/pkg/lumber"
-	"github.com/LambdaTest/synapse/testutils"
-	"github.com/LambdaTest/synapse/testutils/mocks"
+	"github.com/LambdaTest/test-at-scale/pkg/command"
+	"github.com/LambdaTest/test-at-scale/pkg/core"
+	"github.com/LambdaTest/test-at-scale/pkg/global"
+	"github.com/LambdaTest/test-at-scale/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/testutils"
+	"github.com/LambdaTest/test-at-scale/testutils/mocks"
 )
-
-//nolint unused
-type data struct {
-	AccessToken  string         `json:"access_token"`
-	Expiry       time.Time      `json:"expiry"`
-	RefreshToken string         `json:"refresh_token"`
-	Type         core.TokenType `json:"token_type,omitempty"`
-}
 
 func CreateDirectory(path string) {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
@@ -52,9 +43,9 @@ func Test_downloadFile(t *testing.T) {
 		}
 		reqToken := r.Header.Get("Authorization")
 		splitToken := strings.Split(reqToken, "Bearer ")
-		expectedOauth := &core.Oauth{Data: data{AccessToken: "dummy", Type: core.Bearer}}
-		if splitToken[1] != expectedOauth.Data.AccessToken {
-			t.Errorf("Invalid clone token, expected: %v\nreceived: %v", expectedOauth.Data.AccessToken, splitToken[1])
+		expectedOauth := &core.Oauth{AccessToken: "dummy", Type: core.Bearer}
+		if splitToken[1] != expectedOauth.AccessToken {
+			t.Errorf("Invalid clone token, expected: %v\nreceived: %v", expectedOauth.AccessToken, splitToken[1])
 			w.WriteHeader(http.StatusUnauthorized)
 		} else {
 			w.WriteHeader(http.StatusOK)
@@ -73,10 +64,10 @@ func Test_downloadFile(t *testing.T) {
 	}
 	archiveURL := server.URL + "/archive/zipfile.zip"
 	fileName := "copyAndExtracted"
-	oauth := &core.Oauth{Data: data{AccessToken: "dummy", Type: core.Bearer}}
+	oauth := &core.Oauth{AccessToken: "dummy", Type: core.Bearer}
 	err2 := gm.downloadFile(context.TODO(), archiveURL, fileName, oauth)
 	defer removeFile(fileName) // remove the file created after downloading and extracting
-	if err != nil {
+	if err2 != nil {
 		t.Errorf("Error: %v", err2)
 	}
 }
@@ -136,7 +127,7 @@ func TestClone(t *testing.T) {
 
 		payload.RepoLink = server.URL
 		payload.BuildTargetCommit = "testRepo"
-		oauth := &core.Oauth{Data: data{AccessToken: "dummy", Type: core.Bearer}}
+		oauth := &core.Oauth{AccessToken: "dummy", Type: core.Bearer}
 		commitID := payload.BuildTargetCommit
 
 		err = gm.Clone(context.TODO(), payload, oauth)

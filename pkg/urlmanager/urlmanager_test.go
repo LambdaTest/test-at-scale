@@ -4,7 +4,7 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/LambdaTest/synapse/pkg/global"
+	"github.com/LambdaTest/test-at-scale/pkg/global"
 )
 
 func TestGetCloneURL(t *testing.T) {

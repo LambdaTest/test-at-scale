@@ -1,6 +1,6 @@
 package config
 
-import "github.com/LambdaTest/synapse/pkg/lumber"
+import "github.com/LambdaTest/test-at-scale/pkg/lumber"
 
 // Model definition for configuration
 

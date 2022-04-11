@@ -8,19 +8,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/LambdaTest/synapse/pkg/core"
-	"github.com/LambdaTest/synapse/pkg/errs"
-	"github.com/LambdaTest/synapse/pkg/global"
-	"github.com/LambdaTest/synapse/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/pkg/core"
+	"github.com/LambdaTest/test-at-scale/pkg/errs"
+	"github.com/LambdaTest/test-at-scale/pkg/global"
+	"github.com/LambdaTest/test-at-scale/pkg/lumber"
 )
 
 type secretParser struct {
 	logger      lumber.Logger
 	secretRegex *regexp.Regexp
-}
-
-type secretData struct {
-	SecretMap map[string]string `json:"data"`
 }
 
 // New return new secret parser
@@ -33,7 +29,7 @@ func New(logger lumber.Logger) core.SecretParser {
 
 // GetRepoSecret read repo secrets from given path
 func (s *secretParser) GetRepoSecret(path string) (map[string]string, error) {
-	var secretData secretData
+	var secretData map[string]string
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		s.logger.Debugf("failed to find user env secrets in path %s, as path does not exists", path)
 		return nil, nil
@@ -45,16 +41,18 @@ func (s *secretParser) GetRepoSecret(path string) (map[string]string, error) {
 
 	if err = json.Unmarshal(body, &secretData); err != nil {
 		s.logger.Errorf("failed to unmarshal user env secrets, error %v", err)
-		return nil, err
+		return nil, errs.ErrUnMarshalJSON
 	}
 
 	// extract secretmap from data map[data: map[secretname:secretvalue]]
-	return secretData.SecretMap, nil
+	return secretData, nil
 }
 
 // GetOauthSecret parses the oauth secret
 func (s *secretParser) GetOauthSecret(path string) (*core.Oauth, error) {
-	o := &core.Oauth{}
+	o := &core.Oauth{
+		Type: core.Bearer,
+	}
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		s.logger.Errorf("failed to find oauth secret in path %s", path)
 		return nil, err
@@ -66,12 +64,14 @@ func (s *secretParser) GetOauthSecret(path string) (*core.Oauth, error) {
 
 	if err = json.Unmarshal(body, o); err != nil {
 		s.logger.Errorf("failed to unmarshal oauth secret, error %v", err)
-		return nil, err
+		return nil, errs.ErrUnMarshalJSON
 	}
-
+	if o.AccessToken == "" {
+		return nil, errs.ErrMissingAccessToken
+	}
 	// If tokentype is not basic set it to bearer
-	if o.Data.Type != core.Basic {
-		o.Data.Type = core.Bearer
+	if o.Type != core.Basic {
+		o.Type = core.Bearer
 	}
 
 	return o, err
@@ -100,12 +100,12 @@ func (s *secretParser) SubstituteSecret(command string, secretData map[string]st
 }
 
 func (s *secretParser) Expired(token *core.Oauth) bool {
-	if len(token.Data.RefreshToken) == 0 {
+	if token.RefreshToken == "" {
 		return false
 	}
-	if token.Data.Expiry.IsZero() && len(token.Data.AccessToken) != 0 {
+	if token.Expiry.IsZero() && token.AccessToken != "" {
 		return false
 	}
-	return token.Data.Expiry.Add(-global.ExpiryDelta).
+	return token.Expiry.Add(-global.ExpiryDelta).
 		Before(time.Now())
 }
