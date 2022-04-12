@@ -46,7 +46,6 @@ jobs:
         name: Creating Github Release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "bundle-macos,bundle-linux"
           token: ${{ secrets.GITHUB_TOKEN }}
           draft: false
           generateReleaseNotes: true
