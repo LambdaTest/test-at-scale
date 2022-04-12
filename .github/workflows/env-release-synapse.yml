@@ -31,7 +31,7 @@ jobs:
       - name: Setup Environment
         run: |
           echo "BOTNAME=Test-at-Scale Synapse Promoted: Version ${ENVIRONMENT} to ${VERSION}" >> $GITHUB_ENV
-          if [ ${{ env.ENVIRONMENT }} == "prod" ] ; then
+          if [ ${ENVIRONMENT} == "prod" ] ; then
             echo "IMAGE_TAG=latest" >> $GITHUB_ENV
           else
             echo "IMAGE_TAG=${ENVIRONMENT}" >> $GITHUB_ENV
