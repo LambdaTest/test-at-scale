@@ -32,9 +32,9 @@ jobs:
         run: |
           echo "BOTNAME=Test-at-Scale Nucleus Promoted: Version ${ENVIRONMENT} to ${VERSION}" >> $GITHUB_ENV
           if [ ${ENVIRONMENT} == "prod" ] ; then
-            echo "IMAGE_TAG=latest" >> $GITHUB_ENV
+            echo "IMAGE_TAG=latest-base" >> $GITHUB_ENV
           else
-            echo "IMAGE_TAG=${ENVIRONMENT}" >> $GITHUB_ENV
+            echo "IMAGE_TAG=${ENVIRONMENT}-base" >> $GITHUB_ENV
           fi
         env:
           ENVIRONMENT: ${{ github.event.inputs.environment }}
@@ -43,8 +43,8 @@ jobs:
       - name: Promote Docker Image
         run: |
           docker pull ${REGISTRY_NAME}/nucleus:${VERSION}-base
-          docker tag ${REGISTRY_NAME}/nucleus:${VERSION}-base ${REGISTRY_NAME}/nucleus:${{ env.IMAGE_TAG }}-base
-          docker push ${REGISTRY_NAME}/nucleus:${{ env.IMAGE_TAG }}-base
+          docker tag ${REGISTRY_NAME}/nucleus:${VERSION}-base ${REGISTRY_NAME}/nucleus:${{ env.IMAGE_TAG }}
+          docker push ${REGISTRY_NAME}/nucleus:${{ env.IMAGE_TAG }}
         env:
           VERSION: ${{ github.event.inputs.version }}
 
