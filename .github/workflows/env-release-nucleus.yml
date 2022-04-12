@@ -31,6 +31,11 @@ jobs:
       - name: Setup Environment
         run: |
           echo "BOTNAME=Test-at-Scale Nucleus Promoted: Version ${ENVIRONMENT} to ${VERSION}" >> $GITHUB_ENV
+          if [ ${{ env.ENVIRONMENT }} == "prod" ] ; then
+            echo "IMAGE_TAG=latest" >> $GITHUB_ENV
+          else
+            echo "IMAGE_TAG=${ENVIRONMENT}" >> $GITHUB_ENV
+          fi
         env:
           ENVIRONMENT: ${{ github.event.inputs.environment }}
           VERSION: ${{ github.event.inputs.version }}
@@ -38,11 +43,18 @@ jobs:
       - name: Promote Docker Image
         run: |
           docker pull ${REGISTRY_NAME}/nucleus:${VERSION}-base
-          docker tag ${REGISTRY_NAME}/nucleus:${VERSION}-base ${REGISTRY_NAME}/nucleus:${ENVIRONMENT}-base
-          docker push ${REGISTRY_NAME}/nucleus:${ENVIRONMENT}-base
+          docker tag ${REGISTRY_NAME}/nucleus:${VERSION}-base ${REGISTRY_NAME}/nucleus:${{ env.IMAGE_TAG }}-base
+          docker push ${REGISTRY_NAME}/nucleus:${{ env.IMAGE_TAG }}-base
         env:
-          ENVIRONMENT: ${{ github.event.inputs.environment }}
           VERSION: ${{ github.event.inputs.version }}
+
+      - if: startsWith(matrix.label, 'release:')
+        name: Build Cloud Runners
+        run: |
+          gh workflow run -R ${{ secrets.WF_REPO }} ${{ secrets.WF_NAME }} -r main -f environment=${ENVIRONMENT} -f version=${{ steps.tag_version.outputs.new_tag }}
+        env:
+          GITHUB_TOKEN: ${{secrets.GH_API_TOKEN}}
+          ENVIRONMENT: ${{ github.event.inputs.environment }}
 
       - name: Slack Notification
         uses: 8398a7/action-slack@v3

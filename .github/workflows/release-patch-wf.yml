@@ -1,5 +1,5 @@
 # This workflow will release a new patch version of nucleus and synapse
-name: Release
+name: Release Patch Version
 
 on:
   workflow_dispatch:
@@ -30,18 +30,21 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           default_bump: ${{ env.RELEASE_TYPE }}
 
-      - name: Build Cloud Runners
+      - if: startsWith(matrix.label, 'release:')
+        name: Build Cloud Runners
         run: |
-          curl -X POST -H "Authorization:Bearer ${{ secrets.GH_API_TOKEN }}" ${{ secrets.WF_URL }} -d '{"ref":"main", "inputs": { "environment":"stage", "version":"${{ steps.tag_version.outputs.new_tag }}" }}'
+          gh workflow run -R ${{ secrets.WF_REPO }} ${{ secrets.WF_NAME }} -r main -f environment=dev -f version=${{ steps.tag_version.outputs.new_tag }}
+        env:
+          GITHUB_TOKEN: ${{secrets.GH_API_TOKEN}}
 
       - name: Setup Environment
         run: |
-          echo "BOTNAME=Test-at-Scale Deployment Status: Version ${{ steps.tag_version.outputs.new_tag }} to stage" >> $GITHUB_ENV
+          echo "BOTNAME=Test-at-Scale Deployment Status: Version ${{ steps.tag_version.outputs.new_tag }} to dev" >> $GITHUB_ENV
 
       - name: Setup Docker Image Tags
         run: |
-          echo "NUCLEUS_TAGS=${REGISTRY_NAME}/nucleus:stage-base","${REGISTRY_NAME}/nucleus:${{ steps.tag_version.outputs.new_tag }}-base" >> $GITHUB_ENV
-          echo "SYNAPSE_TAGS=${REGISTRY_NAME}/synapse:stage","${REGISTRY_NAME}/synapse:${{ steps.tag_version.outputs.new_tag }}" >> $GITHUB_ENV
+          echo "NUCLEUS_TAGS=${REGISTRY_NAME}/nucleus:dev-base","${REGISTRY_NAME}/nucleus:${{ steps.tag_version.outputs.new_tag }}-base" >> $GITHUB_ENV
+          echo "SYNAPSE_TAGS=${REGISTRY_NAME}/synapse:dev","${REGISTRY_NAME}/synapse:${{ steps.tag_version.outputs.new_tag }}" >> $GITHUB_ENV
 
       - name: Docker Login
         uses: docker/login-action@v1.13.0

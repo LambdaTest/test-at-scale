@@ -31,6 +31,11 @@ jobs:
       - name: Setup Environment
         run: |
           echo "BOTNAME=Test-at-Scale Synapse Promoted: Version ${ENVIRONMENT} to ${VERSION}" >> $GITHUB_ENV
+          if [ ${{ env.ENVIRONMENT }} == "prod" ] ; then
+            echo "IMAGE_TAG=latest" >> $GITHUB_ENV
+          else
+            echo "IMAGE_TAG=${ENVIRONMENT}" >> $GITHUB_ENV
+          fi
         env:
           ENVIRONMENT: ${{ github.event.inputs.environment }}
           VERSION: ${{ github.event.inputs.version }}
@@ -38,8 +43,8 @@ jobs:
       - name: Promote Docker Image
         run: |
           docker pull ${REGISTRY_NAME}/synapse:${VERSION}
-          docker tag ${REGISTRY_NAME}/synapse:${VERSION} ${REGISTRY_NAME}/synapse:${ENVIRONMENT}
-          docker push ${REGISTRY_NAME}/synapse:${ENVIRONMENT}
+          docker tag ${REGISTRY_NAME}/synapse:${VERSION} ${REGISTRY_NAME}/synapse:${{ env.IMAGE_TAG }}
+          docker push ${REGISTRY_NAME}/synapse:${{ env.IMAGE_TAG }}
         env:
           ENVIRONMENT: ${{ github.event.inputs.environment }}
           VERSION: ${{ github.event.inputs.version }}
