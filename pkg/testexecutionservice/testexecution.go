@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/LambdaTest/test-at-scale/config"
 	"github.com/LambdaTest/test-at-scale/pkg/core"
 	"github.com/LambdaTest/test-at-scale/pkg/global"
 	"github.com/LambdaTest/test-at-scale/pkg/logstream"
@@ -23,16 +24,19 @@ const locatorFile = "locators"
 type testExecutionService struct {
 	logger      lumber.Logger
 	azureClient core.AzureClient
+	cfg         *config.NucleusConfig
 	ts          *teststats.ProcStats
 	execManager core.ExecutionManager
 }
 
 // NewTestExecutionService creates and returns a new TestExecutionService instance
-func NewTestExecutionService(execManager core.ExecutionManager,
+func NewTestExecutionService(cfg *config.NucleusConfig,
+	execManager core.ExecutionManager,
 	azureClient core.AzureClient,
 	ts *teststats.ProcStats,
 	logger lumber.Logger) core.TestExecutionService {
-	return &testExecutionService{execManager: execManager,
+	return &testExecutionService{cfg: cfg,
+		execManager: execManager,
 		azureClient: azureClient,
 		ts:          ts,
 		logger:      logger}
@@ -97,7 +101,7 @@ func (tes *testExecutionService) Run(ctx context.Context,
 		OrgID:    payload.OrgID,
 		CommitID: payload.BuildTargetCommit,
 	}
-	for i := 1; i <= payload.NumberOfExecutions; i++ {
+	for i := 1; i <= tes.cfg.ConsecutiveRuns; i++ {
 		var cmd *exec.Cmd
 		if tasConfig.Framework == "jasmine" || tasConfig.Framework == "mocha" {
 			if collectCoverage {
@@ -123,14 +127,14 @@ func (tes *testExecutionService) Run(ctx context.Context,
 		pid := int32(cmd.Process.Pid)
 		tes.logger.Debugf("execution command started with pid %d", pid)
 
-		if err := tes.ts.CaptureTestStats(pid, payload.CollectStats); err != nil {
+		if err := tes.ts.CaptureTestStats(pid, tes.cfg.CollectStats); err != nil {
 			tes.logger.Errorf("failed to find process for command %s with pid %d %v", cmd.String(), pid, err)
 			return nil, err
 		}
 		// not returning error because runner like jest will return error in case of test failure
 		// and we want to run test multiple times
 		if err := cmd.Wait(); err != nil {
-			tes.logger.Errorf("Error in executing []: %+v\n", err)
+			tes.logger.Errorf("error in test execution: %+v", err)
 		}
 		result := <-tes.ts.ExecutionResultOutputChannel
 		executionResults.Results = append(executionResults.Results, result.Results...)
