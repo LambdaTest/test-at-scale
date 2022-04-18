@@ -1,7 +1,7 @@
 package config
 
 import (
-	"github.com/LambdaTest/synapse/pkg/global"
+	"github.com/LambdaTest/test-at-scale/pkg/global"
 	"github.com/spf13/viper"
 )
 

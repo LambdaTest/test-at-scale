@@ -51,8 +51,8 @@ var (
 	ErrSASToken = New("azure client requires SAS Token")
 	// ErrAzureCredentials is returned when the azure credentials are invalid.
 	ErrAzureCredentials = New("azure client requires credentials")
-	// ErrApiStatus is returned when the api status is not 200.
-	ErrApiStatus = New("non OK status")
+	// ErrAPIStatus is returned when the api status is not 200.
+	ErrAPIStatus = New("non OK status")
 	// ErrInvalidLoggerInstance is returned when logger instance is not supported.
 	ErrInvalidLoggerInstance = New("Invalid logger instance")
 	// ErrUnsupportedGitProvider is returned when try to integrate unsupported provider repo
@@ -61,4 +61,34 @@ var (
 	ErrGitDiffNotFound = New("diff not found")
 	// GenericErrRemark returns a generic error message for user facing errors.
 	GenericErrRemark = New("Unexpected error")
+	// ErrMarshalJSON is returned when json marshal failed
+	ErrMarshalJSON = New("JSON marshal failed")
+	// ErrUnMarshalJSON is returned when json unmarshal failed
+	ErrUnMarshalJSON = New("JSON unmarshal failed")
+	// ErrMissingAccessToken is returned when Oauth token is missing
+	ErrMissingAccessToken = New("Missing OAuth access token")
+	// ErrInvalidConfFileFormat is returned when TAS configuration file is invalid
+	ErrInvalidConfFileFormat = New("Invalid format of configuration file")
 )
+
+type StatusFailed struct {
+	Remark string
+}
+
+func (e *StatusFailed) Error() string {
+	return e.Remark
+}
+
+// ErrInvalidConf represents field validation failures of TAS configuration
+type ErrInvalidConf struct {
+	Fields []string
+	Values []interface{}
+}
+
+func (e ErrInvalidConf) Error() string {
+	errMsg := "Invalid values provided for the following fields in configuration file: \n"
+	for idx, field := range e.Fields {
+		errMsg += fmt.Sprintf("%s: %s\n", field, e.Values[idx])
+	}
+	return errMsg
+}

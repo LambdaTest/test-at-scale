@@ -1,0 +1,50 @@
+name: Release to Environment Synapse
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to Deploy'
+        required: true
+        type: choice
+        options:
+        - beta
+        - prod
+      version:
+        description: 'Version to be Published'
+        required: true
+        type: string
+
+jobs:
+  env-release:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Docker Login
+        uses: docker/login-action@v1.13.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+          logout: true
+
+      - name: Setup Environment
+        run: |
+          echo "BOTNAME=Test-at-Scale Synapse Promoted: Version ${ENVIRONMENT} to ${VERSION}" >> $GITHUB_ENV
+          if [ ${ENVIRONMENT} == "prod" ] ; then
+            echo "IMAGE_TAG=latest" >> $GITHUB_ENV
+          else
+            echo "IMAGE_TAG=${ENVIRONMENT}" >> $GITHUB_ENV
+          fi
+        env:
+          ENVIRONMENT: ${{ github.event.inputs.environment }}
+          VERSION: ${{ github.event.inputs.version }}
+
+      - name: Promote Docker Image
+        run: |
+          docker pull lambdatest/synapse:${VERSION}
+          docker tag lambdatest/synapse:${VERSION} lambdatest/synapse:${{ env.IMAGE_TAG }}
+          docker push lambdatest/synapse:${{ env.IMAGE_TAG }}
+        env:
+          ENVIRONMENT: ${{ github.event.inputs.environment }}
+          VERSION: ${{ github.event.inputs.version }}

@@ -3,7 +3,7 @@ package synapse
 import (
 	"encoding/json"
 
-	"github.com/LambdaTest/synapse/pkg/core"
+	"github.com/LambdaTest/test-at-scale/pkg/core"
 )
 
 // CreateLoginMessage creates message of type login

@@ -11,10 +11,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/LambdaTest/synapse/config"
-	"github.com/LambdaTest/synapse/pkg/core"
-	"github.com/LambdaTest/synapse/pkg/errs"
-	"github.com/LambdaTest/synapse/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/config"
+	"github.com/LambdaTest/test-at-scale/pkg/core"
+	"github.com/LambdaTest/test-at-scale/pkg/errs"
+	"github.com/LambdaTest/test-at-scale/pkg/lumber"
 )
 
 // PayloadManager represents the payload for nucleus
@@ -119,7 +119,7 @@ func (pm *payloadManager) ValidatePayload(ctx context.Context, payload *core.Pay
 		return errs.ErrInvalidPayload("Missing build target commit")
 	}
 	// some checks are removed in case of coverage mode or parsing mode
-	if !(pm.cfg.CoverageMode || pm.cfg.ParseMode) {
+	if !pm.cfg.CoverageMode {
 		if pm.cfg.TaskID == "" {
 			return errs.ErrInvalidPayload("Missing taskID in config")
 		}

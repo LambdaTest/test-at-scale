@@ -7,9 +7,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/LambdaTest/synapse/config"
-	"github.com/LambdaTest/synapse/pkg/lumber"
-	"github.com/coreos/go-semver/semver"
+	"github.com/LambdaTest/test-at-scale/config"
+	"github.com/LambdaTest/test-at-scale/pkg/lumber"
 )
 
 // ExecutionID type
@@ -85,6 +84,7 @@ type CommitChangeList struct {
 // Payload defines structure of payload
 type Payload struct {
 	RepoSlug                   string             `json:"repo_slug"`
+	ForkSlug                   string             `json:"fork_slug"`
 	RepoLink                   string             `json:"repo_link"`
 	BuildTargetCommit          string             `json:"build_target_commit"`
 	BuildBaseCommit            string             `json:"build_base_commit"`
@@ -105,7 +105,6 @@ type Payload struct {
 	ParentCommitCoverageExists bool               `json:"parent_commit_coverage_exists"`
 	LicenseTier                Tier               `json:"license_tier"`
 	CollectCoverage            bool               `json:"collect_coverage"`
-	CollectStats               bool               `json:"collect_stats"`
 }
 
 // Pipeline defines all attributes of Pipeline
@@ -122,12 +121,26 @@ type Pipeline struct {
 	TestDiscoveryService TestDiscoveryService
 	BlockTestService     BlockTestService
 	TestExecutionService TestExecutionService
-	ParserService        YMLParserService
 	CoverageService      CoverageService
 	TestStats            TestStats
 	Task                 Task
 	SecretParser         SecretParser
 	HttpClient           http.Client
+}
+
+type DiscoveryResult struct {
+	Tests           []TestPayload      `json:"tests"`
+	ImpactedTests   []string           `json:"impactedTests"`
+	TestSuites      []TestSuitePayload `json:"testSuites"`
+	ExecuteAllTests bool               `json:"executeAllTests"`
+	Parallelism     int                `json:"parallelism"`
+	RepoID          string             `json:"repoID"`
+	BuildID         string             `json:"buildID"`
+	CommitID        string             `json:"commitID"`
+	TaskID          string             `json:"taskID"`
+	OrgID           string             `json:"orgID"`
+	Branch          string             `json:"branch"`
+	Tier            Tier               `json:"tier"`
 }
 
 // ExecutionResult represents the request body for test and test suite execution
@@ -176,13 +189,14 @@ type TestSuitePayload struct {
 	SuiteID         string             `json:"suiteID"`
 	SuiteName       string             `json:"suiteName"`
 	ParentSuiteID   string             `json:"parentSuiteID"`
-	BlacklistSource string             `json:"blacklistSource"`
-	Blacklisted     bool               `json:"blacklist"`
+	BlocklistSource string             `json:"blocklistSource"`
+	Blocklisted     bool               `json:"blocklist"`
 	StartTime       time.Time          `json:"start_time"`
 	EndTime         time.Time          `json:"end_time"`
 	Duration        int                `json:"duration"`
 	Status          string             `json:"status"`
 	Stats           []TestProcessStats `json:"stats"`
+	TotalTests      int                `json:"totalTests"`
 }
 
 // TestProcessStats process stats associated with each test
@@ -205,26 +219,6 @@ const (
 	Passed     Status = "passed"
 	Error      Status = "error"
 )
-
-// ParserStatus repersent information related to each parsing
-type ParserStatus struct {
-	TargetCommitID string `json:"target_commit_id"`
-	BaseCommitID   string `json:"base_commit_id"`
-	Status         Status `json:"status"`
-	Message        string `json:"message"`
-	Tier           Tier   `json:"tier"`
-	ContainerImage string `json:"container_image"`
-}
-
-// ParserResponse repersent response of nucleus when runs on parsing mode
-type ParserResponse struct {
-	BuildID     string        `json:"build_id"`
-	RepoID      string        `json:"repo_id"`
-	OrgID       string        `json:"org_id"`
-	GitProvider string        `json:"git_provider"`
-	RepoSlug    string        `json:"repo_slug"`
-	Status      *ParserStatus `json:"status"`
-}
 
 // TaskPayload repersent task response given by nucleus to neuron
 type TaskPayload struct {
@@ -268,13 +262,21 @@ const (
 	Bitbucket string = "bitbucket"
 )
 
+type TokenType string
+
+const (
+	// Bearer as token type
+	Bearer TokenType = "Bearer"
+	// Basic as token type
+	Basic TokenType = "Basic"
+)
+
 // Oauth represents the sructure of Oauth
 type Oauth struct {
-	Data struct {
-		AccessToken  string    `json:"access_token"`
-		Expiry       time.Time `json:"expiry"`
-		RefreshToken string    `json:"refresh_token"`
-	} `json:"data"`
+	AccessToken  string    `json:"access_token"`
+	Expiry       time.Time `json:"expiry"`
+	RefreshToken string    `json:"refresh_token"`
+	Type         TokenType `json:"token_type,omitempty"`
 }
 
 // TASConfig represents the .tas.yml file
@@ -292,7 +294,7 @@ type TASConfig struct {
 	ConfigFile        string             `yaml:"configFile" validate:"omitempty"`
 	CoverageThreshold *CoverageThreshold `yaml:"coverageThreshold" validate:"omitempty"`
 	Tier              Tier               `yaml:"tier" validate:"oneof=xsmall small medium large xlarge"`
-	NodeVersion       *semver.Version    `yaml:"nodeVersion"`
+	NodeVersion       string             `yaml:"nodeVersion" validate:"omitempty,semver"`
 	ContainerImage    string             `yaml:"containerImage"`
 }
 
@@ -342,6 +344,7 @@ type TaskType string
 const (
 	DiscoveryTask TaskType = "discover"
 	ExecutionTask TaskType = "execute"
+	FlakyTask     TaskType = "flaky"
 )
 
 // TestStatus stores tests status

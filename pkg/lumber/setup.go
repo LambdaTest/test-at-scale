@@ -2,7 +2,7 @@
 
 package lumber
 
-import "github.com/LambdaTest/synapse/pkg/errs"
+import "github.com/LambdaTest/test-at-scale/pkg/errs"
 
 // LoggingConfig stores the config for the logger
 // For some loggers there can only be one level across writers, for such the level of Console is picked by default

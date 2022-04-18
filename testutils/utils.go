@@ -3,13 +3,13 @@ package testutils
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path"
 	"runtime"
 
-	"github.com/LambdaTest/synapse/config"
-	"github.com/LambdaTest/synapse/pkg/core"
-	"github.com/LambdaTest/synapse/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/config"
+	"github.com/LambdaTest/test-at-scale/pkg/core"
+	"github.com/LambdaTest/test-at-scale/pkg/lumber"
 )
 
 // getCurrentWorkingDir give the file path of this file
@@ -23,7 +23,7 @@ func getCurrentWorkingDir() string {
 // GetConfig returns a dummy NucleusConfig using the json file pointed by ApplicationConfigPath. It returns error if it is unable to ReadFile from the provided location or if it is unable to Unmarshal the file contents
 func GetConfig() (*config.NucleusConfig, error) {
 	cwd := getCurrentWorkingDir()
-	configJSON, err := ioutil.ReadFile(cwd + ApplicationConfigPath) // AplicationConfigPath points to dummy config file for NucleusConfig
+	configJSON, err := os.ReadFile(cwd + ApplicationConfigPath) // AplicationConfigPath points to dummy config file for NucleusConfig
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +38,7 @@ func GetConfig() (*config.NucleusConfig, error) {
 // GetTaskPayload returns a dummy core.TaskPayload using the json file pointed by TaskPayloadPath. It returns error if unable to readfile or if unable to unmarshal file components
 func GetTaskPayload() (*core.TaskPayload, error) {
 	cwd := getCurrentWorkingDir()
-	payloadJSON, err := ioutil.ReadFile(cwd + TaskPayloadPath) // TaskPayloadPath points to json file containing dummy TaskPayload
+	payloadJSON, err := os.ReadFile(cwd + TaskPayloadPath) // TaskPayloadPath points to json file containing dummy TaskPayload
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +63,7 @@ func GetLogger() (lumber.Logger, error) {
 // GetPayload returns a dummy core.Payload using the json file pointed by PayloadPath. It returns error if unable to readfile or if unable to unmarshal file components
 func GetPayload() (*core.Payload, error) {
 	cwd := getCurrentWorkingDir()
-	payloadJSON, err := ioutil.ReadFile(cwd + PayloadPath) // PayloadPath points to json file containing dummy PayloadPath
+	payloadJSON, err := os.ReadFile(cwd + PayloadPath) // PayloadPath points to json file containing dummy PayloadPath
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +85,16 @@ func GetGitDiff() map[string]int {
 // GetGitlabCommitDiff returns a dummy GitlabCommitDiff as slice of byte data. Itreturns error if unable to readfile
 func GetGitlabCommitDiff() ([]byte, error) {
 	cwd := getCurrentWorkingDir()
-	data, err := ioutil.ReadFile(cwd + GitlabCommitDiff) // GitLabCommitDiff points to json file containing dummy GitLabCommitDiff
+	data, err := os.ReadFile(cwd + GitlabCommitDiff) // GitLabCommitDiff points to json file containing dummy GitLabCommitDiff
+	if err != nil {
+		return nil, err
+	}
+	return data, err
+}
+
+func LoadFile(relativePath string) ([]byte, error) {
+	absPath := fmt.Sprintf("%s/%s", getCurrentWorkingDir(), relativePath)
+	data, err := os.ReadFile(absPath)
 	if err != nil {
 		return nil, err
 	}

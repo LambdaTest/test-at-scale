@@ -3,8 +3,8 @@ package core
 import (
 	"context"
 
-	"github.com/LambdaTest/synapse/config"
-	"github.com/LambdaTest/synapse/pkg/errs"
+	"github.com/LambdaTest/test-at-scale/config"
+	"github.com/LambdaTest/test-at-scale/pkg/errs"
 )
 
 // Specs denotes system specification
@@ -105,6 +105,5 @@ type PodType string
 // Values that PodType can take
 const (
 	NucleusPod  PodType = "nucleus"
-	ParsingPod  PodType = "parse"
 	CoveragePod PodType = "coverage"
 )

@@ -13,28 +13,28 @@ import (
 	"sync"
 	"time"
 
-	"github.com/LambdaTest/synapse/config"
-	"github.com/LambdaTest/synapse/pkg/api"
-	"github.com/LambdaTest/synapse/pkg/azure"
-	"github.com/LambdaTest/synapse/pkg/blocktestservice"
-	"github.com/LambdaTest/synapse/pkg/cachemanager"
-	"github.com/LambdaTest/synapse/pkg/command"
-	"github.com/LambdaTest/synapse/pkg/core"
-	"github.com/LambdaTest/synapse/pkg/diffmanager"
-	"github.com/LambdaTest/synapse/pkg/gitmanager"
-	"github.com/LambdaTest/synapse/pkg/global"
-	"github.com/LambdaTest/synapse/pkg/lumber"
-	"github.com/LambdaTest/synapse/pkg/payloadmanager"
-	"github.com/LambdaTest/synapse/pkg/secret"
-	"github.com/LambdaTest/synapse/pkg/server"
-	"github.com/LambdaTest/synapse/pkg/service/coverage"
-	"github.com/LambdaTest/synapse/pkg/service/parser"
-	"github.com/LambdaTest/synapse/pkg/service/teststats"
-	"github.com/LambdaTest/synapse/pkg/tasconfigmanager"
-	"github.com/LambdaTest/synapse/pkg/task"
-	"github.com/LambdaTest/synapse/pkg/testdiscoveryservice"
-	"github.com/LambdaTest/synapse/pkg/testexecutionservice"
-	"github.com/LambdaTest/synapse/pkg/zstd"
+	"github.com/LambdaTest/test-at-scale/config"
+	"github.com/LambdaTest/test-at-scale/pkg/api"
+	"github.com/LambdaTest/test-at-scale/pkg/azure"
+	"github.com/LambdaTest/test-at-scale/pkg/blocktestservice"
+	"github.com/LambdaTest/test-at-scale/pkg/cachemanager"
+	"github.com/LambdaTest/test-at-scale/pkg/command"
+	"github.com/LambdaTest/test-at-scale/pkg/core"
+	"github.com/LambdaTest/test-at-scale/pkg/diffmanager"
+	"github.com/LambdaTest/test-at-scale/pkg/gitmanager"
+	"github.com/LambdaTest/test-at-scale/pkg/global"
+	"github.com/LambdaTest/test-at-scale/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/pkg/payloadmanager"
+	"github.com/LambdaTest/test-at-scale/pkg/requestutils"
+	"github.com/LambdaTest/test-at-scale/pkg/secret"
+	"github.com/LambdaTest/test-at-scale/pkg/server"
+	"github.com/LambdaTest/test-at-scale/pkg/service/coverage"
+	"github.com/LambdaTest/test-at-scale/pkg/service/teststats"
+	"github.com/LambdaTest/test-at-scale/pkg/tasconfigmanager"
+	"github.com/LambdaTest/test-at-scale/pkg/task"
+	"github.com/LambdaTest/test-at-scale/pkg/testdiscoveryservice"
+	"github.com/LambdaTest/test-at-scale/pkg/testexecutionservice"
+	"github.com/LambdaTest/test-at-scale/pkg/zstd"
 	"github.com/spf13/cobra"
 )
 
@@ -114,18 +114,21 @@ func run(cmd *cobra.Command, args []string) {
 	pm := payloadmanager.NewPayloadManger(azureClient, logger, cfg)
 	secretParser := secret.New(logger)
 	tcm := tasconfigmanager.NewTASConfigManager(logger)
+	requests := requestutils.New(logger)
 	execManager := command.NewExecutionManager(secretParser, azureClient, logger)
 	gm := gitmanager.NewGitManager(logger, execManager)
 	dm := diffmanager.NewDiffManager(cfg, logger)
-	tds := testdiscoveryservice.NewTestDiscoveryService(execManager, logger)
-	tes := testexecutionservice.NewTestExecutionService(execManager, azureClient, ts, logger)
+
+	tdResChan := make(chan core.DiscoveryResult)
+	tds := testdiscoveryservice.NewTestDiscoveryService(ctx, tdResChan, execManager, requests, logger)
+	tes := testexecutionservice.NewTestExecutionService(cfg, execManager, azureClient, ts, logger)
 	tbs, err := blocktestservice.NewTestBlockTestService(cfg, logger)
 	if err != nil {
 		logger.Fatalf("failed to initialize test blocklist service: %v", err)
 	}
-	router := api.NewRouter(logger, ts)
+	router := api.NewRouter(logger, ts, tdResChan)
 
-	t, err := task.New(ctx, cfg, logger)
+	t, err := task.New(ctx, requests, logger)
 	if err != nil {
 		logger.Fatalf("failed to initialize task: %v", err)
 	}
@@ -138,8 +141,6 @@ func run(cmd *cobra.Command, args []string) {
 	if err != nil {
 		logger.Fatalf("failed to initialize cache manager: %v", err)
 	}
-
-	parserService := parser.New(tcm, logger)
 
 	coverageService, err := coverage.New(execManager, azureClient, zstd, cfg, logger)
 	if err != nil {
@@ -154,7 +155,6 @@ func run(cmd *cobra.Command, args []string) {
 	pl.BlockTestService = tbs
 	pl.TestExecutionService = tes
 	pl.ExecutionManager = execManager
-	pl.ParserService = parserService
 	pl.CoverageService = coverageService
 	pl.TestStats = ts
 	pl.Task = t

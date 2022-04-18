@@ -6,11 +6,12 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/LambdaTest/synapse/pkg/core"
-	"github.com/LambdaTest/synapse/pkg/global"
-	"github.com/LambdaTest/synapse/pkg/lumber"
-	"github.com/LambdaTest/synapse/testutils"
-	"github.com/LambdaTest/synapse/testutils/mocks"
+	"github.com/LambdaTest/test-at-scale/pkg/core"
+	"github.com/LambdaTest/test-at-scale/pkg/global"
+	"github.com/LambdaTest/test-at-scale/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/pkg/requestutils"
+	"github.com/LambdaTest/test-at-scale/testutils"
+	"github.com/LambdaTest/test-at-scale/testutils/mocks"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -19,6 +20,8 @@ func Test_testDiscoveryService_Discover(t *testing.T) {
 	if err != nil {
 		t.Errorf("Couldn't initialise logger, error: %v", err)
 	}
+	requests := requestutils.New(logger)
+	tdResChan := make(chan core.DiscoveryResult)
 	global.TestEnv = true
 	defer func() { global.TestEnv = false }()
 
@@ -148,7 +151,7 @@ func Test_testDiscoveryService_Discover(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tds := NewTestDiscoveryService(tt.fields.execManager, tt.fields.logger)
+			tds := NewTestDiscoveryService(context.TODO(), tdResChan, tt.fields.execManager, requests, tt.fields.logger)
 			err := tds.Discover(tt.args.ctx, tt.args.tasConfig, tt.args.payload, tt.args.secretData, tt.args.diff, tt.args.diffExists)
 
 			if !reflect.DeepEqual(PassedEnvMap, tt.wantEnvMap) || !reflect.DeepEqual(PassedSecretDataMap, tt.wantSecretData) {
