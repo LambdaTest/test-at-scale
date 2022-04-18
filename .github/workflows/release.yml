@@ -54,7 +54,6 @@ jobs:
           name: Release ${{ steps.tag_version.outputs.new_tag }}
           body: ${{ steps.changelog.outputs.changelog }}
 
-
       - if: startsWith(matrix.label, 'release:')
         name: Build Cloud Runners
         run: |
