@@ -112,6 +112,7 @@ func (tds *testDiscoveryService) Discover(ctx context.Context,
 	testDiscoveryResult := <-tds.tdResChan
 	testDiscoveryResult.Parallelism = tasConfig.Parallelism
 	testDiscoveryResult.Tier = tasConfig.Tier
+	testDiscoveryResult.ContainerImage = tasConfig.ContainerImage
 	if err := tds.updateResult(&testDiscoveryResult); err != nil {
 		return err
 	}
