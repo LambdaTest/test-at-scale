@@ -42,19 +42,9 @@ jobs:
 
       - name: Promote Docker Image
         run: |
-          docker pull ${REGISTRY_NAME}/synapse:${VERSION}
-          docker tag ${REGISTRY_NAME}/synapse:${VERSION} ${REGISTRY_NAME}/synapse:${{ env.IMAGE_TAG }}
-          docker push ${REGISTRY_NAME}/synapse:${{ env.IMAGE_TAG }}
+          docker pull lambdatest/synapse:${VERSION}
+          docker tag lambdatest/synapse:${VERSION} lambdatest/synapse:${{ env.IMAGE_TAG }}
+          docker push lambdatest/synapse:${{ env.IMAGE_TAG }}
         env:
           ENVIRONMENT: ${{ github.event.inputs.environment }}
           VERSION: ${{ github.event.inputs.version }}
-
-      - name: Slack Notification
-        uses: 8398a7/action-slack@v3
-        with:
-          status: ${{ job.status }}
-          fields: repo,message,commit,author,action,eventName,ref,workflow,job,took
-          author_name: ${{ env.BOTNAME }}
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        if: always() && startsWith(matrix.label, 'release:')

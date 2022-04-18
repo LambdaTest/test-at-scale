@@ -42,9 +42,9 @@ jobs:
 
       - name: Promote Docker Image
         run: |
-          docker pull ${REGISTRY_NAME}/nucleus:${VERSION}-base
-          docker tag ${REGISTRY_NAME}/nucleus:${VERSION}-base ${REGISTRY_NAME}/nucleus:${{ env.IMAGE_TAG }}
-          docker push ${REGISTRY_NAME}/nucleus:${{ env.IMAGE_TAG }}
+          docker pull lambdatest/nucleus:${VERSION}-base
+          docker tag lambdatest/nucleus:${VERSION}-base lambdatest/nucleus:${{ env.IMAGE_TAG }}
+          docker push lambdatest/nucleus:${{ env.IMAGE_TAG }}
         env:
           VERSION: ${{ github.event.inputs.version }}
 
@@ -55,13 +55,3 @@ jobs:
         env:
           GITHUB_TOKEN: ${{secrets.GH_API_TOKEN}}
           ENVIRONMENT: ${{ github.event.inputs.environment }}
-
-      - name: Slack Notification
-        uses: 8398a7/action-slack@v3
-        with:
-          status: ${{ job.status }}
-          fields: repo,message,commit,author,action,eventName,ref,workflow,job,took
-          author_name: ${{ env.BOTNAME }}
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        if: always() && startsWith(matrix.label, 'release:')

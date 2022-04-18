@@ -70,8 +70,8 @@ jobs:
       - if: startsWith(matrix.label, 'release:')
         name: Setup Docker Image Tags
         run: |
-          echo "NUCLEUS_TAGS=${REGISTRY_NAME}/nucleus:dev-base","${REGISTRY_NAME}/nucleus:${{ steps.tag_version.outputs.new_tag }}-base" >> $GITHUB_ENV
-          echo "SYNAPSE_TAGS=${REGISTRY_NAME}/synapse:dev","${REGISTRY_NAME}/synapse:${{ steps.tag_version.outputs.new_tag }}" >> $GITHUB_ENV
+          echo "NUCLEUS_TAGS=lambdatest/nucleus:dev-base","lambdatest/nucleus:${{ steps.tag_version.outputs.new_tag }}-base" >> $GITHUB_ENV
+          echo "SYNAPSE_TAGS=lambdatest/synapse:dev","lambdatest/synapse:${{ steps.tag_version.outputs.new_tag }}" >> $GITHUB_ENV
 
       - if: startsWith(matrix.label, 'release:')
         name: Docker Login
@@ -98,13 +98,3 @@ jobs:
           tags: ${{ env.SYNAPSE_TAGS }}
           file: build/synapse/Dockerfile
           push: true
-
-      - name: Slack Notification
-        uses: 8398a7/action-slack@v3
-        with:
-          status: ${{ job.status }}
-          fields: repo,message,commit,author,action,eventName,ref,workflow,job,took
-          author_name: ${{ env.BOTNAME }}
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        if: always() && startsWith(matrix.label, 'release:')
