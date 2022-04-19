@@ -172,16 +172,20 @@ func (gm *gitManager) initGit(ctx context.Context, payload *core.Payload, oauth 
 }
 
 func (gm *gitManager) getUnzippedFileName(gitProvider, orgName, repoName, forkSlug, commitID string) string {
-	if gitProvider != core.Bitbucket {
+	switch gitProvider {
+	case core.GitHub:
+		return orgName + "-" + repoName + "-" + commitID
+	case core.GitLab:
+		return repoName + "-" + commitID
+	case core.Bitbucket:
+		// commitID[:12] bitbucket shorthand commit sha
+		if forkSlug != "" {
+			// forkItmes : forkOrg, forkRepo
+			forkItems := strings.Split(forkSlug, "/")
+			return forkItems[0] + "-" + forkItems[1] + "-" + commitID[:12]
+		}
+		return orgName + "-" + repoName + "-" + commitID[:12]
+	default:
 		return repoName + "-" + commitID
 	}
-
-	// commitID[:12] bitbucket shorthand commit sha
-	if forkSlug != "" {
-		// forkItmes : forkOrg, forkRepo
-		forkItems := strings.Split(forkSlug, "/")
-		return forkItems[0] + "-" + forkItems[1] + "-" + commitID[:12]
-	}
-
-	return orgName + "-" + repoName + "-" + commitID[:12]
 }
