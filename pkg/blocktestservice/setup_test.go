@@ -223,6 +223,7 @@ func TestTestBlockListService_GetBlockListedTests(t *testing.T) {
 					SmartRun:  false,
 					Framework: "jest",
 					Blocklist: []string{"src/test/f1.spec.js", "src/test/f2.spec.js"},
+					SplitMode: core.TestSplit,
 					Tier:      "small"},
 				repoID: "/testBlocklist.json"},
 			true}, // Will not get error if the test is run in docker container, so test will fail in docker container

@@ -117,7 +117,7 @@ func ValidateStruct(ctx context.Context, ymlContent []byte) (*core.TASConfig, er
 	}
 	configureValidator(validate, trans)
 
-	tasConfig := &core.TASConfig{SmartRun: true, Tier: core.Small}
+	tasConfig := &core.TASConfig{SmartRun: true, Tier: core.Small, SplitMode: core.TestSplit}
 	if err := yaml.Unmarshal(ymlContent, tasConfig); err != nil {
 		return nil, errs.ErrInvalidConfFileFormat
 	}
