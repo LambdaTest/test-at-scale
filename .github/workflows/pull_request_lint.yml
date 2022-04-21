@@ -19,3 +19,9 @@ jobs:
           titleRegex: '^#(?<ticketNumber>\d+)'
           bodyRegex: '#(?<ticketNumber>\d+)'
           bodyURLRegex: 'http(s?):\/\/(github.com)(\/LambdaTest)(\/test-at-scale)(\/issues)\/(?<ticketNumber>\d+)'
+
+      - name: PR Label Check
+        uses: docker://agilepathway/pull-request-label-checker:latest
+        with:
+          one_of: release:major,release:minor,release:patch
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
