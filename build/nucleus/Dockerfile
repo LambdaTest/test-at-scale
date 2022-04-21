@@ -28,9 +28,9 @@ WORKDIR /tmp/custom-runners
 RUN npm init -y
 
 RUN npm i --global-style --legacy-peer-deps \
-    @lambdatest/test-at-scale-jasmine-runner@~0.1.0 \
-    @lambdatest/test-at-scale-mocha-runner@~0.1.0 \
-    @lambdatest/test-at-scale-jest-runner@~0.1.0
+    @lambdatest/test-at-scale-jasmine-runner@~0.2.0 \
+    @lambdatest/test-at-scale-mocha-runner@~0.2.0 \
+    @lambdatest/test-at-scale-jest-runner@~0.2.0
 RUN npm i -g nyc@^15.1.0
 
 RUN tar -zcf /custom-runners/custom-runners.tgz node_modules

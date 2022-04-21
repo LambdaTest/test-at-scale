@@ -174,7 +174,6 @@ type TestPayload struct {
 	Col             string             `json:"col"`
 	CurrentRetry    int                `json:"currentRetry"`
 	Status          string             `json:"status"`
-	CommitID        string             `json:"commitID"`
 	DAG             []string           `json:"dependsOn"`
 	Filelocator     string             `json:"locator"`
 	BlocklistSource string             `json:"blocklistSource"`
