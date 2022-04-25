@@ -10,7 +10,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime/debug"
-	"strconv"
 	"time"
 
 	"github.com/LambdaTest/test-at-scale/config"
@@ -30,7 +29,7 @@ func NewPipeline(cfg *config.NucleusConfig, logger lumber.Logger) (*Pipeline, er
 	return &Pipeline{
 		Cfg:    cfg,
 		Logger: logger,
-		HttpClient: http.Client{
+		HTTPClient: http.Client{
 			Timeout: 45 * time.Second,
 		},
 	}, nil
@@ -167,7 +166,6 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	os.Setenv("CODE_COVERAGE_DIR", coverageDir)
 	os.Setenv("BRANCH_NAME", payload.BranchName)
 	os.Setenv("ENV", pl.Cfg.Env)
-	os.Setenv("TAS_PARALLELISM", strconv.Itoa(tasConfig.Parallelism))
 	os.Setenv("ENDPOINT_POST_TEST_LIST", endpointPostTestList)
 	os.Setenv("ENDPOINT_POST_TEST_RESULTS", endpointPostTestResults)
 	os.Setenv("REPO_ROOT", global.RepoDir)
@@ -339,7 +337,7 @@ func (pl *Pipeline) sendStats(payload ExecutionResults) error {
 		return err
 	}
 
-	resp, err := pl.HttpClient.Do(req)
+	resp, err := pl.HTTPClient.Do(req)
 
 	if err != nil {
 		pl.Logger.Errorf("error while sending reports %v", err)

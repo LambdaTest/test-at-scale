@@ -111,6 +111,8 @@ func (tds *testDiscoveryService) Discover(ctx context.Context,
 
 	testDiscoveryResult := <-tds.tdResChan
 	testDiscoveryResult.Parallelism = tasConfig.Parallelism
+	testDiscoveryResult.SplitMode = tasConfig.SplitMode
+
 	testDiscoveryResult.Tier = tasConfig.Tier
 	if err := tds.updateResult(&testDiscoveryResult); err != nil {
 		return err
