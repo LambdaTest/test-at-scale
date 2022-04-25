@@ -41,15 +41,6 @@ const (
 	AfterNCommitStrategy PostMergeStrategyName = "after_n_commits"
 )
 
-// SplitMode is the mode for splitting tests
-type SplitMode string
-
-// list of support test splitting modes
-const (
-	FileSplit SplitMode = "file"
-	TestSplit SplitMode = "test"
-)
-
 // Types of Command string
 const (
 	PreRun         CommandType = "prerun"
@@ -134,7 +125,7 @@ type Pipeline struct {
 	TestStats            TestStats
 	Task                 Task
 	SecretParser         SecretParser
-	HTTPClient           http.Client
+	HttpClient           http.Client
 }
 
 type DiscoveryResult struct {
@@ -143,7 +134,6 @@ type DiscoveryResult struct {
 	TestSuites      []TestSuitePayload `json:"testSuites"`
 	ExecuteAllTests bool               `json:"executeAllTests"`
 	Parallelism     int                `json:"parallelism"`
-	SplitMode       SplitMode          `json:"splitMode"`
 	RepoID          string             `json:"repoID"`
 	BuildID         string             `json:"buildID"`
 	CommitID        string             `json:"commitID"`
@@ -255,11 +245,11 @@ type CoverageManifest struct {
 }
 
 const (
-	// FileAdded file added in commit
+	//FileAdded file added in commit
 	FileAdded int = iota + 1
-	// FileRemoved file removed in commit
+	//FileRemoved file removed in commit
 	FileRemoved
-	// FileModified file modified in commit
+	//FileModified file modified in commit
 	FileModified
 )
 
@@ -300,7 +290,6 @@ type TASConfig struct {
 	Prerun            *Run               `yaml:"preRun" validate:"omitempty"`
 	Postrun           *Run               `yaml:"postRun" validate:"omitempty"`
 	Parallelism       int                `yaml:"parallelism"`
-	SplitMode         SplitMode          `yaml:"splitMode" validate:"oneof=test file"`
 	SkipCache         bool               `yaml:"skipCache"`
 	ConfigFile        string             `yaml:"configFile" validate:"omitempty"`
 	CoverageThreshold *CoverageThreshold `yaml:"coverageThreshold" validate:"omitempty"`
@@ -309,7 +298,7 @@ type TASConfig struct {
 	ContainerImage    string             `yaml:"containerImage"`
 }
 
-// CoverageThreshold reprents the code coverage threshold
+//CoverageThreshold reprents the code coverage threshold
 type CoverageThreshold struct {
 	Branches   float64 `yaml:"branches" json:"branches" validate:"number,min=0,max=100"`
 	Lines      float64 `yaml:"lines" json:"lines" validate:"number,min=0,max=100"`

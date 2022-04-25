@@ -190,7 +190,6 @@ func TestValidateStruct(t *testing.T) {
 				ConfigFile:  "scripts/jest/config.source-www.js",
 				NodeVersion: "14.17.6",
 				Tier:        "small",
-				SplitMode:   core.TestSplit,
 			},
 		},
 		{
@@ -201,7 +200,6 @@ func TestValidateStruct(t *testing.T) {
 				SmartRun:  true,
 				Framework: "mocha",
 				Tier:      "small",
-				SplitMode: core.TestSplit,
 			},
 		},
 	}
