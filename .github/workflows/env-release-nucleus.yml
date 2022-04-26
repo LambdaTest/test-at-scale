@@ -50,7 +50,8 @@ jobs:
 
       - name: Build Cloud Runners
         run: |
-          gh workflow run -R ${{ secrets.WF_REPO }} ${{ secrets.WF_NAME }} -r main -f environment=${ENVIRONMENT} -f version=${{ steps.tag_version.outputs.new_tag }}
+          gh workflow run -R ${{ secrets.WF_REPO }} ${{ secrets.WF_NAME }} -r main -f environment=${ENVIRONMENT} -f version=${VERSION}
         env:
           GITHUB_TOKEN: ${{secrets.GH_API_TOKEN}}
           ENVIRONMENT: ${{ github.event.inputs.environment }}
+          VERSION: ${{ github.event.inputs.version }}
