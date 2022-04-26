@@ -151,6 +151,7 @@ type DiscoveryResult struct {
 	OrgID           string             `json:"orgID"`
 	Branch          string             `json:"branch"`
 	Tier            Tier               `json:"tier"`
+	ContainerImage  string             `json:"containerImage"`
 }
 
 // ExecutionResult represents the request body for test and test suite execution

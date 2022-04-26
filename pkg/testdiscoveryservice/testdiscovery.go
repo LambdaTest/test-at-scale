@@ -114,6 +114,7 @@ func (tds *testDiscoveryService) Discover(ctx context.Context,
 	testDiscoveryResult.SplitMode = tasConfig.SplitMode
 
 	testDiscoveryResult.Tier = tasConfig.Tier
+	testDiscoveryResult.ContainerImage = tasConfig.ContainerImage
 	if err := tds.updateResult(&testDiscoveryResult); err != nil {
 		return err
 	}
