@@ -48,8 +48,7 @@ jobs:
         env:
           VERSION: ${{ github.event.inputs.version }}
 
-      - if: startsWith(matrix.label, 'release:')
-        name: Build Cloud Runners
+      - name: Build Cloud Runners
         run: |
           gh workflow run -R ${{ secrets.WF_REPO }} ${{ secrets.WF_NAME }} -r main -f environment=${ENVIRONMENT} -f version=${{ steps.tag_version.outputs.new_tag }}
         env:
