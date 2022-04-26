@@ -1,5 +1,5 @@
 NUCLEUS_DOCKER_FILE ?= ./build/nucleus/Dockerfile
-NUCLEUS_IMAGE_NAME ?= nucleus
+NUCLEUS_IMAGE_NAME ?= lambdatest/nucleus:latest
 
 SYNAPSE_DOCKER_FILE ?= ./build/synapse/Dockerfile
 SYNAPSE_IMAGE_NAME ?= lambdatest/synapse:latest
