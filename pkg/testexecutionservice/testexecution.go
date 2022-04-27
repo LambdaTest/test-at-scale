@@ -151,7 +151,8 @@ func (tes *testExecutionService) Run(ctx context.Context,
 	return executionResults, nil
 }
 
-func (tes *testExecutionService) SendResults(ctx context.Context, payload *core.ExecutionResults) (resp *core.TestReportResponsePayload, err error) {
+func (tes *testExecutionService) SendResults(ctx context.Context,
+	payload *core.ExecutionResults) (resp *core.TestReportResponsePayload, err error) {
 	reqBody, err := json.Marshal(payload)
 	if err != nil {
 		tes.logger.Errorf("failed to marshal request body %v", err)
