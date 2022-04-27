@@ -170,6 +170,13 @@ type ExecutionResults struct {
 	Results  []ExecutionResult `json:"results"`
 }
 
+// TestReportResponsePayload represents the response body for test and test suite report api.
+type TestReportResponsePayload struct {
+	TaskID     string `json:"taskID"`
+	TaskStatus Status `json:"taskStatus"`
+	Remark     string `json:"remark,omitempty"`
+}
+
 // TestPayload represents the request body for test execution
 type TestPayload struct {
 	TestID          string             `json:"testID"`

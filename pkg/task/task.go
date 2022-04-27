@@ -12,24 +12,21 @@ import (
 
 // task represents each instance of nucleus spawned by neuron
 type task struct {
-	ctx      context.Context
 	requests core.Requests
 	endpoint string
 	logger   lumber.Logger
 }
 
 // New returns new task
-func New(ctx context.Context, requests core.Requests, logger lumber.Logger) (core.Task, error) {
+func New(requests core.Requests, logger lumber.Logger) (core.Task, error) {
 	return &task{
-		ctx:      ctx,
 		requests: requests,
 		logger:   logger,
 		endpoint: global.NeuronHost + "/task",
 	}, nil
 }
 
-func (t *task) UpdateStatus(payload *core.TaskPayload) error {
-
+func (t *task) UpdateStatus(ctx context.Context, payload *core.TaskPayload) error {
 	t.logger.Debugf("sending status update of task: %s to %s for repository: %s", payload.TaskID, payload.Status, payload.RepoLink)
 	reqBody, err := json.Marshal(payload)
 	if err != nil {
@@ -37,7 +34,7 @@ func (t *task) UpdateStatus(payload *core.TaskPayload) error {
 		return err
 	}
 
-	if err := t.requests.MakeAPIRequest(t.ctx, http.MethodPut, t.endpoint, reqBody); err != nil {
+	if _, err := t.requests.MakeAPIRequest(ctx, http.MethodPut, t.endpoint, reqBody); err != nil {
 		return err
 	}
 
