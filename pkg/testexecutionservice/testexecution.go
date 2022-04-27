@@ -42,6 +42,7 @@ func NewTestExecutionService(cfg *config.NucleusConfig,
 	ts *teststats.ProcStats,
 	logger lumber.Logger) core.TestExecutionService {
 	return &testExecutionService{cfg: cfg,
+		requests:       requests,
 		serverEndpoint: global.NeuronHost + "/report",
 		execManager:    execManager,
 		azureClient:    azureClient,
@@ -107,6 +108,7 @@ func (tes *testExecutionService) Run(ctx context.Context,
 		RepoID:   payload.RepoID,
 		OrgID:    payload.OrgID,
 		CommitID: payload.BuildTargetCommit,
+		TaskType: payload.TaskType,
 	}
 	for i := 1; i <= tes.cfg.ConsecutiveRuns; i++ {
 		var cmd *exec.Cmd

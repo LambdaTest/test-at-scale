@@ -84,6 +84,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	} else {
 		taskPayload.Type = ExecutionTask
 	}
+	payload.TaskType = taskPayload.Type
 	pl.Logger.Infof("Running nucleus in %s mode", taskPayload.Type)
 
 	// marking task to running state
