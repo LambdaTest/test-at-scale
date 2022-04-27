@@ -114,7 +114,7 @@ type Payload struct {
 	ParentCommitCoverageExists bool               `json:"parent_commit_coverage_exists"`
 	LicenseTier                Tier               `json:"license_tier"`
 	CollectCoverage            bool               `json:"collect_coverage"`
-	TaskType                   TaskType           `json:"task_type"`
+	TaskType                   TaskType           `json:"-"`
 }
 
 // Pipeline defines all attributes of Pipeline
