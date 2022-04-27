@@ -57,7 +57,7 @@ func (gm *gitManager) Clone(ctx context.Context, payload *core.Payload, oauth *c
 		return err
 	}
 
-	filename := gm.getUnzippedFileName(payload.GitProvider, orgName, repoName, payload.ForkSlug, commitID)
+	filename := gm.getUnzippedFileName(payload.GitProvider, orgName, repoName, payload.ForkSlug, commitID, payload.PrivateRepo)
 	if err = os.Rename(filename, global.RepoDir); err != nil {
 		gm.logger.Errorf("failed to rename dir, error %v", err)
 		return err
@@ -171,10 +171,13 @@ func (gm *gitManager) initGit(ctx context.Context, payload *core.Payload, oauth 
 	return nil
 }
 
-func (gm *gitManager) getUnzippedFileName(gitProvider, orgName, repoName, forkSlug, commitID string) string {
+func (gm *gitManager) getUnzippedFileName(gitProvider, orgName, repoName, forkSlug, commitID string, privateRepo bool) string {
 	switch gitProvider {
 	case core.GitHub:
-		return orgName + "-" + repoName + "-" + commitID
+		if privateRepo {
+			return orgName + "-" + repoName + "-" + commitID
+		}
+		return orgName + "-" + repoName + "-" + commitID[:7]
 	case core.GitLab:
 		return repoName + "-" + commitID
 	case core.Bitbucket:
