@@ -11,7 +11,9 @@ import (
 
 	"github.com/LambdaTest/test-at-scale/config"
 	"github.com/LambdaTest/test-at-scale/pkg/core"
+	"github.com/LambdaTest/test-at-scale/pkg/global"
 	"github.com/LambdaTest/test-at-scale/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/pkg/requestutils"
 	"github.com/LambdaTest/test-at-scale/pkg/service/teststats"
 	"github.com/LambdaTest/test-at-scale/testutils"
 	"github.com/LambdaTest/test-at-scale/testutils/mocks"
@@ -31,6 +33,7 @@ func TestNewTestExecutionService(t *testing.T) {
 	var ts *teststats.ProcStats
 	azureClient := new(mocks.AzureClient)
 	execManager := new(mocks.ExecutionManager)
+	requests := requestutils.New(logger)
 
 	type args struct {
 		execManager core.ExecutionManager
@@ -45,11 +48,11 @@ func TestNewTestExecutionService(t *testing.T) {
 	}{
 		{"TestNewTestExecutionService",
 			args{execManager, azureClient, ts, logger},
-			&testExecutionService{logger, azureClient, cfg, ts, execManager}},
+			&testExecutionService{logger, azureClient, cfg, ts, execManager, requests, global.NeuronHost + "/report"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewTestExecutionService(cfg, tt.args.execManager,
+			if got := NewTestExecutionService(cfg, requests, tt.args.execManager,
 				tt.args.azureClient, tt.args.ts, tt.args.logger); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewTestExecutionService() = %v, want %v", got, tt.want)
 			}
@@ -108,7 +111,7 @@ func Test_testExecutionService_GetLocatorsFile(t *testing.T) {
 				ts:          tt.fields.ts,
 				execManager: tt.fields.execManager,
 			}
-			got, err := tes.GetLocatorsFile(tt.args.ctx, tt.args.locatorAddress)
+			got, err := tes.getLocatorsFile(tt.args.ctx, tt.args.locatorAddress)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("testExecutionService.GetLocatorsFile() error = %v, wantErr %v", err, tt.wantErr)
 				return
