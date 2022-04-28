@@ -1,9 +1,7 @@
 package core
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -86,10 +84,11 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	} else {
 		taskPayload.Type = ExecutionTask
 	}
+	payload.TaskType = taskPayload.Type
 	pl.Logger.Infof("Running nucleus in %s mode", taskPayload.Type)
 
 	// marking task to running state
-	if err = pl.Task.UpdateStatus(taskPayload); err != nil {
+	if err = pl.Task.UpdateStatus(context.Background(), taskPayload); err != nil {
 		pl.Logger.Fatalf("failed to update task status %v", err)
 	}
 
@@ -113,7 +112,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 				taskPayload.Remark = err.Error()
 			}
 		}
-		if err := pl.Task.UpdateStatus(taskPayload); err != nil {
+		if err = pl.Task.UpdateStatus(context.Background(), taskPayload); err != nil {
 			pl.Logger.Fatalf("failed to update task status %v", err)
 		}
 	}()
@@ -288,13 +287,13 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 			}
 		}
 
-		if err = pl.sendStats(*executionResults); err != nil {
+		resp, err := pl.TestExecutionService.SendResults(ctx, executionResults)
+		if err != nil {
 			pl.Logger.Errorf("error while sending test reports %v", err)
 			err = errs.New(errs.GenericErrRemark.Error())
 			return err
 		}
-
-		taskPayload.Status = findTaskPayloadStatus(executionResults)
+		taskPayload.Status = resp.TaskStatus
 
 		if tasConfig.Postrun != nil {
 			pl.Logger.Infof("Running post-run steps")
@@ -308,47 +307,5 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	}
 	pl.Logger.Debugf("Completed pipeline")
 
-	return nil
-}
-
-func findTaskPayloadStatus(executionResults *ExecutionResults) Status {
-	for _, result := range executionResults.Results {
-		for i := 0; i < len(result.TestPayload); i++ {
-			testResult := &result.TestPayload[i]
-			if testResult.Status == "failed" {
-				return Failed
-			}
-		}
-	}
-	return Passed
-}
-
-func (pl *Pipeline) sendStats(payload ExecutionResults) error {
-	endpointNeuronReport := global.NeuronHost + "/report"
-	reqBody, err := json.Marshal(payload)
-	if err != nil {
-		pl.Logger.Errorf("failed to marshal request body %v", err)
-		return err
-	}
-
-	req, err := http.NewRequest(http.MethodPost, endpointNeuronReport, bytes.NewBuffer(reqBody))
-	if err != nil {
-		pl.Logger.Errorf("failed to create new request %v", err)
-		return err
-	}
-
-	resp, err := pl.HTTPClient.Do(req)
-
-	if err != nil {
-		pl.Logger.Errorf("error while sending reports %v", err)
-		return err
-	}
-
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		pl.Logger.Errorf("error while sending reports, non 200 status")
-		return errors.New("non 200 status")
-	}
 	return nil
 }
