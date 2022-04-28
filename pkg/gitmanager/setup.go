@@ -177,6 +177,7 @@ func (gm *gitManager) getUnzippedFileName(gitProvider, orgName, repoName, forkSl
 		if privateRepo {
 			return orgName + "-" + repoName + "-" + commitID
 		}
+		// commitID[:7] github shorthand commit sha for public repos
 		return orgName + "-" + repoName + "-" + commitID[:7]
 	case core.GitLab:
 		return repoName + "-" + commitID
