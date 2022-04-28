@@ -146,7 +146,9 @@ func (tes *testExecutionService) Run(ctx context.Context,
 			tes.logger.Errorf("error in test execution: %+v", err)
 		}
 		result := <-tes.ts.ExecutionResultOutputChannel
-		executionResults.Results = append(executionResults.Results, result.Results...)
+		if result != nil {
+			executionResults.Results = append(executionResults.Results, result.Results...)
+		}
 	}
 	return executionResults, nil
 }
