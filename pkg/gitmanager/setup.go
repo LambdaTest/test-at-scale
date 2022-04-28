@@ -123,7 +123,9 @@ func (gm *gitManager) copyAndExtractFile(ctx context.Context, resp *http.Respons
 		fmt.Sprintf("mkdir %s", global.RepoDir),
 		fmt.Sprintf("mv %s/clonedir/*/* %s", filepath.Dir(path), global.RepoDir),
 	}
-	if err := gm.execManager.ExecuteInternalCommands(ctx, core.RenameCloneFile, commands, filepath.Dir(path), nil, nil); err != nil {
+
+	err = gm.execManager.ExecuteInternalCommands(ctx, core.RenameCloneFile, commands, filepath.Dir(path), nil, nil)
+	if err != nil {
 		return err
 	}
 
