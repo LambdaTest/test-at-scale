@@ -236,6 +236,14 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 			return err
 		}
 
+		pl.Logger.Debugf("Caching workspace")
+		// Persist workspace
+		if err = pl.CacheStore.CacheWorkspace(ctx); err != nil {
+			pl.Logger.Errorf("Error caching workspace: %+v", err)
+			err = errs.New(errs.GenericErrRemark.Error())
+			return err
+		}
+
 		pl.Logger.Infof("Identifying changed files ...")
 		diffExists := true
 		diff, err := pl.DiffManager.GetChangedFiles(ctx, payload, oauth)
@@ -258,14 +266,6 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 		}
 		// mark status as passed
 		taskPayload.Status = Passed
-
-		pl.Logger.Debugf("Caching workspace")
-		// Persist workspace
-		if err = pl.CacheStore.CacheWorkspace(ctx); err != nil {
-			pl.Logger.Errorf("Error caching workspace: %+v", err)
-			err = errs.New(errs.GenericErrRemark.Error())
-			return err
-		}
 
 		// Upload cache once for other builds
 		if err = pl.CacheStore.Upload(ctx, cacheKey, tasConfig.Cache.Paths...); err != nil {
