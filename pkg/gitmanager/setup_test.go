@@ -87,7 +87,7 @@ func Test_copyAndExtractFile(t *testing.T) {
 		Body: ioutil.NopCloser(bytes.NewBufferString(fileBody)),
 	}
 	path := "newFile"
-	err2 := gm.copyAndExtractFile(&resp, path)
+	err2 := gm.copyAndExtractFile(context.TODO(), &resp, path)
 	if err2 != nil {
 		t.Errorf("Error: %v", err2)
 		return
