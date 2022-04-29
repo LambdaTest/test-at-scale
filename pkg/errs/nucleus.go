@@ -81,12 +81,13 @@ func (e *StatusFailed) Error() string {
 
 // ErrInvalidConf represents field validation failures of TAS configuration
 type ErrInvalidConf struct {
-	Fields []string
-	Values []interface{}
+	Message string
+	Fields  []string
+	Values  []interface{}
 }
 
 func (e ErrInvalidConf) Error() string {
-	errMsg := "Invalid values provided for the following fields in configuration file: \n"
+	errMsg := e.Message
 	for idx, field := range e.Fields {
 		errMsg += fmt.Sprintf("%s: %s\n", field, e.Values[idx])
 	}

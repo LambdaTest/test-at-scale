@@ -99,7 +99,10 @@ func GetConfigFileName(path string) (string, error) {
 	if ext == ".yaml" || ext == ".yml" {
 		matches, _ := doublestar.Glob(os.DirFS(global.RepoDir), strings.TrimSuffix(path, ext)+".{yml,yaml}")
 		if len(matches) == 0 {
-			return "", errs.New(fmt.Sprintf("Configuration file not found at path: %s", path))
+			return "", errs.New(
+				fmt.Sprintf(
+					"%s configuration file not found at the root of your project. Please make sure you have placed it correctly.",
+					path))
 		}
 		// If there are files with the both extensions, pick the first match
 		path = matches[0]
@@ -107,7 +110,7 @@ func GetConfigFileName(path string) (string, error) {
 	return path, nil
 }
 
-func ValidateStruct(ctx context.Context, ymlContent []byte) (*core.TASConfig, error) {
+func ValidateStruct(ctx context.Context, ymlContent []byte, ymlFilename string) (*core.TASConfig, error) {
 	enObj := en.New()
 	uni := ut.New(enObj, enObj)
 	trans, _ := uni.GetTranslator("en")
@@ -127,6 +130,11 @@ func ValidateStruct(ctx context.Context, ymlContent []byte) (*core.TASConfig, er
 		// translate all error at once
 		validationErrs := validateErr.(validator.ValidationErrors)
 		err := new(errs.ErrInvalidConf)
+		err.Message = errs.New(
+			fmt.Sprintf(
+				"Invalid values provided for the following fields in the %s configuration file: \n",
+				ymlFilename),
+		).Error()
 		for _, e := range validationErrs {
 			// can translate each error one at a time.
 			err.Fields = append(err.Fields, e.Field())
