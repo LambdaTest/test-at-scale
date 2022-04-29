@@ -52,15 +52,16 @@ const (
 
 // Types of Command string
 const (
-	PreRun         CommandType = "prerun"
-	PostRun        CommandType = "postrun"
-	InstallRunners CommandType = "installrunners"
-	Execution      CommandType = "execution"
-	Discovery      CommandType = "discovery"
-	Zstd           CommandType = "zstd"
-	CoverageMerge  CommandType = "coveragemerge"
-	InstallNodeVer CommandType = "installnodeversion"
-	InitGit        CommandType = "initgit"
+	PreRun          CommandType = "prerun"
+	PostRun         CommandType = "postrun"
+	InstallRunners  CommandType = "installrunners"
+	Execution       CommandType = "execution"
+	Discovery       CommandType = "discovery"
+	Zstd            CommandType = "zstd"
+	CoverageMerge   CommandType = "coveragemerge"
+	InstallNodeVer  CommandType = "installnodeversion"
+	InitGit         CommandType = "initgit"
+	RenameCloneFile CommandType = "renameclonefile"
 )
 
 // Types of containers
