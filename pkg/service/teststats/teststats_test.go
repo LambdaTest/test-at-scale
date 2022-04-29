@@ -7,12 +7,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/LambdaTest/synapse/config"
-	"github.com/LambdaTest/synapse/pkg/core"
-	"github.com/LambdaTest/synapse/pkg/global"
-	"github.com/LambdaTest/synapse/pkg/lumber"
-	"github.com/LambdaTest/synapse/pkg/procfs"
-	"github.com/LambdaTest/synapse/testutils"
+	"github.com/LambdaTest/test-at-scale/config"
+	"github.com/LambdaTest/test-at-scale/pkg/core"
+	"github.com/LambdaTest/test-at-scale/pkg/global"
+	"github.com/LambdaTest/test-at-scale/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/pkg/procfs"
+	"github.com/LambdaTest/test-at-scale/testutils"
 )
 
 func getDummyTimeMap() map[string]time.Time {
@@ -53,7 +53,7 @@ func TestNew(t *testing.T) {
 					Timeout: global.DefaultHTTPTimeout,
 				},
 				ExecutionResultInputChannel:  make(chan core.ExecutionResults),
-				ExecutionResultOutputChannel: make(chan core.ExecutionResults),
+				ExecutionResultOutputChannel: make(chan *core.ExecutionResults),
 			}, false},
 	}
 	for _, tt := range tests {
@@ -165,7 +165,8 @@ func TestProcStats_appendStatsToTests(t *testing.T) {
 				{Name: "test 1", StartTime: timeMap["tpast1"], EndTime: timeMap["tfuture1"]},
 			},
 				[]*procfs.Stats{}},
-			"[{TestID: Detail: SuiteID: Suites:[] Title: FullTitle: Name:test 1 Duration:0 FilePath: Line: Col: CurrentRetry:0 Status: CommitID: DAG:[] Filelocator: BlocklistSource: Blocklisted:false StartTime:2021-02-22 16:23:01 +0000 UTC EndTime:2021-02-22 16:23:01 +0000 UTC Stats:[]}]",
+			// nolint:lll
+			"[{TestID: Detail: SuiteID: Suites:[] Title: FullTitle: Name:test 1 Duration:0 FilePath: Line: Col: CurrentRetry:0 Status: DAG:[] Filelocator: BlocklistSource: Blocklisted:false StartTime:2021-02-22 16:23:01 +0000 UTC EndTime:2021-02-22 16:23:01 +0000 UTC Stats:[]}]",
 		},
 
 		{"Test appendStatsToTests",
@@ -212,7 +213,8 @@ func TestProcStats_appendStatsToTests(t *testing.T) {
 					},
 				},
 			},
-			"[{TestID: Detail: SuiteID: Suites:[] Title: FullTitle: Name:test 1 Duration:100 FilePath: Line: Col: CurrentRetry:0 Status: CommitID: DAG:[] Filelocator: BlocklistSource: Blocklisted:false StartTime:2021-02-22 16:23:01 +0000 UTC EndTime:2021-02-22 16:23:01.1 +0000 UTC Stats:[{Memory:131 CPU:1.2 Storage:0 RecordTime:2021-02-22 16:23:01 +0000 UTC}]} {TestID: Detail: SuiteID: Suites:[] Title: FullTitle: Name:test 2 Duration:200 FilePath: Line: Col: CurrentRetry:0 Status: CommitID: DAG:[] Filelocator: BlocklistSource: Blocklisted:false StartTime:2021-02-22 16:22:05 +0000 UTC EndTime:2021-02-22 16:22:05.2 +0000 UTC Stats:[{Memory:100 CPU:25.4 Storage:250 RecordTime:2021-02-22 16:22:05 +0000 UTC}]}]",
+			// nolint:lll
+			"[{TestID: Detail: SuiteID: Suites:[] Title: FullTitle: Name:test 1 Duration:100 FilePath: Line: Col: CurrentRetry:0 Status: DAG:[] Filelocator: BlocklistSource: Blocklisted:false StartTime:2021-02-22 16:23:01 +0000 UTC EndTime:2021-02-22 16:23:01.1 +0000 UTC Stats:[{Memory:131 CPU:1.2 Storage:0 RecordTime:2021-02-22 16:23:01 +0000 UTC}]} {TestID: Detail: SuiteID: Suites:[] Title: FullTitle: Name:test 2 Duration:200 FilePath: Line: Col: CurrentRetry:0 Status: DAG:[] Filelocator: BlocklistSource: Blocklisted:false StartTime:2021-02-22 16:22:05 +0000 UTC EndTime:2021-02-22 16:22:05.2 +0000 UTC Stats:[{Memory:100 CPU:25.4 Storage:250 RecordTime:2021-02-22 16:22:05 +0000 UTC}]}]",
 		},
 	}
 	for _, tt := range tests {
@@ -246,27 +248,29 @@ func TestProcStats_appendStatsToTestSuites(t *testing.T) {
 	}{
 		{"Test appendStatsToTests",
 			args{[]core.TestSuitePayload{
-				{SuiteID: "testSuite1", StartTime: timeMap["tpast1"], EndTime: timeMap["tfuture1"]},
+				{SuiteID: "testSuite1", StartTime: timeMap["tpast1"], EndTime: timeMap["tfuture1"], TotalTests: 2},
 			},
 				[]*procfs.Stats{}},
-			"[{SuiteID:testSuite1 SuiteName: ParentSuiteID: BlacklistSource: Blacklisted:false StartTime:2021-02-22 16:23:01 +0000 UTC EndTime:2021-02-22 16:23:01 +0000 UTC Duration:0 Status: Stats:[]}]",
+			"[{SuiteID:testSuite1 SuiteName: ParentSuiteID: BlocklistSource: Blocklisted:false StartTime:2021-02-22 16:23:01 +0000 UTC EndTime:2021-02-22 16:23:01 +0000 UTC Duration:0 Status: Stats:[] TotalTests:2}]", // nolint
 		},
 
 		{"Test appendStatsToTests",
 			args{[]core.TestSuitePayload{
 				{
-					SuiteID:   "testSuite2",
-					StartTime: timeMap["tpast1"],
-					Duration:  100,
-					EndTime:   timeMap["tfuture1"],
-					Stats:     []core.TestProcessStats{},
+					SuiteID:    "testSuite2",
+					StartTime:  timeMap["tpast1"],
+					Duration:   100,
+					EndTime:    timeMap["tfuture1"],
+					Stats:      []core.TestProcessStats{},
+					TotalTests: 3,
 				},
 				{
-					SuiteID:   "testSuite3",
-					StartTime: timeMap["tpast2"],
-					Duration:  200,
-					EndTime:   timeMap["tfuture2"],
-					Stats:     []core.TestProcessStats{{Memory: 100, CPU: 25.4, Storage: 250, RecordTime: timeMap["tpast2"]}},
+					SuiteID:    "testSuite3",
+					StartTime:  timeMap["tpast2"],
+					Duration:   200,
+					EndTime:    timeMap["tfuture2"],
+					Stats:      []core.TestProcessStats{{Memory: 100, CPU: 25.4, Storage: 250, RecordTime: timeMap["tpast2"]}},
+					TotalTests: 5,
 				},
 			},
 				[]*procfs.Stats{
@@ -296,7 +300,7 @@ func TestProcStats_appendStatsToTestSuites(t *testing.T) {
 					},
 				},
 			},
-			"[{SuiteID:testSuite2 SuiteName: ParentSuiteID: BlacklistSource: Blacklisted:false StartTime:2021-02-22 16:23:01 +0000 UTC EndTime:2021-02-22 16:23:01.1 +0000 UTC Duration:100 Status: Stats:[{Memory:131 CPU:1.2 Storage:0 RecordTime:2021-02-22 16:23:01 +0000 UTC}]} {SuiteID:testSuite3 SuiteName: ParentSuiteID: BlacklistSource: Blacklisted:false StartTime:2021-02-22 16:22:05 +0000 UTC EndTime:2021-02-22 16:22:05.2 +0000 UTC Duration:200 Status: Stats:[{Memory:100 CPU:25.4 Storage:250 RecordTime:2021-02-22 16:22:05 +0000 UTC}]}]",
+			"[{SuiteID:testSuite2 SuiteName: ParentSuiteID: BlocklistSource: Blocklisted:false StartTime:2021-02-22 16:23:01 +0000 UTC EndTime:2021-02-22 16:23:01.1 +0000 UTC Duration:100 Status: Stats:[{Memory:131 CPU:1.2 Storage:0 RecordTime:2021-02-22 16:23:01 +0000 UTC}] TotalTests:3} {SuiteID:testSuite3 SuiteName: ParentSuiteID: BlocklistSource: Blocklisted:false StartTime:2021-02-22 16:22:05 +0000 UTC EndTime:2021-02-22 16:22:05.2 +0000 UTC Duration:200 Status: Stats:[{Memory:100 CPU:25.4 Storage:250 RecordTime:2021-02-22 16:22:05 +0000 UTC}] TotalTests:5}]", //nolint
 		},
 	}
 	for _, tt := range tests {

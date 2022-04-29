@@ -5,21 +5,17 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/LambdaTest/synapse/config"
-	"github.com/LambdaTest/synapse/pkg/core"
-	errs "github.com/LambdaTest/synapse/pkg/errs"
-	"github.com/LambdaTest/synapse/pkg/global"
-	"github.com/LambdaTest/synapse/pkg/lumber"
-	"github.com/LambdaTest/synapse/pkg/utils"
+	"github.com/LambdaTest/test-at-scale/config"
+	"github.com/LambdaTest/test-at-scale/pkg/core"
+	errs "github.com/LambdaTest/test-at-scale/pkg/errs"
+	"github.com/LambdaTest/test-at-scale/pkg/global"
+	"github.com/LambdaTest/test-at-scale/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/pkg/utils"
 )
 
 type secertManager struct {
 	logger lumber.Logger
 	cfg    *config.SynapseConfig
-}
-
-type secretsFile struct {
-	Secrets core.Secret `json:"data"`
 }
 
 // New returns new secretManager
@@ -34,13 +30,17 @@ func (s *secertManager) GetLambdatestSecrets() *config.LambdatestConfig {
 	return &s.cfg.Lambdatest
 }
 
+// GetSynapseName returns the name of synapse if mentioned in config
+func (s *secertManager) GetSynapseName() string {
+	return s.cfg.Name
+}
+
 func (s *secertManager) WriteGitSecrets(path string) error {
-	gitSecrets := secretsFile{
-		Secrets: core.Secret{
-			"access_token":  s.cfg.Git.Token,
-			"expiry":        "0001-01-01T00:00:00Z",
-			"refresh_token": "",
-		},
+	gitSecrets := core.Secret{
+		"access_token":  s.cfg.Git.Token,
+		"expiry":        "0001-01-01T00:00:00Z",
+		"refresh_token": "",
+		"token_type":    s.cfg.Git.TokenType,
 	}
 	gitSecretsJSON, err := json.Marshal(gitSecrets)
 	if err != nil {
@@ -63,10 +63,8 @@ func (s *secertManager) WriteRepoSecrets(repo string, path string) error {
 	if !ok {
 		return errors.New("no secrets found in configuration file")
 	}
-	repoSecrets := secretsFile{
-		Secrets: val,
-	}
-	repoSecretsJSON, err := json.Marshal(repoSecrets)
+
+	repoSecretsJSON, err := json.Marshal(val)
 	if err != nil {
 		return errs.ERR_JSON_MAR(err.Error())
 	}
@@ -102,7 +100,6 @@ func (s *secertManager) GetDockerSecrets(r *core.RunnerOptions) (core.ContainerI
 	}
 	// for private repo check whether creds are empty
 	if s.cfg.ContainerRegistry.Username == "" || s.cfg.ContainerRegistry.Password == "" {
-
 		return containerImageConfig, errs.CR_AUTH_NF
 	}
 	jsonBytes, _ := json.Marshal(map[string]string{

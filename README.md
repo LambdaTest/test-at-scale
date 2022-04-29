@@ -78,8 +78,10 @@ mkdir ~/test-at-scale
 cd ~/test-at-scale
 curl https://raw.githubusercontent.com/LambdaTest/test-at-scale/main/.sample.synapse.json -o .synapse.json
 ```
-- Open the downloaded `.synapse.json` configuration file in any editor of your choice.
-- You will need to add the following in this file: 
+
+- Open the downloaded `.synapse.json` configuration file in any editor of your choice such as `vi`, `nano`, `code`, etc.
+> **NOTE**: `.synapse.json` file is hidden by default. You can list it using `ls -la` command.
+- You will need to add the following in this file:
   - 1- **LambdaTest Secret Key**, that you got at the end of **Step 1**.
   - 2- **Git Token**, that would be required to clone the repositories after Step 3. Generating [GitHub](https://www.lambdatest.com/support/docs/tas-how-to-guides-gh-token), [GitLab](https://www.lambdatest.com/support/docs/tas-how-to-guides-gl-token) personal access token.
 - This file will also be used to store certain other parameters such as **Repository Secrets** (Optional), **Container Registry** (Optional) etc that might be required in configuring test-at-scale on your local/self-hosted environment. You can learn more about the configuration options [here](https://www.lambdatest.com/support/docs/tas-self-hosted-configuration#parameters).
@@ -91,7 +93,7 @@ curl https://raw.githubusercontent.com/LambdaTest/test-at-scale/main/.sample.syn
 #### Installation on Docker
 
 ##### Prerequisites
-- [Docker](https://docs.docker.com/get-docker/) or [Docker-Compose](https://docs.docker.com/compose/install/) (Recommended)
+- [Docker](https://docs.docker.com/get-docker/) and [Docker-Compose](https://docs.docker.com/compose/install/) (Recommended)
 
 ##### Docker Compose
 - Run the docker application.
@@ -163,7 +165,7 @@ docker run --name synapse --restart always \
 
 ### Step 5 - Configuring TAS yml
 A `.tas.yml` file is a basic yaml configuration file that contains steps required for installing necessary dependencies and executing the tests present in your repository.
-- In order to configure your imported repository, follow the steps given on the `.tas.yml`  configuration page. 
+- In order to configure your imported repository, follow the steps given on the `.tas.yml`  configuration page.
 - You can also know more about `.tas.yml` configuration parameters [here](https://www.lambdatest.com/support/docs/tas-configuring-tas-yml).
 
   ![N|Solid](https://www.lambdatest.com/support/assets/images/yml-download-6e7366b290de36ef8cb74f3d564850af.gif)
@@ -171,11 +173,11 @@ A `.tas.yml` file is a basic yaml configuration file that contains steps require
 - Placing the `.tas.yml` configuration file.
   - Create a new file as **.tas.yml** at the root level of your repository .
   - **Copy** the configuration from the TAS yml configuration page and **paste** them in the **.tas.yml** file you just created.
-  - **Commit and Push** the changes to your repo.   
+  - **Commit and Push** the changes to your repo.
   
   ![N|Solid](https://www.lambdatest.com/support/assets/images/yml_placing-72cd952b403e499a938151c955540e18.gif)
 
-## **Language & Framework Support** 
+## **Language & Framework Support**
 Currently we support Mocha, Jest and Jasmine for testing Javascript codebases.
 
 ## **Tutorials**
@@ -201,7 +203,7 @@ Join the Test-at-scale Community on [Discord](https://discord.gg/Wyf8srhf6K). Cl
 The documentation and community will help you troubleshoot most issues. If you have encountered a bug, you can contact us using one of the following channels:
 - Help yourself with our [Documentation](https://www.lambdatest.com/support/docs/tas-overview)📚, and [FAQs](https://www.lambdatest.com/support/docs/tas-faq/).
 - In case of Issue & bugs go to [GitHub issues](https://github.com/LambdaTest/test-at-scale/issues)🐛.
-- For support & feedback join our [Discord](https://discord.gg/Wyf8srhf6K) or reach out to us on our [email](mailto:hello.tas@lambdatest.com)💬. 
+- For support & feedback join our [Discord](https://discord.gg/Wyf8srhf6K) or reach out to us on our [email](mailto:hello.tas@lambdatest.com)💬.
 
 We are committed to fostering an open and welcoming environment in the community. Please see the Code of Conduct.
 

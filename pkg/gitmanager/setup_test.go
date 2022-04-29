@@ -12,11 +12,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/LambdaTest/synapse/pkg/command"
-	"github.com/LambdaTest/synapse/pkg/global"
-	"github.com/LambdaTest/synapse/pkg/lumber"
-	"github.com/LambdaTest/synapse/testutils"
-	"github.com/LambdaTest/synapse/testutils/mocks"
+	"github.com/LambdaTest/test-at-scale/pkg/command"
+	"github.com/LambdaTest/test-at-scale/pkg/core"
+	"github.com/LambdaTest/test-at-scale/pkg/global"
+	"github.com/LambdaTest/test-at-scale/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/testutils"
+	"github.com/LambdaTest/test-at-scale/testutils/mocks"
+	"github.com/stretchr/testify/mock"
 )
 
 func CreateDirectory(path string) {
@@ -42,9 +44,9 @@ func Test_downloadFile(t *testing.T) {
 		}
 		reqToken := r.Header.Get("Authorization")
 		splitToken := strings.Split(reqToken, "Bearer ")
-		expectedCloneToken := "dummy"
-		if splitToken[1] != expectedCloneToken {
-			t.Errorf("Invalid clone token, expected: %v\nreceived: %v", expectedCloneToken, splitToken[1])
+		expectedOauth := &core.Oauth{AccessToken: "dummy", Type: core.Bearer}
+		if splitToken[1] != expectedOauth.AccessToken {
+			t.Errorf("Invalid clone token, expected: %v\nreceived: %v", expectedOauth.AccessToken, splitToken[1])
 			w.WriteHeader(http.StatusUnauthorized)
 		} else {
 			w.WriteHeader(http.StatusOK)
@@ -57,16 +59,29 @@ func Test_downloadFile(t *testing.T) {
 		return
 	}
 	var httpClient http.Client
+	execManager := new(mocks.ExecutionManager)
+	execManager.On("ExecuteInternalCommands",
+		mock.AnythingOfType("*context.emptyCtx"),
+		mock.AnythingOfType("core.CommandType"),
+		mock.AnythingOfType("[]string"),
+		mock.AnythingOfType("string"),
+		mock.AnythingOfType("map[string]string"),
+		mock.AnythingOfType("map[string]string")).Return(
+		func(ctx context.Context, commandType core.CommandType, commands []string, cwd string, envMap, secretData map[string]string) error {
+			return nil
+		},
+	)
 	gm := &gitManager{
-		logger:     logger,
-		httpClient: httpClient,
+		logger:      logger,
+		httpClient:  httpClient,
+		execManager: execManager,
 	}
 	archiveURL := server.URL + "/archive/zipfile.zip"
 	fileName := "copyAndExtracted"
-	cloneToken := "dummy"
-	err2 := gm.downloadFile(context.TODO(), archiveURL, fileName, cloneToken)
+	oauth := &core.Oauth{AccessToken: "dummy", Type: core.Bearer}
+	err2 := gm.downloadFile(context.TODO(), archiveURL, fileName, oauth)
 	defer removeFile(fileName) // remove the file created after downloading and extracting
-	if err != nil {
+	if err2 != nil {
 		t.Errorf("Error: %v", err2)
 	}
 }
@@ -77,16 +92,29 @@ func Test_copyAndExtractFile(t *testing.T) {
 		t.Errorf("Couldn't get logger, error: %v", err)
 	}
 	var httpClient http.Client
+	execManager := new(mocks.ExecutionManager)
+	execManager.On("ExecuteInternalCommands",
+		mock.AnythingOfType("*context.emptyCtx"),
+		mock.AnythingOfType("core.CommandType"),
+		mock.AnythingOfType("[]string"),
+		mock.AnythingOfType("string"),
+		mock.AnythingOfType("map[string]string"),
+		mock.AnythingOfType("map[string]string")).Return(
+		func(ctx context.Context, commandType core.CommandType, commands []string, cwd string, envMap, secretData map[string]string) error {
+			return nil
+		},
+	)
 	gm := &gitManager{
-		logger:     logger,
-		httpClient: httpClient,
+		logger:      logger,
+		httpClient:  httpClient,
+		execManager: execManager,
 	}
 	fileBody := "Hello World!"
 	resp := http.Response{
 		Body: ioutil.NopCloser(bytes.NewBufferString(fileBody)),
 	}
 	path := "newFile"
-	err2 := gm.copyAndExtractFile(&resp, path)
+	err2 := gm.copyAndExtractFile(context.TODO(), &resp, path)
 	if err2 != nil {
 		t.Errorf("Error: %v", err2)
 		return
@@ -126,10 +154,10 @@ func TestClone(t *testing.T) {
 
 		payload.RepoLink = server.URL
 		payload.BuildTargetCommit = "testRepo"
-		cloneToken := "dummy"
+		oauth := &core.Oauth{AccessToken: "dummy", Type: core.Bearer}
 		commitID := payload.BuildTargetCommit
 
-		err = gm.Clone(context.TODO(), payload, cloneToken)
+		err = gm.Clone(context.TODO(), payload, oauth)
 		global.TestEnv = false
 		expErr := "opening zip archive for reading: creating reader: zip: not a valid zip file"
 

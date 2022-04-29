@@ -9,11 +9,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/LambdaTest/synapse/pkg/core"
-	"github.com/LambdaTest/synapse/pkg/lumber"
-	"github.com/LambdaTest/synapse/pkg/service/teststats"
-	"github.com/LambdaTest/synapse/testutils"
-	"github.com/LambdaTest/synapse/testutils/mocks"
+	"github.com/LambdaTest/test-at-scale/config"
+	"github.com/LambdaTest/test-at-scale/pkg/core"
+	"github.com/LambdaTest/test-at-scale/pkg/global"
+	"github.com/LambdaTest/test-at-scale/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/pkg/requestutils"
+	"github.com/LambdaTest/test-at-scale/pkg/service/teststats"
+	"github.com/LambdaTest/test-at-scale/testutils"
+	"github.com/LambdaTest/test-at-scale/testutils/mocks"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -24,9 +27,13 @@ func TestNewTestExecutionService(t *testing.T) {
 	if err != nil {
 		t.Errorf("Couldn't initialise logger, error: %v", err)
 	}
+	cfg := new(config.NucleusConfig)
+	cfg.ConsecutiveRuns = 1
+	cfg.CollectStats = true
 	var ts *teststats.ProcStats
 	azureClient := new(mocks.AzureClient)
 	execManager := new(mocks.ExecutionManager)
+	requests := requestutils.New(logger)
 
 	type args struct {
 		execManager core.ExecutionManager
@@ -39,11 +46,14 @@ func TestNewTestExecutionService(t *testing.T) {
 		args args
 		want *testExecutionService
 	}{
-		{"TestNewTestExecutionService", args{execManager, azureClient, ts, logger}, &testExecutionService{logger, azureClient, ts, execManager}},
+		{"TestNewTestExecutionService",
+			args{execManager, azureClient, ts, logger},
+			&testExecutionService{logger, azureClient, cfg, ts, execManager, requests, global.NeuronHost + "/report"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewTestExecutionService(tt.args.execManager, tt.args.azureClient, tt.args.ts, tt.args.logger); !reflect.DeepEqual(got, tt.want) {
+			if got := NewTestExecutionService(cfg, requests, tt.args.execManager,
+				tt.args.azureClient, tt.args.ts, tt.args.logger); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewTestExecutionService() = %v, want %v", got, tt.want)
 			}
 		})
@@ -101,7 +111,7 @@ func Test_testExecutionService_GetLocatorsFile(t *testing.T) {
 				ts:          tt.fields.ts,
 				execManager: tt.fields.execManager,
 			}
-			got, err := tes.GetLocatorsFile(tt.args.ctx, tt.args.locatorAddress)
+			got, err := tes.getLocatorsFile(tt.args.ctx, tt.args.locatorAddress)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("testExecutionService.GetLocatorsFile() error = %v, wantErr %v", err, tt.wantErr)
 				return

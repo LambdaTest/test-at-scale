@@ -12,10 +12,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/LambdaTest/synapse/config"
-	"github.com/LambdaTest/synapse/pkg/core"
-	"github.com/LambdaTest/synapse/pkg/global"
-	"github.com/LambdaTest/synapse/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/config"
+	"github.com/LambdaTest/test-at-scale/pkg/core"
+	"github.com/LambdaTest/test-at-scale/pkg/global"
+	"github.com/LambdaTest/test-at-scale/pkg/lumber"
 )
 
 const (
@@ -80,7 +80,7 @@ func (tbs *TestBlockTestService) fetchBlockListFromNeuron(ctx context.Context, r
 	q := u.Query()
 	q.Set("repoID", repoID)
 	q.Set("branch", branch)
-	q.Set("buildID", tbs.cfg.BuildID)
+	q.Set("taskID", tbs.cfg.TaskID)
 	u.RawQuery = q.Encode()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)

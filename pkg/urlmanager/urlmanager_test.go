@@ -4,7 +4,7 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/LambdaTest/synapse/pkg/global"
+	"github.com/LambdaTest/test-at-scale/pkg/global"
 )
 
 func TestGetCloneURL(t *testing.T) {
@@ -13,6 +13,8 @@ func TestGetCloneURL(t *testing.T) {
 		repoLink    string
 		repo        string
 		commitID    string
+		repoSlug    string
+		forkSlug    string
 	}
 	tests := []struct {
 		name    string
@@ -20,13 +22,15 @@ func TestGetCloneURL(t *testing.T) {
 		want    string
 		wantErr bool
 	}{
-		{"For github as git provider", args{"github", "https://github.com/nexe", "nexe", "abc"}, "https://github.com/nexe/archive/abc.zip", false},
-		{"For non-github and gitlab as git provider", args{"gittest", "https://github.com/nexe", "nexe", "abc"}, "", true},
-		{"For gitlab as git provider", args{"gitlab", "https://gitlab.com/nexe", "nexe", "abc"}, "https://gitlab.com/nexe/-/archive/abc/nexe-abc.zip", false},
+		{"For github as git provider", args{"github", "https://github.com/nexe", "nexe", "abc", "nexe", "nexe/nexe"},
+			"https://api.github.com/repos/nexe/nexe/zipball/abc", false},
+		{"For non-github and gitlab as git provider", args{"gittest", "https://github.com/nexe", "nexe", "abc", "nexe", ""}, "", true},
+		{"For gitlab as git provider", args{"gitlab", "https://gitlab.com/nexe", "nexe", "abc", "nexe", ""},
+			"https://gitlab.com/nexe/-/archive/abc/nexe-abc.zip", false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := GetCloneURL(tt.args.gitprovider, tt.args.repoLink, tt.args.repo, tt.args.commitID)
+			got, err := GetCloneURL(tt.args.gitprovider, tt.args.repoLink, tt.args.repo, tt.args.commitID, tt.args.repoSlug, tt.args.forkSlug)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetCloneURL() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -44,6 +48,7 @@ func TestGetCommitDiffURL(t *testing.T) {
 		path         string
 		baseCommit   string
 		targetCommit string
+		forkSlug     string
 	}
 	tests := []struct {
 		name    string
@@ -51,13 +56,13 @@ func TestGetCommitDiffURL(t *testing.T) {
 		want    string
 		wantErr bool
 	}{
-		{"For github as git provider", args{"github", "/tests/nexe", "abc", "xyz"}, "https://api.github.com/repos/tests/nexe/compare/abc...xyz", false},
-		{"For non-github and gitlab as git provider", args{"gittest", "tests/nexe", "abc", "xyz"}, "", true},
-		{"For gitlab as git provider", args{"gitlab", "/tests/nexe", "abc", "xyz"}, global.APIHostURLMap["gitlab"] + "/" + url.QueryEscape("tests/nexe") + "/repository/compare?from=abc&to=xyz", false},
+		{"For github as git provider", args{"github", "/tests/nexe", "abc", "xyz", ""}, "https://api.github.com/repos/tests/nexe/compare/abc...xyz", false},
+		{"For non-github and gitlab as git provider", args{"gittest", "tests/nexe", "abc", "xyz", ""}, "", true},
+		{"For gitlab as git provider", args{"gitlab", "/tests/nexe", "abc", "xyz", ""}, global.APIHostURLMap["gitlab"] + "/" + url.QueryEscape("tests/nexe") + "/repository/compare?from=abc&to=xyz", false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := GetCommitDiffURL(tt.args.gitprovider, tt.args.path, tt.args.baseCommit, tt.args.targetCommit)
+			got, err := GetCommitDiffURL(tt.args.gitprovider, tt.args.path, tt.args.baseCommit, tt.args.targetCommit, tt.args.forkSlug)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetCommitDiffURL() error = %v, wantErr %v", err, tt.wantErr)
 				return

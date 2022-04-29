@@ -7,10 +7,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/LambdaTest/synapse/pkg/core"
-	"github.com/LambdaTest/synapse/pkg/global"
-	"github.com/LambdaTest/synapse/pkg/lumber"
-	"github.com/LambdaTest/synapse/pkg/utils"
+	"github.com/LambdaTest/test-at-scale/pkg/core"
+	"github.com/LambdaTest/test-at-scale/pkg/global"
+	"github.com/LambdaTest/test-at-scale/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/pkg/utils"
 	"github.com/denisbrodbeck/machineid"
 	"github.com/gorilla/websocket"
 	"github.com/lestrrat-go/backoff"
@@ -19,13 +19,14 @@ import (
 
 // All constant related to synapse
 const (
-	Repo                   = "repo"
-	BuildID                = "build-id"
-	JobID                  = "job-id"
-	Mode                   = "mode"
-	ID                     = "id"
-	DuplicateConnectionErr = "Synapse already has an open connection"
-	AuthenticationFailed   = "Synapse authentication failed"
+	Repo                             = "repo"
+	BuildID                          = "build-id"
+	JobID                            = "job-id"
+	Mode                             = "mode"
+	ID                               = "id"
+	DuplicateConnectionErr           = "Synapse already has an open connection"
+	AuthenticationFailed             = "Synapse authentication failed"
+	duplicateConnectionSleepDuration = 15 * time.Second
 )
 
 type synapse struct {
@@ -118,7 +119,7 @@ func (s *synapse) openAndMaintainConnection(ctx context.Context, connectionFaile
 
 /*
  connectionHandler handles the connection by listening to any connection closer
- also it returns boolean value which repersents whether we can retry to connect
+ also it returns boolean value which represents whether we can retry to connect
 */
 func (s *synapse) connectionHandler(ctx context.Context, conn *websocket.Conn, connectionFailed chan struct{}) bool {
 	normalCloser := make(chan struct{})
@@ -153,38 +154,55 @@ func (s *synapse) connectionHandler(ctx context.Context, conn *websocket.Conn, c
 messageReader reads websocket messages and acts upon it
 */
 func (s *synapse) messageReader(normalCloser chan struct{}, conn *websocket.Conn) {
-
-	// s.conn.SetReadLimit(maxMessageSize)
-	// s.conn.SetReadDeadline(time.Now().Add(pingWait))
+	conn.SetReadLimit(global.MaxMessageSize)
+	if err := conn.SetReadDeadline(time.Now().Add(global.PingWait)); err != nil {
+		s.logger.Errorf("Error in setting read deadline , error: %v", err)
+		s.MsgErrChan <- struct{}{}
+		close(s.MsgErrChan)
+		return
+	}
 	conn.SetPingHandler(func(string) error {
 		if err := conn.WriteMessage(websocket.PongMessage, nil); err != nil {
-			s.logger.Errorf("Error in writing pong msg %s", err.Error())
-			s.MsgErrChan <- struct{}{}
-			close(s.MsgErrChan)
+			s.logger.Errorf("Error in writing pong msg , error: %v", err)
+			return err
+		}
+		if err := conn.SetReadDeadline(time.Now().Add(global.PingWait)); err != nil {
+			s.logger.Errorf("Error in setting read deadline , error: %v", err)
+
 			return err
 		}
 		return nil
 	})
-
+	duplicateConnectionChan := make(chan struct{})
 	for {
-		_, msg, err := conn.ReadMessage()
-		if err != nil {
-			if websocket.IsCloseError(err, websocket.CloseNormalClosure) {
-				s.logger.Debugf("Normal closure occurred...........")
-				normalCloser <- struct{}{}
-				return
-			}
-			s.logger.Errorf("disconnecting from lambdatest server. error in reading message %v", err)
+		select {
+		case <-duplicateConnectionChan:
+			s.logger.Errorf("Duplicate connection detected .. will retry after certain time")
+			time.Sleep(duplicateConnectionSleepDuration)
 			s.MsgErrChan <- struct{}{}
 			close(s.MsgErrChan)
+			close(duplicateConnectionChan)
 			return
+		default:
+			_, msg, err := conn.ReadMessage()
+			if err != nil {
+				if websocket.IsCloseError(err, websocket.CloseNormalClosure) {
+					s.logger.Debugf("Normal closure occurred...........")
+					normalCloser <- struct{}{}
+					return
+				}
+				s.logger.Errorf("disconnecting from lambdatest server. error in reading message %v", err)
+				s.MsgErrChan <- struct{}{}
+				close(s.MsgErrChan)
+				return
+			}
+			s.processMessage(msg, duplicateConnectionChan)
 		}
-		s.processMessage(msg)
 	}
 }
 
-// processMessage process messages recieved via websocket
-func (s *synapse) processMessage(msg []byte) {
+// processMessage process messages received via websocket
+func (s *synapse) processMessage(msg []byte, duplicateConnectionChan chan struct{}) {
 	var message core.Message
 	err := json.Unmarshal(msg, &message)
 	if err != nil {
@@ -194,7 +212,7 @@ func (s *synapse) processMessage(msg []byte) {
 	switch message.Type {
 	case core.MsgError:
 		s.logger.Debugf("error message received from server")
-		go s.processErrorMessage(message)
+		go s.processErrorMessage(message, duplicateConnectionChan)
 	case core.MsgInfo:
 		s.logger.Debugf("info message received from server")
 	case core.MsgTask:
@@ -206,13 +224,15 @@ func (s *synapse) processMessage(msg []byte) {
 }
 
 // processErrorMessage handles error messages
-func (s *synapse) processErrorMessage(message core.Message) {
+func (s *synapse) processErrorMessage(message core.Message, duplicateConnectionChan chan struct{}) {
 	errMsg := string(message.Content)
 	s.logger.Errorf("error message received from server, error %s ", errMsg)
-	if errMsg == DuplicateConnectionErr || errMsg == AuthenticationFailed {
+	if errMsg == AuthenticationFailed {
 		s.InvalidConnectionRequest <- struct{}{}
 	}
-
+	if errMsg == DuplicateConnectionErr {
+		duplicateConnectionChan <- struct{}{}
+	}
 }
 
 // processTask handles task type message
@@ -257,9 +277,9 @@ func (s *synapse) runAndUpdateJobStatus(runnerOpts core.RunnerOptions) {
 
 	status := <-statusChan
 	// post job completion steps
-	s.logger.Debugf("Status %+v", status)
+	s.logger.Debugf("jobID %s, buildID %s  status  %+v", runnerOpts.Label[JobID], runnerOpts.Label[BuildID], status)
 
-	s.sendResourceUpdates(core.ResourceRelease, runnerOpts)
+	s.sendResourceUpdates(core.ResourceRelease, &runnerOpts, runnerOpts.Label[JobID], runnerOpts.Label[BuildID])
 	jobStatus := core.JobFailed
 	if status.Done {
 		jobStatus = core.JobCompleted
@@ -279,6 +299,7 @@ func (s *synapse) login() {
 	}
 	lambdatestConfig := s.secretsManager.GetLambdatestSecrets()
 	loginDetails := core.LoginDetails{
+		Name:      s.secretsManager.GetSynapseName(),
 		SecretKey: lambdatestConfig.SecretKey,
 		CPU:       cpu,
 		RAM:       ram,
@@ -309,7 +330,8 @@ func (s *synapse) logout() {
 // sendResourceUpdates sends resource status of synapse
 func (s *synapse) sendResourceUpdates(
 	status core.StatType,
-	runnerOpts core.RunnerOptions,
+	runnerOpts *core.RunnerOptions,
+	jobID, buildID string,
 ) {
 	specs := GetResources(runnerOpts.Tier)
 	resourceStats := core.ResourceStats{
@@ -317,18 +339,19 @@ func (s *synapse) sendResourceUpdates(
 		CPU:    specs.CPU,
 		RAM:    specs.RAM,
 	}
+	s.logger.Debugf("sending resource update for jobID %s buildID %s to lambdatest %+v", jobID, buildID, resourceStats)
 	resourceStatsMessage := CreateResourceStatsMessage(resourceStats)
 	s.writeMessageToBuffer(&resourceStatsMessage)
 }
 
 // writeMessageToBuffer  writes all message to buffer channel
 func (s *synapse) writeMessageToBuffer(message *core.Message) {
-	messageJson, err := json.Marshal(message)
+	messageJSON, err := json.Marshal(message)
 	if err != nil {
 		s.logger.Errorf("error marshaling message")
 		return
 	}
-	s.MsgChan <- messageJson
+	s.MsgChan <- messageJSON
 }
 
 // messageWriter writes the messages to open websocket

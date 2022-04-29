@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/LambdaTest/synapse/config"
-	"github.com/LambdaTest/synapse/pkg/core"
-	"github.com/LambdaTest/synapse/pkg/global"
+	"github.com/LambdaTest/test-at-scale/config"
+	"github.com/LambdaTest/test-at-scale/pkg/core"
+	"github.com/LambdaTest/test-at-scale/pkg/global"
 	"github.com/google/uuid"
 )
 
@@ -20,7 +20,7 @@ func getRunnerOptions() *core.RunnerOptions {
 		ContainerArgs:  []string{"sleep", "10"},
 		DockerImage:    "ubuntu:latest",
 		HostVolumePath: "/tmp",
-		PodType:        core.ParsingPod,
+		PodType:        core.NucleusPod,
 	}
 	return &r
 }

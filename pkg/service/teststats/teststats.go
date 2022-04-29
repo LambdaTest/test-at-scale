@@ -6,11 +6,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/LambdaTest/synapse/config"
-	"github.com/LambdaTest/synapse/pkg/core"
-	"github.com/LambdaTest/synapse/pkg/global"
-	"github.com/LambdaTest/synapse/pkg/lumber"
-	"github.com/LambdaTest/synapse/pkg/procfs"
+	"github.com/LambdaTest/test-at-scale/config"
+	"github.com/LambdaTest/test-at-scale/pkg/core"
+	"github.com/LambdaTest/test-at-scale/pkg/global"
+	"github.com/LambdaTest/test-at-scale/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/pkg/procfs"
 )
 
 //ProcStats represents the process stats for a particular pid
@@ -19,7 +19,7 @@ type ProcStats struct {
 	httpClient                   http.Client
 	ExecutionResultInputChannel  chan core.ExecutionResults
 	wg                           sync.WaitGroup
-	ExecutionResultOutputChannel chan core.ExecutionResults
+	ExecutionResultOutputChannel chan *core.ExecutionResults
 }
 
 // New returns instance of ProcStats
@@ -30,7 +30,7 @@ func New(cfg *config.NucleusConfig, logger lumber.Logger) (*ProcStats, error) {
 		httpClient: http.Client{
 			Timeout: global.DefaultHTTPTimeout,
 		},
-		ExecutionResultOutputChannel: make(chan core.ExecutionResults),
+		ExecutionResultOutputChannel: make(chan *core.ExecutionResults),
 	}, nil
 
 }
@@ -60,15 +60,13 @@ func (s *ProcStats) CaptureTestStats(pid int32, collectStats bool) error {
 					s.appendStatsToTestSuites(executionResults.Results[ind].TestSuitePayload, processStats)
 				}
 			}
-			s.ExecutionResultOutputChannel <- executionResults
+			s.ExecutionResultOutputChannel <- &executionResults
 		default:
 			// Can reach here in 2 cases (ie `/results` API wasn't called):
 			// 1. runner process exited with zero exit exitCode but no testFiles were run (changes in Readme.md etc)
 			// 2. runner process exited with non-zero exitCode
-			// In second case, non-zero exitCodes are already captured and sent as
-			// "Task error" when updating task status to neuron in lifeycle.go
 			s.logger.Warnf("No test results found, pid %d", pid)
-			s.ExecutionResultOutputChannel <- core.ExecutionResults{}
+			s.ExecutionResultOutputChannel <- nil
 		}
 	}()
 

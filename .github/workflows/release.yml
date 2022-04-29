@@ -1,0 +1,120 @@
+name: Release on Dev
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+
+  Release:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Check Patch Label
+        id: check_pr_labels_patch
+        uses: shioyang/check-pr-labels-on-push-action@v1.0.3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          labels: '["release:patch"]'
+
+      - name: Check Minor Label
+        id: check_pr_labels_minor
+        uses: shioyang/check-pr-labels-on-push-action@v1.0.3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          labels: '["release:minor"]'
+
+      - name: Check Major Label
+        id: check_pr_labels_major
+        uses: shioyang/check-pr-labels-on-push-action@v1.0.3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          labels: '["release:major"]'
+
+      - name: Release Type
+        run: |
+          if [ ${MAJOR} == "true" ] ; then
+            echo "RELEASE_TYPE=major" >> $GITHUB_ENV
+          elif [ ${MINOR} == "true" ] ; then
+            echo "RELEASE_TYPE=minor" >> $GITHUB_ENV
+          elif [ ${PATCH} == "true" ] ; then
+            echo "RELEASE_TYPE=patch" >> $GITHUB_ENV
+          else
+          echo "RELEASE_TYPE=none" >> $GITHUB_ENV
+          fi
+        env:
+          PATCH: ${{ steps.check_pr_labels_patch.outputs.result }}
+          MINOR: ${{ steps.check_pr_labels_minor.outputs.result }}
+          MAJOR: ${{ steps.check_pr_labels_major.outputs.result }}
+
+      - name: Testing Release Type
+        if: env.RELEASE_TYPE == 'none'
+        uses: actions/github-script@v3
+        with:
+          script: |
+              core.setFailed('Release labels were not present in the PR!')
+
+      - name: Inject slug/short variables
+        uses: rlespinasse/github-slug-action@v3.x
+
+      - name: Checkout
+        uses: actions/checkout@v2.4.0
+
+      - name: Bump version and push tag
+        id: tag_version
+        uses: mathieudutour/github-tag-action@v6.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          default_bump: ${{ env.RELEASE_TYPE }}
+
+      - name: Creating Github Release
+        uses: ncipollo/release-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          draft: false
+          generateReleaseNotes: true
+          prerelease: false
+          tag: ${{ steps.tag_version.outputs.new_tag }}
+          name: Release ${{ steps.tag_version.outputs.new_tag }}
+          body: ${{ steps.changelog.outputs.changelog }}
+
+      - name: Build Cloud Runners
+        run: |
+          gh workflow run -R ${{ secrets.WF_REPO }} ${{ secrets.WF_NAME }} -r main -f environment=dev -f version=${{ steps.tag_version.outputs.new_tag }}
+        env:
+          GITHUB_TOKEN: ${{secrets.GH_API_TOKEN}}
+
+      - name: Setup Environment
+        run: |
+          echo "BOTNAME=Test-at-Scale Deployment Status: Version ${{ steps.tag_version.outputs.new_tag }} to dev" >> $GITHUB_ENV
+
+      - name: Setup Docker Image Tags
+        run: |
+          echo "NUCLEUS_TAGS=lambdatest/nucleus:dev-base","lambdatest/nucleus:${{ steps.tag_version.outputs.new_tag }}-base" >> $GITHUB_ENV
+          echo "SYNAPSE_TAGS=lambdatest/synapse:dev","lambdatest/synapse:${{ steps.tag_version.outputs.new_tag }}" >> $GITHUB_ENV
+
+      - name: Docker Login
+        uses: docker/login-action@v1.13.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+          logout: true
+
+      - name: Build and push Nucleus images
+        uses: docker/build-push-action@v2.9.0
+        with:
+          context: .
+          tags: ${{ env.NUCLEUS_TAGS }}
+          file: build/nucleus/Dockerfile
+          push: true
+
+      - name: Build and push Synapse images
+        uses: docker/build-push-action@v2.9.0
+        with:
+          context: .
+          tags: ${{ env.SYNAPSE_TAGS }}
+          file: build/synapse/Dockerfile
+          push: true

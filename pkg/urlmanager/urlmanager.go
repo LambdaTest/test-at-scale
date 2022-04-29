@@ -3,24 +3,30 @@ package urlmanager
 import (
 	"fmt"
 	"net/url"
+	"strings"
 
-	"github.com/LambdaTest/synapse/pkg/core"
-	"github.com/LambdaTest/synapse/pkg/errs"
-	"github.com/LambdaTest/synapse/pkg/global"
+	"github.com/LambdaTest/test-at-scale/pkg/core"
+	"github.com/LambdaTest/test-at-scale/pkg/errs"
+	"github.com/LambdaTest/test-at-scale/pkg/global"
 )
 
 // GetCloneURL returns repo clone url for given git provider
-func GetCloneURL(gitprovider, repoLink, repo, commitID string) (string, error) {
+func GetCloneURL(gitprovider, repoLink, repo, commitID, forkSlug, repoSlug string) (string, error) {
 	if global.TestEnv {
 		return global.TestServer, nil
 	}
 	switch gitprovider {
 	case core.GitHub:
-		return fmt.Sprintf("%s/archive/%s.zip", repoLink, commitID), nil
+		return fmt.Sprintf("%s/%s/zipball/%s", global.APIHostURLMap[gitprovider], repoSlug, commitID), nil
 	case core.GitLab:
 		return fmt.Sprintf("%s/-/archive/%s/%s-%s.zip", repoLink, commitID, repo, commitID), nil
 
 	case core.Bitbucket:
+		if forkSlug != "" {
+			forkLink := strings.Replace(repoLink, repoSlug, forkSlug, -1)
+			return fmt.Sprintf("%s/get/%s.zip", forkLink, commitID), nil
+		}
+
 		return fmt.Sprintf("%s/get/%s.zip", repoLink, commitID), nil
 
 	default:
@@ -29,7 +35,7 @@ func GetCloneURL(gitprovider, repoLink, repo, commitID string) (string, error) {
 }
 
 // GetCommitDiffURL returns commit diff url for given git provider
-func GetCommitDiffURL(gitprovider, path, baseCommit, targetCommit string) (string, error) {
+func GetCommitDiffURL(gitprovider, path, baseCommit, targetCommit, forkSlug string) (string, error) {
 	if global.TestEnv {
 		return global.TestServer, nil
 	}
@@ -39,9 +45,14 @@ func GetCommitDiffURL(gitprovider, path, baseCommit, targetCommit string) (strin
 
 	case core.GitLab:
 		encodedPath := url.QueryEscape(path[1:])
-		return fmt.Sprintf("%s/%s/repository/compare?from=%s&to=%s", global.APIHostURLMap[gitprovider], encodedPath, baseCommit, targetCommit), nil
+		return fmt.Sprintf("%s/%s/repository/compare?from=%s&to=%s",
+			global.APIHostURLMap[gitprovider], encodedPath, baseCommit, targetCommit), nil
 
 	case core.Bitbucket:
+		if forkSlug != "" {
+			return fmt.Sprintf("%s/repositories%s/diff/%s..%s",
+				global.APIHostURLMap[gitprovider], path, fmt.Sprintf("%s:%s", forkSlug, targetCommit), baseCommit), nil
+		}
 		return fmt.Sprintf("%s/repositories%s/diff/%s..%s", global.APIHostURLMap[gitprovider], path, targetCommit, baseCommit), nil
 
 	default:
@@ -68,5 +79,4 @@ func GetPullRequestDiffURL(gitprovider, path string, prNumber int) (string, erro
 	default:
 		return "", errs.ErrUnsupportedGitProvider
 	}
-
 }

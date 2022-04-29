@@ -3,39 +3,51 @@ package testexecutionservice
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 
-	"github.com/LambdaTest/synapse/pkg/core"
-	"github.com/LambdaTest/synapse/pkg/global"
-	"github.com/LambdaTest/synapse/pkg/logstream"
-	"github.com/LambdaTest/synapse/pkg/lumber"
-	"github.com/LambdaTest/synapse/pkg/service/teststats"
+	"github.com/LambdaTest/test-at-scale/config"
+	"github.com/LambdaTest/test-at-scale/pkg/core"
+	"github.com/LambdaTest/test-at-scale/pkg/global"
+	"github.com/LambdaTest/test-at-scale/pkg/logstream"
+	"github.com/LambdaTest/test-at-scale/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/pkg/service/teststats"
 )
 
 const locatorFile = "locators"
 
 type testExecutionService struct {
-	logger      lumber.Logger
-	azureClient core.AzureClient
-	ts          *teststats.ProcStats
-	execManager core.ExecutionManager
+	logger         lumber.Logger
+	azureClient    core.AzureClient
+	cfg            *config.NucleusConfig
+	ts             *teststats.ProcStats
+	execManager    core.ExecutionManager
+	requests       core.Requests
+	serverEndpoint string
 }
 
 // NewTestExecutionService creates and returns a new TestExecutionService instance
-func NewTestExecutionService(execManager core.ExecutionManager,
+func NewTestExecutionService(cfg *config.NucleusConfig,
+	requests core.Requests,
+	execManager core.ExecutionManager,
 	azureClient core.AzureClient,
 	ts *teststats.ProcStats,
 	logger lumber.Logger) core.TestExecutionService {
-	return &testExecutionService{execManager: execManager,
-		azureClient: azureClient,
-		ts:          ts,
-		logger:      logger}
+	return &testExecutionService{cfg: cfg,
+		requests:       requests,
+		serverEndpoint: global.NeuronHost + "/report",
+		execManager:    execManager,
+		azureClient:    azureClient,
+		ts:             ts,
+		logger:         logger}
 }
 
 // Run executes the test files
@@ -49,8 +61,8 @@ func (tes *testExecutionService) Run(ctx context.Context,
 	defer azureWriter.Close()
 	blobPath := fmt.Sprintf("%s/%s/%s/%s.log", payload.OrgID, payload.BuildID, payload.TaskID, core.Execution)
 	errChan := tes.execManager.StoreCommandLogs(ctx, blobPath, azureReader)
+	defer tes.closeAndWriteLog(azureWriter, errChan)
 	logWriter := lumber.NewWriter(tes.logger)
-	defer logWriter.Close()
 	multiWriter := io.MultiWriter(logWriter, azureWriter)
 	maskWriter := logstream.NewMasker(multiWriter, secretData)
 
@@ -73,7 +85,8 @@ func (tes *testExecutionService) Run(ctx context.Context,
 	}
 
 	if payload.LocatorAddress != "" {
-		locatorFile, err := tes.GetLocatorsFile(ctx, payload.LocatorAddress)
+		locatorFile, err := tes.getLocatorsFile(ctx, payload.LocatorAddress)
+		tes.logger.Debugf("locators : %v\n", locatorFile)
 		if err != nil {
 			tes.logger.Errorf("failed to get locator file, error: %v", err)
 			return nil, err
@@ -85,88 +98,85 @@ func (tes *testExecutionService) Run(ctx context.Context,
 	commandArgs := args
 	envVars, err := tes.execManager.GetEnvVariables(envMap, secretData)
 	if err != nil {
-		tes.logger.Errorf("failed to parsed env variables, error: %v", err)
+		tes.logger.Errorf("failed to parse env variables, error: %v", err)
 		return nil, err
 	}
-	var cmd *exec.Cmd
-	if tasConfig.Framework == "jasmine" || tasConfig.Framework == "mocha" {
-		if collectCoverage {
-			cmd = exec.CommandContext(ctx, "nyc", commandArgs...)
+
+	executionResults := &core.ExecutionResults{
+		TaskID:   payload.TaskID,
+		BuildID:  payload.BuildID,
+		RepoID:   payload.RepoID,
+		OrgID:    payload.OrgID,
+		CommitID: payload.BuildTargetCommit,
+		TaskType: payload.TaskType,
+	}
+	for i := 1; i <= tes.cfg.ConsecutiveRuns; i++ {
+		var cmd *exec.Cmd
+		if tasConfig.Framework == "jasmine" || tasConfig.Framework == "mocha" {
+			if collectCoverage {
+				cmd = exec.CommandContext(ctx, "nyc", commandArgs...)
+			} else {
+				cmd = exec.CommandContext(ctx, commandArgs[0], commandArgs[1:]...) //nolint:gosec
+			}
 		} else {
-			cmd = exec.CommandContext(ctx, commandArgs[0], commandArgs[1:]...)
+			cmd = exec.CommandContext(ctx, commandArgs[0], commandArgs[1:]...) //nolint:gosec
+			if collectCoverage {
+				envVars = append(envVars, "TAS_COLLECT_COVERAGE=true")
+			}
 		}
-	} else {
-		cmd = exec.CommandContext(ctx, commandArgs[0], commandArgs[1:]...)
-		if collectCoverage {
-			envVars = append(envVars, "TAS_COLLECT_COVERAGE=true")
+		cmd.Dir = global.RepoDir
+		cmd.Env = envVars
+		cmd.Stdout = maskWriter
+		cmd.Stderr = maskWriter
+		tes.logger.Debugf("Executing test execution command: %s", cmd.String())
+		if err := cmd.Start(); err != nil {
+			tes.logger.Errorf("failed to execute test %s %v", cmd.String(), err)
+			return nil, err
+		}
+		pid := int32(cmd.Process.Pid)
+		tes.logger.Debugf("execution command started with pid %d", pid)
+
+		if err := tes.ts.CaptureTestStats(pid, tes.cfg.CollectStats); err != nil {
+			tes.logger.Errorf("failed to find process for command %s with pid %d %v", cmd.String(), pid, err)
+			return nil, err
+		}
+		// not returning error because runner like jest will return error in case of test failure
+		// and we want to run test multiple times
+		if err := cmd.Wait(); err != nil {
+			tes.logger.Errorf("error in test execution: %+v", err)
+		}
+		result := <-tes.ts.ExecutionResultOutputChannel
+		if result != nil {
+			executionResults.Results = append(executionResults.Results, result.Results...)
 		}
 	}
-	cmd.Dir = global.RepoDir
-	cmd.Env = envVars
-	cmd.Stdout = maskWriter
-	cmd.Stderr = maskWriter
-
-	tes.logger.Debugf("Executing test execution command: %s", cmd.String())
-	if err := cmd.Start(); err != nil {
-		tes.logger.Errorf("failed to execute test %s %v", cmd.String(), err)
-		return nil, err
-	}
-	pid := int32(cmd.Process.Pid)
-	tes.logger.Debugf("execution command started with pid %d", pid)
-
-	if err := tes.ts.CaptureTestStats(pid, payload.CollectStats); err != nil {
-		tes.logger.Errorf("failed to find process for command %s with pid %d %v", cmd.String(), pid, err)
-		return nil, err
-	}
-	if err := cmd.Wait(); err != nil {
-		tes.logger.Errorf("Error in executing []: %+v\n", err)
-		return nil, err
-	}
-	executionResults := <-tes.ts.ExecutionResultOutputChannel
-
-	// FIXME:  commenting this out as we will need to rework on coverage logic after test parallelization
-	// if collectCoverage {
-	// 	if err := tes.createCoverageManifest(tasConfig, coverageDir, removedfiles, executeAll); err != nil {
-	// 		tes.logger.Errorf("failed to create manifest file %v", err)
-	// 		return nil, err
-	// 	}
-	// }
-	azureWriter.Close()
-	if uploadErr := <-errChan; uploadErr != nil {
-		tes.logger.Errorf("failed to upload logs for test execution, error: %v", uploadErr)
-		return nil, uploadErr
-	}
-	return &executionResults, nil
+	return executionResults, nil
 }
 
-// func (tes *testExecutionService) createCoverageManifest(tasConfig *core.TASConfig, coverageDirectory string, removedFiles []string, executeAll bool) error {
-// 	manifestFile := core.CoverageManifest{
-// 		Removedfiles:     removedFiles,
-// 		AllFilesExecuted: executeAll,
-// 	}
+func (tes *testExecutionService) SendResults(ctx context.Context,
+	payload *core.ExecutionResults) (resp *core.TestReportResponsePayload, err error) {
+	reqBody, err := json.Marshal(payload)
+	if err != nil {
+		tes.logger.Errorf("failed to marshal request body %v", err)
+		return nil, err
+	}
+	respBody, err := tes.requests.MakeAPIRequest(ctx, http.MethodPost, tes.serverEndpoint, reqBody)
+	if err != nil {
+		tes.logger.Errorf("error while sending reports %v", err)
+		return nil, err
+	}
+	err = json.Unmarshal(respBody, &resp)
+	if err != nil {
+		tes.logger.Errorf("failed to unmarshal response body %v", err)
+		return nil, err
+	}
+	if resp.TaskStatus == "" {
+		return nil, errors.New("empty task status")
+	}
+	return resp, nil
+}
 
-// 	coverageThreshold := core.CoverageThreshold{
-// 		Branches:   tasConfig.CoverageThreshold.Branches,
-// 		Lines:      tasConfig.CoverageThreshold.Lines,
-// 		Functions:  tasConfig.CoverageThreshold.Functions,
-// 		Statements: tasConfig.CoverageThreshold.Statements,
-// 		PerFile:    tasConfig.CoverageThreshold.PerFile,
-// 	}
-
-// 	if coverageThreshold != (core.CoverageThreshold{}) {
-// 		manifestFile.CoverageThreshold = &coverageThreshold
-// 	}
-
-// 	manifestPath := filepath.Join(coverageDirectory, global.CoverageManifestFileName)
-
-// 	rawBytes, err := json.Marshal(manifestFile)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	return ioutil.WriteFile(manifestPath, rawBytes, 0644)
-// }
-
-func (tes *testExecutionService) GetLocatorsFile(ctx context.Context, locatorAddress string) (string, error) {
+func (tes *testExecutionService) getLocatorsFile(ctx context.Context, locatorAddress string) (string, error) {
 	u, err := url.Parse(locatorAddress)
 	if err != nil {
 		return "", err
@@ -196,4 +206,11 @@ func (tes *testExecutionService) GetLocatorsFile(ctx context.Context, locatorAdd
 		return "", err
 	}
 	return locatorFilePath, err
+}
+
+func (tes *testExecutionService) closeAndWriteLog(azureWriter *io.PipeWriter, errChan <-chan error) {
+	azureWriter.Close()
+	if err := <-errChan; err != nil {
+		tes.logger.Errorf("failed to upload logs for test execution, error: %v", err)
+	}
 }

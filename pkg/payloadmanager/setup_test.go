@@ -10,11 +10,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/LambdaTest/synapse/config"
-	"github.com/LambdaTest/synapse/pkg/core"
-	"github.com/LambdaTest/synapse/pkg/lumber"
-	"github.com/LambdaTest/synapse/testutils"
-	"github.com/LambdaTest/synapse/testutils/mocks"
+	"github.com/LambdaTest/test-at-scale/config"
+	"github.com/LambdaTest/test-at-scale/pkg/core"
+	"github.com/LambdaTest/test-at-scale/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/testutils"
+	"github.com/LambdaTest/test-at-scale/testutils/mocks"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -91,7 +91,7 @@ func Test_payloadManager_FetchPayload(t *testing.T) {
 			}
 
 			received, _ := json.Marshal(got)
-			receivedPayload := fmt.Sprintf("%+v", string(received))
+			receivedPayload := fmt.Sprintf("%+v\n", string(received))
 			if receivedPayload != tt.want {
 				t.Errorf("payloadManager.FetchPayload() = \n%v, \nwant: %v\n", receivedPayload, tt.want)
 			}
@@ -110,7 +110,6 @@ func Test_payloadManager_ValidatePayload(t *testing.T) {
 		ctx            context.Context
 		payload        *core.Payload
 		coverageMode   bool
-		parseMode      bool
 		locators       string
 		locatorAddress string
 		taskID         string
@@ -140,11 +139,11 @@ func Test_payloadManager_ValidatePayload(t *testing.T) {
 
 		{"Test validate payload for empty build target commit", args{ctx: context.TODO(), payload: &core.Payload{RepoLink: "github.com/abc/", RepoSlug: "/slug", GitProvider: "fake", BuildID: "build", RepoID: "repo", BranchName: "branch", OrgID: "org", TasFileName: "tas", BuildTargetCommit: ""}}, true},
 
-		{"Test validate payload for empty target commit in config", args{ctx: context.TODO(), payload: &core.Payload{RepoLink: "github.com/abc/", RepoSlug: "/slug", GitProvider: "fake", BuildID: "build", RepoID: "repo", BranchName: "branch", OrgID: "org", TasFileName: "tas", BuildTargetCommit: "btg"}, coverageMode: false, parseMode: false, locators: "../dummy"}, true},
+		{"Test validate payload for empty target commit in config", args{ctx: context.TODO(), payload: &core.Payload{RepoLink: "github.com/abc/", RepoSlug: "/slug", GitProvider: "fake", BuildID: "build", RepoID: "repo", BranchName: "branch", OrgID: "org", TasFileName: "tas", BuildTargetCommit: "btg"}, coverageMode: false, locators: "../dummy"}, true},
 
-		{"Test validate payload for target & base commit in config", args{ctx: context.TODO(), payload: &core.Payload{RepoLink: "github.com/abc/", RepoSlug: "/slug", GitProvider: "fake", BuildID: "build", RepoID: "repo", BranchName: "branch", OrgID: "org", TasFileName: "tas", BuildTargetCommit: "btg"}, coverageMode: false, parseMode: false, locators: "../dummy"}, true},
+		{"Test validate payload for target & base commit in config", args{ctx: context.TODO(), payload: &core.Payload{RepoLink: "github.com/abc/", RepoSlug: "/slug", GitProvider: "fake", BuildID: "build", RepoID: "repo", BranchName: "branch", OrgID: "org", TasFileName: "tas", BuildTargetCommit: "btg"}, coverageMode: false, locators: "../dummy"}, true},
 
-		{"Test validate payload for target, base commit & taskID in config", args{ctx: context.TODO(), payload: &core.Payload{RepoLink: "github.com/abc/", RepoSlug: "/slug", GitProvider: "fake", BuildID: "build", RepoID: "repo", BranchName: "branch", OrgID: "org", TasFileName: "tas", BuildTargetCommit: "btg"}, coverageMode: false, parseMode: false, locators: "../dummy", taskID: "tid"}, true},
+		{"Test validate payload for target, base commit & taskID in config", args{ctx: context.TODO(), payload: &core.Payload{RepoLink: "github.com/abc/", RepoSlug: "/slug", GitProvider: "fake", BuildID: "build", RepoID: "repo", BranchName: "branch", OrgID: "org", TasFileName: "tas", BuildTargetCommit: "btg"}, coverageMode: false, locators: "../dummy", taskID: "tid"}, true},
 
 		{"Test validate payload for non push and pull event", args{ctx: context.TODO(), payload: &core.Payload{RepoLink: "github.com/abc/", RepoSlug: "/slug", GitProvider: "fake", BuildID: "build", RepoID: "repo", BranchName: "branch", OrgID: "org", TasFileName: "tas", BuildTargetCommit: "btg", EventType: "invalid"}, coverageMode: true}, true},
 
@@ -154,7 +153,6 @@ func Test_payloadManager_ValidatePayload(t *testing.T) {
 	}
 	for _, tt := range tests {
 		cfg.CoverageMode = tt.args.coverageMode
-		cfg.ParseMode = tt.args.parseMode
 		cfg.LocatorAddress = tt.args.locatorAddress
 		// cfg.BuildTargetCommit = tt.args.buildTargetCommit
 		cfg.Locators = tt.args.locators
@@ -181,7 +179,7 @@ func Test_payloadManager_ValidatePayload(t *testing.T) {
 					return
 				}
 			}
-			if !(cfg.CoverageMode || cfg.ParseMode) {
+			if !(cfg.CoverageMode) {
 				if cfg.TaskID != "" {
 					if tt.args.payload.TaskID != tt.args.taskID {
 						t.Errorf("got payload.TaskID: %v, want: %v", tt.args.payload.TaskID, tt.args.taskID)

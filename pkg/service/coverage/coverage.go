@@ -16,13 +16,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/LambdaTest/synapse/config"
-	"github.com/LambdaTest/synapse/pkg/core"
-	"github.com/LambdaTest/synapse/pkg/global"
+	"github.com/LambdaTest/test-at-scale/config"
+	"github.com/LambdaTest/test-at-scale/pkg/core"
+	"github.com/LambdaTest/test-at-scale/pkg/global"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/LambdaTest/synapse/pkg/fileutils"
-	"github.com/LambdaTest/synapse/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/pkg/fileutils"
+	"github.com/LambdaTest/test-at-scale/pkg/lumber"
 )
 
 const (

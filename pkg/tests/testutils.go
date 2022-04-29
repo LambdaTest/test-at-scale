@@ -1,7 +1,7 @@
 package tests
 
 import (
-	"github.com/LambdaTest/synapse/config"
+	"github.com/LambdaTest/test-at-scale/config"
 )
 
 // MockConfig creates new dummy config
@@ -13,7 +13,8 @@ func MockConfig() *config.SynapseConfig {
 			SecretKey: "dummysecretkey",
 		},
 		Git: config.GitConfig{
-			Token: "dummytoken",
+			Token:     "dummytoken",
+			TokenType: "Bearer",
 		},
 		ContainerRegistry: config.ContainerRegistryConfig{
 			Mode:       config.PublicMode,

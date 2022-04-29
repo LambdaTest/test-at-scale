@@ -15,25 +15,26 @@ type PayloadManager interface {
 
 // TASConfigManager defines operations for tas config
 type TASConfigManager interface {
-	// LoadConfig loads the TASConfig from the given path
-	LoadConfig(ctx context.Context, path string, eventType EventType, parseMode bool) (*TASConfig, error)
+	// LoadAndValidate loads and validates the TASConfig from the given path
+	LoadAndValidate(ctx context.Context, path string, eventType EventType, licenseTier Tier) (*TASConfig, error)
 }
 
 // GitManager manages the cloning of git repositories
 type GitManager interface {
 	// Clone repository from TAS config
-	Clone(ctx context.Context, payload *Payload, cloneToken string) error
+	Clone(ctx context.Context, payload *Payload, oauth *Oauth) error
 }
 
 // DiffManager manages the diff findings for the given payload
 type DiffManager interface {
-	GetChangedFiles(ctx context.Context, payload *Payload, cloneToken string) (map[string]int, error)
+	GetChangedFiles(ctx context.Context, payload *Payload, oauth *Oauth) (map[string]int, error)
 }
 
 // TestDiscoveryService services discovery of tests
 type TestDiscoveryService interface {
 	// Discover executes the test discovery scripts.
-	Discover(ctx context.Context, tasConfig *TASConfig, payload *Payload, secretData map[string]string, diff map[string]int, diffExists bool) error
+	Discover(ctx context.Context, tasConfig *TASConfig,
+		payload *Payload, secretData map[string]string, diff map[string]int, diffExists bool) error
 }
 
 // BlockTestService is used for fetching blocklisted tests
@@ -44,18 +45,15 @@ type BlockTestService interface {
 // TestExecutionService services execution of tests
 type TestExecutionService interface {
 	// Run executes the test execution scripts.
-	Run(ctx context.Context, tasConfig *TASConfig, payload *Payload, coverageDirectory string, secretMap map[string]string) (*ExecutionResults, error)
+	Run(ctx context.Context, tasConfig *TASConfig,
+		payload *Payload, coverageDirectory string, secretMap map[string]string) (results *ExecutionResults, err error)
+	// SendResults sends the test execution results to the TAS server.
+	SendResults(ctx context.Context, payload *ExecutionResults) (resp *TestReportResponsePayload, err error)
 }
 
 // CoverageService services coverage of tests
 type CoverageService interface {
 	MergeAndUpload(ctx context.Context, payload *Payload) error
-}
-
-// YMLParserService parses the .tas.yml files
-type YMLParserService interface {
-	// ParseAndValidate the YML file and validades it
-	ParseAndValidate(ctx context.Context, payload *Payload) error
 }
 
 // TestStats is used for servicing stat collection
@@ -66,7 +64,7 @@ type TestStats interface {
 // Task is a service to update task status at neuron
 type Task interface {
 	// UpdateStatus updates status of the task
-	UpdateStatus(payload *TaskPayload) error
+	UpdateStatus(ctx context.Context, payload *TaskPayload) error
 }
 
 // NotifMessage  defines struct for notification message
@@ -107,9 +105,14 @@ type CacheStore interface {
 
 // SecretParser defines operation for parsing the vault secrets in given path
 type SecretParser interface {
+	// GetOauthSecret parses the oauth secret for given path
 	GetOauthSecret(filepath string) (*Oauth, error)
+	// GetRepoSecret parses the repo secret for given path
 	GetRepoSecret(string) (map[string]string, error)
+	// SubstituteSecret replace secret placeholders with their respective values
 	SubstituteSecret(command string, secretData map[string]string) (string, error)
+	// Expired reports whether the token is expired.
+	Expired(token *Oauth) bool
 }
 
 // ExecutionManager has responsibility for executing the preRun, postRun and internal commands
@@ -122,4 +125,10 @@ type ExecutionManager interface {
 	GetEnvVariables(envMap, secretData map[string]string) ([]string, error)
 	// StoreCommandLogs stores the command logs in the azure.
 	StoreCommandLogs(ctx context.Context, blobPath string, reader io.Reader) <-chan error
+}
+
+// Requests is a util interface for making API Requests
+type Requests interface {
+	// MakeAPIRequest makes an HTTP request
+	MakeAPIRequest(ctx context.Context, httpMethod, endpoint string, body []byte) ([]byte, error)
 }

@@ -24,6 +24,7 @@ const (
 	SecretRegex              = `\${{\s*secrets\.(.*?)\s*}}`
 	ExecutionResultChunkSize = 50
 	TestLocatorsDelimiter    = "#TAS#"
+	ExpiryDelta              = 15 * time.Minute
 )
 
 // FrameworkRunnerMap is map of framework with there respective runner location

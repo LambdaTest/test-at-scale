@@ -6,14 +6,15 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
-	"github.com/LambdaTest/synapse/pkg/lumber"
-	"github.com/LambdaTest/synapse/testutils"
+	"github.com/LambdaTest/test-at-scale/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/pkg/requestutils"
+	"github.com/LambdaTest/test-at-scale/testutils"
 )
 
-func TestTask_UpdateStatus(t *testing.T) {
+var noContext = context.Background()
 
+func TestTask_UpdateStatus(t *testing.T) {
 	check := func(t *testing.T, st int) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if r.URL.Path != "/task" {
@@ -29,31 +30,26 @@ func TestTask_UpdateStatus(t *testing.T) {
 		defer server.Close()
 
 		logger, err := lumber.NewLogger(lumber.LoggingConfig{ConsoleLevel: lumber.Debug}, true, 1)
+		requests := requestutils.New(logger)
 		if err != nil {
 			fmt.Println("Logger can't be established")
-		}
-
-		cfg, err := testutils.GetConfig()
-		if err != nil {
-			fmt.Printf("Unable to get config, received: %v", err)
 		}
 
 		taskPayload, err := testutils.GetTaskPayload()
 		if err != nil {
 			t.Errorf("Couldn't get task payload, received: %v", err)
 		}
-		_, err2 := New(context.TODO(), cfg, logger)
+		_, err2 := New(requests, logger)
 		if err2 != nil {
 			t.Errorf("New task couldn't initialised, received: %v", err)
 		}
 		tk := &task{
-			ctx:      context.TODO(),
-			client:   http.Client{Timeout: 30 * time.Second},
+			requests: requests,
 			logger:   logger,
 			endpoint: server.URL + "/task",
 		}
 
-		updateStatusErr := tk.UpdateStatus(taskPayload)
+		updateStatusErr := tk.UpdateStatus(noContext, taskPayload)
 
 		if st != 200 {
 			expectedErr := "non 200 status code"
@@ -90,6 +86,7 @@ func TestTask_UpdateStatusForError(t *testing.T) {
 		defer server.Close()
 
 		logger, err := lumber.NewLogger(lumber.LoggingConfig{ConsoleLevel: lumber.Debug}, true, 1)
+		requests := requestutils.New(logger)
 		if err != nil {
 			fmt.Println("Logger can't be established")
 		}
@@ -99,13 +96,12 @@ func TestTask_UpdateStatusForError(t *testing.T) {
 			t.Errorf("Couldn't get task payload, received: %v", err)
 		}
 		tk := &task{
-			ctx:      context.TODO(),
-			client:   http.Client{Timeout: 30 * time.Second},
+			requests: requests,
 			logger:   logger,
 			endpoint: server.URL + "/task",
 		}
 
-		updateStatusErr := tk.UpdateStatus(taskPayload)
+		updateStatusErr := tk.UpdateStatus(noContext, taskPayload)
 
 		if st != 200 {
 			expectedErr := "non 200 status code"
