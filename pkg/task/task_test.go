@@ -12,8 +12,9 @@ import (
 	"github.com/LambdaTest/test-at-scale/testutils"
 )
 
-func TestTask_UpdateStatus(t *testing.T) {
+var noContext = context.Background()
 
+func TestTask_UpdateStatus(t *testing.T) {
 	check := func(t *testing.T, st int) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if r.URL.Path != "/task" {
@@ -38,18 +39,17 @@ func TestTask_UpdateStatus(t *testing.T) {
 		if err != nil {
 			t.Errorf("Couldn't get task payload, received: %v", err)
 		}
-		_, err2 := New(context.TODO(), requests, logger)
+		_, err2 := New(requests, logger)
 		if err2 != nil {
 			t.Errorf("New task couldn't initialised, received: %v", err)
 		}
 		tk := &task{
-			ctx:      context.TODO(),
 			requests: requests,
 			logger:   logger,
 			endpoint: server.URL + "/task",
 		}
 
-		updateStatusErr := tk.UpdateStatus(taskPayload)
+		updateStatusErr := tk.UpdateStatus(noContext, taskPayload)
 
 		if st != 200 {
 			expectedErr := "non 200 status code"
@@ -96,13 +96,12 @@ func TestTask_UpdateStatusForError(t *testing.T) {
 			t.Errorf("Couldn't get task payload, received: %v", err)
 		}
 		tk := &task{
-			ctx:      context.TODO(),
 			requests: requests,
 			logger:   logger,
 			endpoint: server.URL + "/task",
 		}
 
-		updateStatusErr := tk.UpdateStatus(taskPayload)
+		updateStatusErr := tk.UpdateStatus(noContext, taskPayload)
 
 		if st != 200 {
 			expectedErr := "non 200 status code"

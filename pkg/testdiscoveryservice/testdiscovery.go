@@ -15,7 +15,6 @@ import (
 )
 
 type testDiscoveryService struct {
-	ctx         context.Context
 	logger      lumber.Logger
 	execManager core.ExecutionManager
 	tdResChan   chan core.DiscoveryResult
@@ -30,7 +29,6 @@ func NewTestDiscoveryService(ctx context.Context,
 	requests core.Requests,
 	logger lumber.Logger) core.TestDiscoveryService {
 	return &testDiscoveryService{
-		ctx:         ctx,
 		logger:      logger,
 		execManager: execManager,
 		tdResChan:   tdResChan,
@@ -111,21 +109,23 @@ func (tds *testDiscoveryService) Discover(ctx context.Context,
 
 	testDiscoveryResult := <-tds.tdResChan
 	testDiscoveryResult.Parallelism = tasConfig.Parallelism
+	testDiscoveryResult.SplitMode = tasConfig.SplitMode
+	testDiscoveryResult.ContainerImage = tasConfig.ContainerImage
 	testDiscoveryResult.Tier = tasConfig.Tier
-	if err := tds.updateResult(&testDiscoveryResult); err != nil {
+	if err := tds.updateResult(ctx, &testDiscoveryResult); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (tds *testDiscoveryService) updateResult(testDiscoveryResult *core.DiscoveryResult) error {
+func (tds *testDiscoveryService) updateResult(ctx context.Context, testDiscoveryResult *core.DiscoveryResult) error {
 	reqBody, err := json.Marshal(testDiscoveryResult)
 	if err != nil {
 		tds.logger.Errorf("error while json marshal %v", err)
 		return err
 	}
 
-	if err := tds.requests.MakeAPIRequest(tds.ctx, http.MethodPost, tds.endpoint, reqBody); err != nil {
+	if _, err := tds.requests.MakeAPIRequest(ctx, http.MethodPost, tds.endpoint, reqBody); err != nil {
 		return err
 	}
 

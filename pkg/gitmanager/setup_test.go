@@ -18,6 +18,7 @@ import (
 	"github.com/LambdaTest/test-at-scale/pkg/lumber"
 	"github.com/LambdaTest/test-at-scale/testutils"
 	"github.com/LambdaTest/test-at-scale/testutils/mocks"
+	"github.com/stretchr/testify/mock"
 )
 
 func CreateDirectory(path string) {
@@ -58,9 +59,22 @@ func Test_downloadFile(t *testing.T) {
 		return
 	}
 	var httpClient http.Client
+	execManager := new(mocks.ExecutionManager)
+	execManager.On("ExecuteInternalCommands",
+		mock.AnythingOfType("*context.emptyCtx"),
+		mock.AnythingOfType("core.CommandType"),
+		mock.AnythingOfType("[]string"),
+		mock.AnythingOfType("string"),
+		mock.AnythingOfType("map[string]string"),
+		mock.AnythingOfType("map[string]string")).Return(
+		func(ctx context.Context, commandType core.CommandType, commands []string, cwd string, envMap, secretData map[string]string) error {
+			return nil
+		},
+	)
 	gm := &gitManager{
-		logger:     logger,
-		httpClient: httpClient,
+		logger:      logger,
+		httpClient:  httpClient,
+		execManager: execManager,
 	}
 	archiveURL := server.URL + "/archive/zipfile.zip"
 	fileName := "copyAndExtracted"
@@ -78,16 +92,29 @@ func Test_copyAndExtractFile(t *testing.T) {
 		t.Errorf("Couldn't get logger, error: %v", err)
 	}
 	var httpClient http.Client
+	execManager := new(mocks.ExecutionManager)
+	execManager.On("ExecuteInternalCommands",
+		mock.AnythingOfType("*context.emptyCtx"),
+		mock.AnythingOfType("core.CommandType"),
+		mock.AnythingOfType("[]string"),
+		mock.AnythingOfType("string"),
+		mock.AnythingOfType("map[string]string"),
+		mock.AnythingOfType("map[string]string")).Return(
+		func(ctx context.Context, commandType core.CommandType, commands []string, cwd string, envMap, secretData map[string]string) error {
+			return nil
+		},
+	)
 	gm := &gitManager{
-		logger:     logger,
-		httpClient: httpClient,
+		logger:      logger,
+		httpClient:  httpClient,
+		execManager: execManager,
 	}
 	fileBody := "Hello World!"
 	resp := http.Response{
 		Body: ioutil.NopCloser(bytes.NewBufferString(fileBody)),
 	}
 	path := "newFile"
-	err2 := gm.copyAndExtractFile(&resp, path)
+	err2 := gm.copyAndExtractFile(context.TODO(), &resp, path)
 	if err2 != nil {
 		t.Errorf("Error: %v", err2)
 		return

@@ -41,17 +41,27 @@ const (
 	AfterNCommitStrategy PostMergeStrategyName = "after_n_commits"
 )
 
+// SplitMode is the mode for splitting tests
+type SplitMode string
+
+// list of support test splitting modes
+const (
+	FileSplit SplitMode = "file"
+	TestSplit SplitMode = "test"
+)
+
 // Types of Command string
 const (
-	PreRun         CommandType = "prerun"
-	PostRun        CommandType = "postrun"
-	InstallRunners CommandType = "installrunners"
-	Execution      CommandType = "execution"
-	Discovery      CommandType = "discovery"
-	Zstd           CommandType = "zstd"
-	CoverageMerge  CommandType = "coveragemerge"
-	InstallNodeVer CommandType = "installnodeversion"
-	InitGit        CommandType = "initgit"
+	PreRun          CommandType = "prerun"
+	PostRun         CommandType = "postrun"
+	InstallRunners  CommandType = "installrunners"
+	Execution       CommandType = "execution"
+	Discovery       CommandType = "discovery"
+	Zstd            CommandType = "zstd"
+	CoverageMerge   CommandType = "coveragemerge"
+	InstallNodeVer  CommandType = "installnodeversion"
+	InitGit         CommandType = "initgit"
+	RenameCloneFile CommandType = "renameclonefile"
 )
 
 // Types of containers
@@ -105,6 +115,7 @@ type Payload struct {
 	ParentCommitCoverageExists bool               `json:"parent_commit_coverage_exists"`
 	LicenseTier                Tier               `json:"license_tier"`
 	CollectCoverage            bool               `json:"collect_coverage"`
+	TaskType                   TaskType           `json:"-"`
 }
 
 // Pipeline defines all attributes of Pipeline
@@ -125,7 +136,7 @@ type Pipeline struct {
 	TestStats            TestStats
 	Task                 Task
 	SecretParser         SecretParser
-	HttpClient           http.Client
+	HTTPClient           http.Client
 }
 
 type DiscoveryResult struct {
@@ -134,6 +145,7 @@ type DiscoveryResult struct {
 	TestSuites      []TestSuitePayload `json:"testSuites"`
 	ExecuteAllTests bool               `json:"executeAllTests"`
 	Parallelism     int                `json:"parallelism"`
+	SplitMode       SplitMode          `json:"splitMode"`
 	RepoID          string             `json:"repoID"`
 	BuildID         string             `json:"buildID"`
 	CommitID        string             `json:"commitID"`
@@ -141,6 +153,7 @@ type DiscoveryResult struct {
 	OrgID           string             `json:"orgID"`
 	Branch          string             `json:"branch"`
 	Tier            Tier               `json:"tier"`
+	ContainerImage  string             `json:"containerImage"`
 }
 
 // ExecutionResult represents the request body for test and test suite execution
@@ -156,7 +169,15 @@ type ExecutionResults struct {
 	RepoID   string            `json:"repoID"`
 	OrgID    string            `json:"orgID"`
 	CommitID string            `json:"commitID"`
+	TaskType TaskType          `json:"taskType"`
 	Results  []ExecutionResult `json:"results"`
+}
+
+// TestReportResponsePayload represents the response body for test and test suite report api.
+type TestReportResponsePayload struct {
+	TaskID     string `json:"taskID"`
+	TaskStatus Status `json:"taskStatus"`
+	Remark     string `json:"remark,omitempty"`
 }
 
 // TestPayload represents the request body for test execution
@@ -174,7 +195,6 @@ type TestPayload struct {
 	Col             string             `json:"col"`
 	CurrentRetry    int                `json:"currentRetry"`
 	Status          string             `json:"status"`
-	CommitID        string             `json:"commitID"`
 	DAG             []string           `json:"dependsOn"`
 	Filelocator     string             `json:"locator"`
 	BlocklistSource string             `json:"blocklistSource"`
@@ -245,11 +265,11 @@ type CoverageManifest struct {
 }
 
 const (
-	//FileAdded file added in commit
+	// FileAdded file added in commit
 	FileAdded int = iota + 1
-	//FileRemoved file removed in commit
+	// FileRemoved file removed in commit
 	FileRemoved
-	//FileModified file modified in commit
+	// FileModified file modified in commit
 	FileModified
 )
 
@@ -290,6 +310,7 @@ type TASConfig struct {
 	Prerun            *Run               `yaml:"preRun" validate:"omitempty"`
 	Postrun           *Run               `yaml:"postRun" validate:"omitempty"`
 	Parallelism       int                `yaml:"parallelism"`
+	SplitMode         SplitMode          `yaml:"splitMode" validate:"oneof=test file"`
 	SkipCache         bool               `yaml:"skipCache"`
 	ConfigFile        string             `yaml:"configFile" validate:"omitempty"`
 	CoverageThreshold *CoverageThreshold `yaml:"coverageThreshold" validate:"omitempty"`
@@ -298,7 +319,7 @@ type TASConfig struct {
 	ContainerImage    string             `yaml:"containerImage"`
 }
 
-//CoverageThreshold reprents the code coverage threshold
+// CoverageThreshold reprents the code coverage threshold
 type CoverageThreshold struct {
 	Branches   float64 `yaml:"branches" json:"branches" validate:"number,min=0,max=100"`
 	Lines      float64 `yaml:"lines" json:"lines" validate:"number,min=0,max=100"`

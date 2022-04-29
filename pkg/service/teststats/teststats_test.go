@@ -165,7 +165,8 @@ func TestProcStats_appendStatsToTests(t *testing.T) {
 				{Name: "test 1", StartTime: timeMap["tpast1"], EndTime: timeMap["tfuture1"]},
 			},
 				[]*procfs.Stats{}},
-			"[{TestID: Detail: SuiteID: Suites:[] Title: FullTitle: Name:test 1 Duration:0 FilePath: Line: Col: CurrentRetry:0 Status: CommitID: DAG:[] Filelocator: BlocklistSource: Blocklisted:false StartTime:2021-02-22 16:23:01 +0000 UTC EndTime:2021-02-22 16:23:01 +0000 UTC Stats:[]}]",
+			// nolint:lll
+			"[{TestID: Detail: SuiteID: Suites:[] Title: FullTitle: Name:test 1 Duration:0 FilePath: Line: Col: CurrentRetry:0 Status: DAG:[] Filelocator: BlocklistSource: Blocklisted:false StartTime:2021-02-22 16:23:01 +0000 UTC EndTime:2021-02-22 16:23:01 +0000 UTC Stats:[]}]",
 		},
 
 		{"Test appendStatsToTests",
@@ -212,7 +213,8 @@ func TestProcStats_appendStatsToTests(t *testing.T) {
 					},
 				},
 			},
-			"[{TestID: Detail: SuiteID: Suites:[] Title: FullTitle: Name:test 1 Duration:100 FilePath: Line: Col: CurrentRetry:0 Status: CommitID: DAG:[] Filelocator: BlocklistSource: Blocklisted:false StartTime:2021-02-22 16:23:01 +0000 UTC EndTime:2021-02-22 16:23:01.1 +0000 UTC Stats:[{Memory:131 CPU:1.2 Storage:0 RecordTime:2021-02-22 16:23:01 +0000 UTC}]} {TestID: Detail: SuiteID: Suites:[] Title: FullTitle: Name:test 2 Duration:200 FilePath: Line: Col: CurrentRetry:0 Status: CommitID: DAG:[] Filelocator: BlocklistSource: Blocklisted:false StartTime:2021-02-22 16:22:05 +0000 UTC EndTime:2021-02-22 16:22:05.2 +0000 UTC Stats:[{Memory:100 CPU:25.4 Storage:250 RecordTime:2021-02-22 16:22:05 +0000 UTC}]}]",
+			// nolint:lll
+			"[{TestID: Detail: SuiteID: Suites:[] Title: FullTitle: Name:test 1 Duration:100 FilePath: Line: Col: CurrentRetry:0 Status: DAG:[] Filelocator: BlocklistSource: Blocklisted:false StartTime:2021-02-22 16:23:01 +0000 UTC EndTime:2021-02-22 16:23:01.1 +0000 UTC Stats:[{Memory:131 CPU:1.2 Storage:0 RecordTime:2021-02-22 16:23:01 +0000 UTC}]} {TestID: Detail: SuiteID: Suites:[] Title: FullTitle: Name:test 2 Duration:200 FilePath: Line: Col: CurrentRetry:0 Status: DAG:[] Filelocator: BlocklistSource: Blocklisted:false StartTime:2021-02-22 16:22:05 +0000 UTC EndTime:2021-02-22 16:22:05.2 +0000 UTC Stats:[{Memory:100 CPU:25.4 Storage:250 RecordTime:2021-02-22 16:22:05 +0000 UTC}]}]",
 		},
 	}
 	for _, tt := range tests {

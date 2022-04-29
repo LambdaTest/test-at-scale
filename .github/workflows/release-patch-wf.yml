@@ -1,0 +1,69 @@
+# This workflow will release a new patch version of nucleus and synapse
+name: Release Patch Version
+
+on:
+  workflow_dispatch:
+
+jobs:
+
+  Release:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Retrieving Release Type
+        run: |
+          echo "RELEASE_TYPE=patch" >> $GITHUB_ENV
+          echo "Releasing: ${release_type}"
+
+      - name: Inject slug/short variables
+        uses: rlespinasse/github-slug-action@v3.x
+
+      - name: Checkout
+        uses: actions/checkout@v2.4.0
+
+      - name: Bump version and push tag
+        id: tag_version
+        uses: mathieudutour/github-tag-action@v6.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          default_bump: ${{ env.RELEASE_TYPE }}
+
+      - name: Build Cloud Runners
+        run: |
+          gh workflow run -R ${{ secrets.WF_REPO }} ${{ secrets.WF_NAME }} -r main -f environment=dev -f version=${{ steps.tag_version.outputs.new_tag }}
+        env:
+          GITHUB_TOKEN: ${{secrets.GH_API_TOKEN}}
+
+      - name: Setup Environment
+        run: |
+          echo "BOTNAME=Test-at-Scale Deployment Status: Version ${{ steps.tag_version.outputs.new_tag }} to dev" >> $GITHUB_ENV
+
+      - name: Setup Docker Image Tags
+        run: |
+          echo "NUCLEUS_TAGS=lambdatest/nucleus:dev-base","lambdatest/nucleus:${{ steps.tag_version.outputs.new_tag }}-base" >> $GITHUB_ENV
+          echo "SYNAPSE_TAGS=lambdatest/synapse:dev","lambdatest/synapse:${{ steps.tag_version.outputs.new_tag }}" >> $GITHUB_ENV
+
+      - name: Docker Login
+        uses: docker/login-action@v1.13.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+          logout: true
+
+      - name: Build and push Nucleus images
+        uses: docker/build-push-action@v2.9.0
+        with:
+          context: .
+          tags: ${{ env.NUCLEUS_TAGS }}
+          file: build/nucleus/Dockerfile
+          push: true
+
+      - name: Build and push Synapse images
+        uses: docker/build-push-action@v2.9.0
+        with:
+          context: .
+          tags: ${{ env.SYNAPSE_TAGS }}
+          file: build/synapse/Dockerfile
+          push: true

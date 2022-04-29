@@ -3,8 +3,11 @@ package testexecutionservice
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
@@ -22,24 +25,29 @@ import (
 const locatorFile = "locators"
 
 type testExecutionService struct {
-	logger      lumber.Logger
-	azureClient core.AzureClient
-	cfg         *config.NucleusConfig
-	ts          *teststats.ProcStats
-	execManager core.ExecutionManager
+	logger         lumber.Logger
+	azureClient    core.AzureClient
+	cfg            *config.NucleusConfig
+	ts             *teststats.ProcStats
+	execManager    core.ExecutionManager
+	requests       core.Requests
+	serverEndpoint string
 }
 
 // NewTestExecutionService creates and returns a new TestExecutionService instance
 func NewTestExecutionService(cfg *config.NucleusConfig,
+	requests core.Requests,
 	execManager core.ExecutionManager,
 	azureClient core.AzureClient,
 	ts *teststats.ProcStats,
 	logger lumber.Logger) core.TestExecutionService {
 	return &testExecutionService{cfg: cfg,
-		execManager: execManager,
-		azureClient: azureClient,
-		ts:          ts,
-		logger:      logger}
+		requests:       requests,
+		serverEndpoint: global.NeuronHost + "/report",
+		execManager:    execManager,
+		azureClient:    azureClient,
+		ts:             ts,
+		logger:         logger}
 }
 
 // Run executes the test files
@@ -77,7 +85,7 @@ func (tes *testExecutionService) Run(ctx context.Context,
 	}
 
 	if payload.LocatorAddress != "" {
-		locatorFile, err := tes.GetLocatorsFile(ctx, payload.LocatorAddress)
+		locatorFile, err := tes.getLocatorsFile(ctx, payload.LocatorAddress)
 		tes.logger.Debugf("locators : %v\n", locatorFile)
 		if err != nil {
 			tes.logger.Errorf("failed to get locator file, error: %v", err)
@@ -100,6 +108,7 @@ func (tes *testExecutionService) Run(ctx context.Context,
 		RepoID:   payload.RepoID,
 		OrgID:    payload.OrgID,
 		CommitID: payload.BuildTargetCommit,
+		TaskType: payload.TaskType,
 	}
 	for i := 1; i <= tes.cfg.ConsecutiveRuns; i++ {
 		var cmd *exec.Cmd
@@ -137,46 +146,37 @@ func (tes *testExecutionService) Run(ctx context.Context,
 			tes.logger.Errorf("error in test execution: %+v", err)
 		}
 		result := <-tes.ts.ExecutionResultOutputChannel
-		executionResults.Results = append(executionResults.Results, result.Results...)
+		if result != nil {
+			executionResults.Results = append(executionResults.Results, result.Results...)
+		}
 	}
-	// FIXME:  commenting this out as we will need to rework on coverage logic after test parallelization
-	// if collectCoverage {
-	// 	if err := tes.createCoverageManifest(tasConfig, coverageDir, removedfiles, executeAll); err != nil {
-	// 		tes.logger.Errorf("failed to create manifest file %v", err)
-	// 		return nil, err
-	// 	}
-	// }
 	return executionResults, nil
 }
 
-// func (tes *testExecutionService) createCoverageManifest(tasConfig *core.TASConfig, coverageDirectory string, removedFiles []string, executeAll bool) error {
-// 	manifestFile := core.CoverageManifest{
-// 		Removedfiles:     removedFiles,
-// 		AllFilesExecuted: executeAll,
-// 	}
+func (tes *testExecutionService) SendResults(ctx context.Context,
+	payload *core.ExecutionResults) (resp *core.TestReportResponsePayload, err error) {
+	reqBody, err := json.Marshal(payload)
+	if err != nil {
+		tes.logger.Errorf("failed to marshal request body %v", err)
+		return nil, err
+	}
+	respBody, err := tes.requests.MakeAPIRequest(ctx, http.MethodPost, tes.serverEndpoint, reqBody)
+	if err != nil {
+		tes.logger.Errorf("error while sending reports %v", err)
+		return nil, err
+	}
+	err = json.Unmarshal(respBody, &resp)
+	if err != nil {
+		tes.logger.Errorf("failed to unmarshal response body %v", err)
+		return nil, err
+	}
+	if resp.TaskStatus == "" {
+		return nil, errors.New("empty task status")
+	}
+	return resp, nil
+}
 
-// 	coverageThreshold := core.CoverageThreshold{
-// 		Branches:   tasConfig.CoverageThreshold.Branches,
-// 		Lines:      tasConfig.CoverageThreshold.Lines,
-// 		Functions:  tasConfig.CoverageThreshold.Functions,
-// 		Statements: tasConfig.CoverageThreshold.Statements,
-// 		PerFile:    tasConfig.CoverageThreshold.PerFile,
-// 	}
-
-// 	if coverageThreshold != (core.CoverageThreshold{}) {
-// 		manifestFile.CoverageThreshold = &coverageThreshold
-// 	}
-
-// 	manifestPath := filepath.Join(coverageDirectory, global.CoverageManifestFileName)
-
-// 	rawBytes, err := json.Marshal(manifestFile)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	return ioutil.WriteFile(manifestPath, rawBytes, 0644)
-// }
-
-func (tes *testExecutionService) GetLocatorsFile(ctx context.Context, locatorAddress string) (string, error) {
+func (tes *testExecutionService) getLocatorsFile(ctx context.Context, locatorAddress string) (string, error) {
 	u, err := url.Parse(locatorAddress)
 	if err != nil {
 		return "", err

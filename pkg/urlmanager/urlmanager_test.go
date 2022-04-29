@@ -22,9 +22,11 @@ func TestGetCloneURL(t *testing.T) {
 		want    string
 		wantErr bool
 	}{
-		{"For github as git provider", args{"github", "https://github.com/nexe", "nexe", "abc", "nexe", ""}, "https://github.com/nexe/archive/abc.zip", false},
+		{"For github as git provider", args{"github", "https://github.com/nexe", "nexe", "abc", "nexe", "nexe/nexe"},
+			"https://api.github.com/repos/nexe/nexe/zipball/abc", false},
 		{"For non-github and gitlab as git provider", args{"gittest", "https://github.com/nexe", "nexe", "abc", "nexe", ""}, "", true},
-		{"For gitlab as git provider", args{"gitlab", "https://gitlab.com/nexe", "nexe", "abc", "nexe", ""}, "https://gitlab.com/nexe/-/archive/abc/nexe-abc.zip", false},
+		{"For gitlab as git provider", args{"gitlab", "https://gitlab.com/nexe", "nexe", "abc", "nexe", ""},
+			"https://gitlab.com/nexe/-/archive/abc/nexe-abc.zip", false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
