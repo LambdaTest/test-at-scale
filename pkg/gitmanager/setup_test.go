@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/LambdaTest/test-at-scale/pkg/command"
@@ -17,6 +18,7 @@ import (
 	"github.com/LambdaTest/test-at-scale/pkg/lumber"
 	"github.com/LambdaTest/test-at-scale/testutils"
 	"github.com/LambdaTest/test-at-scale/testutils/mocks"
+	"github.com/stretchr/testify/mock"
 )
 
 func CreateDirectory(path string) {
@@ -34,15 +36,78 @@ func removeFile(path string) {
 	}
 }
 
+func Test_downloadFile(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/archive/zipfile.zip" {
+			t.Errorf("Expected to request '/archive/zipfile.zip', got: %v", r.URL)
+			return
+		}
+		reqToken := r.Header.Get("Authorization")
+		splitToken := strings.Split(reqToken, "Bearer ")
+		expectedOauth := &core.Oauth{AccessToken: "dummy", Type: core.Bearer}
+		if splitToken[1] != expectedOauth.AccessToken {
+			t.Errorf("Invalid clone token, expected: %v\nreceived: %v", expectedOauth.AccessToken, splitToken[1])
+			w.WriteHeader(http.StatusUnauthorized)
+		} else {
+			w.WriteHeader(http.StatusOK)
+		}
+	}))
+	defer server.Close()
+	logger, err := testutils.GetLogger()
+	if err != nil {
+		t.Errorf("Couldn't get logger, error: %v", err)
+		return
+	}
+	var httpClient http.Client
+	execManager := new(mocks.ExecutionManager)
+	execManager.On("ExecuteInternalCommands",
+		mock.AnythingOfType("*context.emptyCtx"),
+		mock.AnythingOfType("core.CommandType"),
+		mock.AnythingOfType("[]string"),
+		mock.AnythingOfType("string"),
+		mock.AnythingOfType("map[string]string"),
+		mock.AnythingOfType("map[string]string")).Return(
+		func(ctx context.Context, commandType core.CommandType, commands []string, cwd string, envMap, secretData map[string]string) error {
+			return nil
+		},
+	)
+	gm := &gitManager{
+		logger:      logger,
+		httpClient:  httpClient,
+		execManager: execManager,
+	}
+	archiveURL := server.URL + "/archive/zipfile.zip"
+	fileName := "copyAndExtracted"
+	oauth := &core.Oauth{AccessToken: "dummy", Type: core.Bearer}
+	err2 := gm.downloadFile(context.TODO(), archiveURL, fileName, oauth)
+	defer removeFile(fileName) // remove the file created after downloading and extracting
+	if err2 != nil {
+		t.Errorf("Error: %v", err2)
+	}
+}
+
 func Test_copyAndExtractFile(t *testing.T) {
 	logger, err := testutils.GetLogger()
 	if err != nil {
 		t.Errorf("Couldn't get logger, error: %v", err)
 	}
 	var httpClient http.Client
+	execManager := new(mocks.ExecutionManager)
+	execManager.On("ExecuteInternalCommands",
+		mock.AnythingOfType("*context.emptyCtx"),
+		mock.AnythingOfType("core.CommandType"),
+		mock.AnythingOfType("[]string"),
+		mock.AnythingOfType("string"),
+		mock.AnythingOfType("map[string]string"),
+		mock.AnythingOfType("map[string]string")).Return(
+		func(ctx context.Context, commandType core.CommandType, commands []string, cwd string, envMap, secretData map[string]string) error {
+			return nil
+		},
+	)
 	gm := &gitManager{
-		logger:     logger,
-		httpClient: httpClient,
+		logger:      logger,
+		httpClient:  httpClient,
+		execManager: execManager,
 	}
 	fileBody := "Hello World!"
 	resp := http.Response{
@@ -138,38 +203,4 @@ func TestClone(t *testing.T) {
 	t.Run("Check the clone function", func(t *testing.T) {
 		checkClone(t)
 	})
-}
-
-func Test_gitManager_downloadFile(t *testing.T) {
-	type fields struct {
-		logger      lumber.Logger
-		httpClient  http.Client
-		execManager core.ExecutionManager
-	}
-	type args struct {
-		ctx        context.Context
-		archiveURL string
-		fileName   string
-		oauth      *core.Oauth
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gm := &gitManager{
-				logger:      tt.fields.logger,
-				httpClient:  tt.fields.httpClient,
-				execManager: tt.fields.execManager,
-			}
-			if err := gm.downloadFile(tt.args.ctx, tt.args.archiveURL, tt.args.fileName, tt.args.oauth); (err != nil) != tt.wantErr {
-				t.Errorf("gitManager.downloadFile() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
 }
