@@ -167,7 +167,10 @@ func TestValidateStruct(t *testing.T) {
 		{
 			"Invalid Field Values",
 			"testutils/testdata/tasyml/invalid_fields.yml",
-			errs.ErrInvalidConf{Fields: []string{"framework", "nodeVersion"}, Values: []interface{}{"hello", "test"}},
+			errs.ErrInvalidConf{
+				Message: "Invalid values provided for the following fields in the testutils/testdata/tasyml/invalid_fields.yml configuration file: \n",
+				Fields:  []string{"framework", "nodeVersion"},
+				Values:  []interface{}{"hello", "test"}},
 			nil,
 		},
 		{
