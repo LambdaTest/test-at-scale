@@ -155,20 +155,23 @@ func TestValidateStruct(t *testing.T) {
 		{
 			"Junk characters File",
 			"testutils/testdata/tasyml/junk.yml",
-			errs.ErrInvalidConfFileFormat,
+			// nolint:lll
+			fmt.Errorf("`testutils/testdata/tasyml/junk.yml` configuration file contains invalid format. Please correct the `testutils/testdata/tasyml/junk.yml` file"),
 			nil,
 		},
 		{
 			"Invalid Types",
 			"testutils/testdata/tasyml/invalid_types.yml",
-			errs.ErrInvalidConfFileFormat,
+			// nolint:lll
+			fmt.Errorf("`testutils/testdata/tasyml/invalid_types.yml` configuration file contains invalid format. Please correct the `testutils/testdata/tasyml/invalid_types.yml` file"),
 			nil,
 		},
 		{
 			"Invalid Field Values",
 			"testutils/testdata/tasyml/invalid_fields.yml",
 			errs.ErrInvalidConf{
-				Message: "Invalid values provided for the following fields in the testutils/testdata/tasyml/invalid_fields.yml configuration file: \n",
+				// nolint:lll
+				Message: "Invalid values provided for the following fields in the `testutils/testdata/tasyml/invalid_fields.yml` configuration file: \n",
 				Fields:  []string{"framework", "nodeVersion"},
 				Values:  []interface{}{"hello", "test"}},
 			nil,

@@ -73,11 +73,11 @@ func (tc *tasConfigManager) LoadAndValidate(ctx context.Context,
 	switch eventType {
 	case core.EventPullRequest:
 		if tasConfig.Premerge == nil {
-			return nil, errs.New(fmt.Sprintf("`preMerge` test cases are not configured in %s configuration file.", path))
+			return nil, errs.New(fmt.Sprintf("`preMerge` test cases are not configured in `%s` configuration file.", path))
 		}
 	case core.EventPush:
 		if tasConfig.Postmerge == nil {
-			return nil, errs.New(fmt.Sprintf("`postMerge` test cases are not configured in %s configuration file.", path))
+			return nil, errs.New(fmt.Sprintf("`postMerge` test cases are not configured in `%s` configuration file.", path))
 		}
 	}
 	if err := isValidLicenseTier(tasConfig.Tier, licenseTier); err != nil {

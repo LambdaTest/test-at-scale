@@ -101,7 +101,7 @@ func GetConfigFileName(path string) (string, error) {
 		if len(matches) == 0 {
 			return "", errs.New(
 				fmt.Sprintf(
-					"%s configuration file not found at the root of your project. Please make sure you have placed it correctly.",
+					"`%s` configuration file not found at the root of your project. Please make sure you have placed it correctly.",
 					path))
 		}
 		// If there are files with the both extensions, pick the first match
@@ -122,7 +122,7 @@ func ValidateStruct(ctx context.Context, ymlContent []byte, ymlFilename string) 
 
 	tasConfig := &core.TASConfig{SmartRun: true, Tier: core.Small, SplitMode: core.TestSplit}
 	if err := yaml.Unmarshal(ymlContent, tasConfig); err != nil {
-		return nil, errs.ErrInvalidConfFileFormat
+		return nil, fmt.Errorf("`%s` configuration file contains invalid format. Please correct the `%s` file", ymlFilename, ymlFilename)
 	}
 
 	validateErr := validate.Struct(tasConfig)
@@ -132,7 +132,7 @@ func ValidateStruct(ctx context.Context, ymlContent []byte, ymlFilename string) 
 		err := new(errs.ErrInvalidConf)
 		err.Message = errs.New(
 			fmt.Sprintf(
-				"Invalid values provided for the following fields in the %s configuration file: \n",
+				"Invalid values provided for the following fields in the `%s` configuration file: \n",
 				ymlFilename),
 		).Error()
 		for _, e := range validationErrs {
