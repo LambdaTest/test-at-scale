@@ -3,10 +3,8 @@ package tasconfigmanager
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io/ioutil"
-	"os"
 
 	"github.com/LambdaTest/test-at-scale/pkg/errs"
 	"github.com/LambdaTest/test-at-scale/pkg/global"
@@ -47,14 +45,11 @@ func (tc *tasConfigManager) LoadAndValidate(ctx context.Context,
 
 	yamlFile, err := ioutil.ReadFile(fmt.Sprintf("%s/%s", global.RepoDir, path))
 	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return nil, errs.New(fmt.Sprintf("Configuration file not found at path: %s", path))
-		}
 		tc.logger.Errorf("Error while reading file, error %v", err)
 		return nil, errs.New(fmt.Sprintf("Error while reading configuration file at path: %s", path))
 	}
 
-	tasConfig, err := utils.ValidateStruct(ctx, yamlFile)
+	tasConfig, err := utils.ValidateStruct(ctx, yamlFile, path)
 	if err != nil {
 		return nil, err
 	}
@@ -78,11 +73,11 @@ func (tc *tasConfigManager) LoadAndValidate(ctx context.Context,
 	switch eventType {
 	case core.EventPullRequest:
 		if tasConfig.Premerge == nil {
-			return nil, errs.New("`preMerge` is not configured in configuration file")
+			return nil, errs.New(fmt.Sprintf("`preMerge` test cases are not configured in `%s` configuration file.", path))
 		}
 	case core.EventPush:
 		if tasConfig.Postmerge == nil {
-			return nil, errs.New("`postMerge` is not configured in configuration file")
+			return nil, errs.New(fmt.Sprintf("`postMerge` test cases are not configured in `%s` configuration file.", path))
 		}
 	}
 	if err := isValidLicenseTier(tasConfig.Tier, licenseTier); err != nil {
@@ -92,9 +87,12 @@ func (tc *tasConfigManager) LoadAndValidate(ctx context.Context,
 	return tasConfig, nil
 }
 
-func isValidLicenseTier(yamlLicense, currentLicense core.Tier) error {
-	if tierEnumMapping[yamlLicense] > tierEnumMapping[currentLicense] {
-		return fmt.Errorf("tier must not exceed max tier in license %v", currentLicense)
+func isValidLicenseTier(yamlTier, licenseTier core.Tier) error {
+	if tierEnumMapping[yamlTier] > tierEnumMapping[licenseTier] {
+		return errs.New(
+			fmt.Sprintf(
+				"Sorry, the requested tier `%s` is not supported under the current plan. Please upgrade your plan.",
+				yamlTier))
 	}
 	return nil
 }

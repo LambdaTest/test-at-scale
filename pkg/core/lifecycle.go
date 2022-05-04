@@ -281,7 +281,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 		executionResults, err := pl.TestExecutionService.Run(ctx, tasConfig, pl.Payload, coverageDir, secretMap)
 		if err != nil {
 			pl.Logger.Infof("Unable to perform test execution: %v", err)
-			err = &errs.StatusFailed{Remark: "Failed in executing tests"}
+			err = &errs.StatusFailed{Remark: "Failed in executing tests."}
 			if executionResults == nil {
 				return err
 			}
@@ -300,7 +300,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 			err = pl.ExecutionManager.ExecuteUserCommands(ctx, PostRun, payload, tasConfig.Postrun, secretMap)
 			if err != nil {
 				pl.Logger.Errorf("Unable to run post-run steps %v", err)
-				err = &errs.StatusFailed{Remark: "Failed in running post-run steps"}
+				err = &errs.StatusFailed{Remark: "Failed in running post-run steps."}
 				return err
 			}
 		}
