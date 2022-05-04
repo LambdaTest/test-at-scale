@@ -99,7 +99,10 @@ func GetConfigFileName(path string) (string, error) {
 	if ext == ".yaml" || ext == ".yml" {
 		matches, _ := doublestar.Glob(os.DirFS(global.RepoDir), strings.TrimSuffix(path, ext)+".{yml,yaml}")
 		if len(matches) == 0 {
-			return "", errs.New(fmt.Sprintf("Configuration file not found at path: %s", path))
+			return "", errs.New(
+				fmt.Sprintf(
+					"`%s` configuration file not found at the root of your project. Please make sure you have placed it correctly.",
+					path))
 		}
 		// If there are files with the both extensions, pick the first match
 		path = matches[0]
@@ -114,7 +117,7 @@ func ValidateStructTASYmlV1(ctx context.Context, ymlContent []byte) (*core.TASCo
 	}
 	tasConfig := &core.TASConfig{SmartRun: true, Tier: core.Small, SplitMode: core.TestSplit}
 	if err := yaml.Unmarshal(ymlContent, tasConfig); err != nil {
-		return nil, errs.ErrInvalidConfFileFormat
+		return nil, fmt.Errorf("Error in unmarshling tas yml file")
 	}
 	if err := validateStruct(validate, tasConfig); err != nil {
 		return nil, err
@@ -146,7 +149,7 @@ func configureValidator(validate *validator.Validate, trans ut.Translator) {
 func GetVersion(ymlContent []byte) (float32, error) {
 	tasVersion := &core.TasVersion{}
 	if err := yaml.Unmarshal(ymlContent, tasVersion); err != nil {
-		return 0.0, errs.ErrInvalidConfFileFormat
+		return 0.0, fmt.Errorf("Error in unmarshling tas yml file")
 	}
 
 	return tasVersion.Version, nil
@@ -156,7 +159,7 @@ func ValidateStructTASYmlV2(ctx context.Context, ymlContent []byte) (*core.TASCo
 
 	tasConfig := &core.TASConfigV2{SmartRun: true, Tier: core.Small, SplitMode: core.TestSplit}
 	if err := yaml.Unmarshal(ymlContent, tasConfig); err != nil {
-		return nil, errs.ErrInvalidConfFileFormat
+		return nil, fmt.Errorf("Error in unmarshling tas yml file")
 	}
 	validate, err := getValidator()
 	if err != nil {

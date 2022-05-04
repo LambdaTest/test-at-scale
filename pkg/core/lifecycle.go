@@ -88,10 +88,11 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	} else {
 		taskPayload.Type = ExecutionTask
 	}
+	payload.TaskType = taskPayload.Type
 	pl.Logger.Infof("Running nucleus in %s mode", taskPayload.Type)
 
 	// marking task to running state
-	if err = pl.Task.UpdateStatus(taskPayload); err != nil {
+	if err = pl.Task.UpdateStatus(context.Background(), taskPayload); err != nil {
 		pl.Logger.Fatalf("failed to update task status %v", err)
 	}
 
@@ -115,7 +116,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 				taskPayload.Remark = err.Error()
 			}
 		}
-		if err := pl.Task.UpdateStatus(taskPayload); err != nil {
+		if err = pl.Task.UpdateStatus(context.Background(), taskPayload); err != nil {
 			pl.Logger.Fatalf("failed to update task status %v", err)
 		}
 	}()
@@ -286,6 +287,14 @@ func (pl *Pipeline) runOldVersion(ctx context.Context,
 			return err
 		}
 
+		pl.Logger.Debugf("Caching workspace")
+		// Persist workspace
+		if err = pl.CacheStore.CacheWorkspace(ctx); err != nil {
+			pl.Logger.Errorf("Error caching workspace: %+v", err)
+			err = errs.New(errs.GenericErrRemark.Error())
+			return err
+		}
+
 		pl.Logger.Infof("Identifying changed files ...")
 		diffExists := true
 		diff, err := pl.DiffManager.GetChangedFiles(ctx, payload, oauth)
@@ -309,14 +318,6 @@ func (pl *Pipeline) runOldVersion(ctx context.Context,
 		// mark status as passed
 		taskPayload.Status = Passed
 
-		pl.Logger.Debugf("Caching workspace")
-		// Persist workspace
-		if err = pl.CacheStore.CacheWorkspace(ctx); err != nil {
-			pl.Logger.Errorf("Error caching workspace: %+v", err)
-			err = errs.New(errs.GenericErrRemark.Error())
-			return err
-		}
-
 		// Upload cache once for other builds
 		if err = pl.CacheStore.Upload(ctx, cacheKey, tasConfig.Cache.Paths...); err != nil {
 			pl.Logger.Errorf("Unable to upload cache: %v", err)
@@ -331,26 +332,26 @@ func (pl *Pipeline) runOldVersion(ctx context.Context,
 		executionResults, err := pl.TestExecutionService.Run(ctx, tasConfig, pl.Payload, coverageDir, secretMap)
 		if err != nil {
 			pl.Logger.Infof("Unable to perform test execution: %v", err)
-			err = &errs.StatusFailed{Remark: "Failed in executing tests"}
+			err = &errs.StatusFailed{Remark: "Failed in executing tests."}
 			if executionResults == nil {
 				return err
 			}
 		}
 
-		if err = pl.sendStats(*executionResults); err != nil {
+		resp, err := pl.TestExecutionService.SendResults(ctx, executionResults)
+		if err != nil {
 			pl.Logger.Errorf("error while sending test reports %v", err)
 			err = errs.New(errs.GenericErrRemark.Error())
 			return err
 		}
-
-		taskPayload.Status = findTaskPayloadStatus(executionResults)
+		taskPayload.Status = resp.TaskStatus
 
 		if tasConfig.Postrun != nil {
 			pl.Logger.Infof("Running post-run steps")
 			err = pl.ExecutionManager.ExecuteUserCommands(ctx, PostRun, payload, tasConfig.Postrun, secretMap, global.RepoDir)
 			if err != nil {
 				pl.Logger.Errorf("Unable to run post-run steps %v", err)
-				err = &errs.StatusFailed{Remark: "Failed in running post-run steps"}
+				err = &errs.StatusFailed{Remark: "Failed in running post-run steps."}
 				return err
 			}
 		}

@@ -41,7 +41,6 @@ func (gm *gitManager) Clone(ctx context.Context, payload *core.Payload, oauth *c
 	repoLink := payload.RepoLink
 	repoItems := strings.Split(repoLink, "/")
 	repoName := repoItems[len(repoItems)-1]
-	orgName := repoItems[len(repoItems)-2]
 	commitID := payload.BuildTargetCommit
 
 	archiveURL, err := urlmanager.GetCloneURL(payload.GitProvider, repoLink, repoName, commitID, payload.ForkSlug, payload.RepoSlug)
@@ -54,12 +53,6 @@ func (gm *gitManager) Clone(ctx context.Context, payload *core.Payload, oauth *c
 	err = gm.downloadFile(ctx, archiveURL, commitID+".zip", oauth)
 	if err != nil {
 		gm.logger.Errorf("failed to download file %v", err)
-		return err
-	}
-
-	filename := gm.getUnzippedFileName(payload.GitProvider, orgName, repoName, payload.ForkSlug, commitID)
-	if err = os.Rename(filename, global.RepoDir); err != nil {
-		gm.logger.Errorf("failed to rename dir, error %v", err)
 		return err
 	}
 
@@ -91,7 +84,7 @@ func (gm *gitManager) downloadFile(ctx context.Context, archiveURL, fileName str
 		gm.logger.Errorf("non 200 status while cloning from endpoint %s, status %d ", archiveURL, resp.StatusCode)
 		return errs.ErrAPIStatus
 	}
-	err = gm.copyAndExtractFile(resp, fileName)
+	err = gm.copyAndExtractFile(ctx, resp, fileName)
 	if err != nil {
 		gm.logger.Errorf("failed to copy file %v", err)
 		return err
@@ -101,7 +94,7 @@ func (gm *gitManager) downloadFile(ctx context.Context, archiveURL, fileName str
 
 // copyAndExtractFile copies the content of http response directly to the local storage
 // and extracts the file if it is a zip file.
-func (gm *gitManager) copyAndExtractFile(resp *http.Response, path string) error {
+func (gm *gitManager) copyAndExtractFile(ctx context.Context, resp *http.Response, path string) error {
 	out, err := os.Create(path)
 	if err != nil {
 		gm.logger.Errorf("failed to create file err %v", err)
@@ -119,12 +112,23 @@ func (gm *gitManager) copyAndExtractFile(resp *http.Response, path string) error
 	if filepath.Ext(path) == ".zip" {
 		zip := archiver.NewZip()
 		zip.OverwriteExisting = true
-		if err = zip.Unarchive(path, filepath.Dir(path)); err != nil {
+		if err = zip.Unarchive(path, fmt.Sprintf("%s/clonedir", filepath.Dir(path))); err != nil {
 			gm.logger.Errorf("failed to unarchive file %v", err)
 			return err
 
 		}
 	}
+
+	commands := []string{
+		fmt.Sprintf("mkdir %s", global.RepoDir),
+		fmt.Sprintf("mv %s/clonedir/*/* %s", filepath.Dir(path), global.RepoDir),
+	}
+
+	err = gm.execManager.ExecuteInternalCommands(ctx, core.RenameCloneFile, commands, filepath.Dir(path), nil, nil)
+	if err != nil {
+		return err
+	}
+
 	return err
 }
 
@@ -169,23 +173,4 @@ func (gm *gitManager) initGit(ctx context.Context, payload *core.Payload, oauth 
 		return err
 	}
 	return nil
-}
-
-func (gm *gitManager) getUnzippedFileName(gitProvider, orgName, repoName, forkSlug, commitID string) string {
-	switch gitProvider {
-	case core.GitHub:
-		return orgName + "-" + repoName + "-" + commitID
-	case core.GitLab:
-		return repoName + "-" + commitID
-	case core.Bitbucket:
-		// commitID[:12] bitbucket shorthand commit sha
-		if forkSlug != "" {
-			// forkItmes : forkOrg, forkRepo
-			forkItems := strings.Split(forkSlug, "/")
-			return forkItems[0] + "-" + forkItems[1] + "-" + commitID[:12]
-		}
-		return orgName + "-" + repoName + "-" + commitID[:12]
-	default:
-		return repoName + "-" + commitID
-	}
 }

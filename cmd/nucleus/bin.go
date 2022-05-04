@@ -121,14 +121,14 @@ func run(cmd *cobra.Command, args []string) {
 
 	tdResChan := make(chan core.DiscoveryResult)
 	tds := testdiscoveryservice.NewTestDiscoveryService(ctx, tdResChan, execManager, requests, logger)
-	tes := testexecutionservice.NewTestExecutionService(cfg, execManager, azureClient, ts, logger)
+	tes := testexecutionservice.NewTestExecutionService(cfg, requests, execManager, azureClient, ts, logger)
 	tbs, err := blocktestservice.NewTestBlockTestService(cfg, logger)
 	if err != nil {
 		logger.Fatalf("failed to initialize test blocklist service: %v", err)
 	}
 	router := api.NewRouter(logger, ts, tdResChan)
 
-	t, err := task.New(ctx, requests, logger)
+	t, err := task.New(requests, logger)
 	if err != nil {
 		logger.Fatalf("failed to initialize task: %v", err)
 	}

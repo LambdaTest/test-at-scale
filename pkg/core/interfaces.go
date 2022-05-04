@@ -54,7 +54,10 @@ type BlockTestService interface {
 // TestExecutionService services execution of tests
 type TestExecutionService interface {
 	// Run executes the test execution scripts.
-	Run(ctx context.Context, tasConfig *TASConfig, payload *Payload, coverageDirectory string, secretMap map[string]string) (*ExecutionResults, error)
+	Run(ctx context.Context, tasConfig *TASConfig,
+		payload *Payload, coverageDirectory string, secretMap map[string]string) (results *ExecutionResults, err error)
+	// SendResults sends the test execution results to the TAS server.
+	SendResults(ctx context.Context, payload *ExecutionResults) (resp *TestReportResponsePayload, err error)
 }
 
 // CoverageService services coverage of tests
@@ -70,7 +73,7 @@ type TestStats interface {
 // Task is a service to update task status at neuron
 type Task interface {
 	// UpdateStatus updates status of the task
-	UpdateStatus(payload *TaskPayload) error
+	UpdateStatus(ctx context.Context, payload *TaskPayload) error
 }
 
 // NotifMessage  defines struct for notification message
@@ -135,5 +138,6 @@ type ExecutionManager interface {
 
 // Requests is a util interface for making API Requests
 type Requests interface {
-	MakeAPIRequest(ctx context.Context, httpMethod, endpoint string, body []byte) error
+	// MakeAPIRequest makes an HTTP request
+	MakeAPIRequest(ctx context.Context, httpMethod, endpoint string, body []byte) ([]byte, error)
 }

@@ -52,15 +52,16 @@ const (
 
 // Types of Command string
 const (
-	PreRun         CommandType = "prerun"
-	PostRun        CommandType = "postrun"
-	InstallRunners CommandType = "installrunners"
-	Execution      CommandType = "execution"
-	Discovery      CommandType = "discovery"
-	Zstd           CommandType = "zstd"
-	CoverageMerge  CommandType = "coveragemerge"
-	InstallNodeVer CommandType = "installnodeversion"
-	InitGit        CommandType = "initgit"
+	PreRun          CommandType = "prerun"
+	PostRun         CommandType = "postrun"
+	InstallRunners  CommandType = "installrunners"
+	Execution       CommandType = "execution"
+	Discovery       CommandType = "discovery"
+	Zstd            CommandType = "zstd"
+	CoverageMerge   CommandType = "coveragemerge"
+	InstallNodeVer  CommandType = "installnodeversion"
+	InitGit         CommandType = "initgit"
+	RenameCloneFile CommandType = "renameclonefile"
 )
 
 // Types of containers
@@ -114,6 +115,7 @@ type Payload struct {
 	ParentCommitCoverageExists bool               `json:"parent_commit_coverage_exists"`
 	LicenseTier                Tier               `json:"license_tier"`
 	CollectCoverage            bool               `json:"collect_coverage"`
+	TaskType                   TaskType           `json:"-"`
 }
 
 // Pipeline defines all attributes of Pipeline
@@ -168,7 +170,15 @@ type ExecutionResults struct {
 	RepoID   string            `json:"repoID"`
 	OrgID    string            `json:"orgID"`
 	CommitID string            `json:"commitID"`
+	TaskType TaskType          `json:"taskType"`
 	Results  []ExecutionResult `json:"results"`
+}
+
+// TestReportResponsePayload represents the response body for test and test suite report api.
+type TestReportResponsePayload struct {
+	TaskID     string `json:"taskID"`
+	TaskStatus Status `json:"taskStatus"`
+	Remark     string `json:"remark,omitempty"`
 }
 
 // TestPayload represents the request body for test execution
@@ -186,7 +196,6 @@ type TestPayload struct {
 	Col             string             `json:"col"`
 	CurrentRetry    int                `json:"currentRetry"`
 	Status          string             `json:"status"`
-	CommitID        string             `json:"commitID"`
 	DAG             []string           `json:"dependsOn"`
 	Filelocator     string             `json:"locator"`
 	BlocklistSource string             `json:"blocklistSource"`
