@@ -107,32 +107,16 @@ func GetConfigFileName(path string) (string, error) {
 	return path, nil
 }
 
-func ValidateStruct(ctx context.Context, ymlContent []byte) (*core.TASConfig, error) {
-	enObj := en.New()
-	uni := ut.New(enObj, enObj)
-	trans, _ := uni.GetTranslator("en")
-	validate := validator.New()
-	if err := en_translations.RegisterDefaultTranslations(validate, trans); err != nil {
+func ValidateStructTASYmlV1(ctx context.Context, ymlContent []byte) (*core.TASConfig, error) {
+	validate, err := getValidator()
+	if err != nil {
 		return nil, err
 	}
-	configureValidator(validate, trans)
-
 	tasConfig := &core.TASConfig{SmartRun: true, Tier: core.Small, SplitMode: core.TestSplit}
 	if err := yaml.Unmarshal(ymlContent, tasConfig); err != nil {
 		return nil, errs.ErrInvalidConfFileFormat
 	}
-
-	validateErr := validate.Struct(tasConfig)
-	if validateErr != nil {
-		// translate all error at once
-		validationErrs := validateErr.(validator.ValidationErrors)
-		err := new(errs.ErrInvalidConf)
-		for _, e := range validationErrs {
-			// can translate each error one at a time.
-			err.Fields = append(err.Fields, e.Field())
-			err.Values = append(err.Values, e.Value())
-		}
-
+	if err := validateStruct(validate, tasConfig); err != nil {
 		return nil, err
 	}
 	return tasConfig, nil
@@ -157,4 +141,58 @@ func configureValidator(validate *validator.Validate, trans ut.Translator) {
 		t, _ := ut.T(requiredTagName, fe.Namespace()[i+1:])
 		return t
 	})
+}
+
+func GetVersion(ymlContent []byte) (float32, error) {
+	tasVersion := &core.TasVersion{}
+	if err := yaml.Unmarshal(ymlContent, tasVersion); err != nil {
+		return 0.0, errs.ErrInvalidConfFileFormat
+	}
+
+	return tasVersion.Version, nil
+}
+
+func ValidateStructTASYmlV2(ctx context.Context, ymlContent []byte) (*core.TASConfigV2, error) {
+
+	tasConfig := &core.TASConfigV2{SmartRun: true, Tier: core.Small, SplitMode: core.TestSplit}
+	if err := yaml.Unmarshal(ymlContent, tasConfig); err != nil {
+		return nil, errs.ErrInvalidConfFileFormat
+	}
+	validate, err := getValidator()
+	if err != nil {
+		return nil, err
+	}
+	if err := validateStruct(validate, tasConfig); err != nil {
+		return nil, err
+	}
+
+	return tasConfig, nil
+}
+
+func getValidator() (*validator.Validate, error) {
+	enObj := en.New()
+	uni := ut.New(enObj, enObj)
+	trans, _ := uni.GetTranslator("en")
+	validate := validator.New()
+	if err := en_translations.RegisterDefaultTranslations(validate, trans); err != nil {
+		return nil, err
+	}
+	configureValidator(validate, trans)
+	return validate, nil
+}
+
+func validateStruct(validate *validator.Validate, config interface{}) error {
+	validateErr := validate.Struct(config)
+	if validateErr != nil {
+		// translate all error at once
+		validationErrs := validateErr.(validator.ValidationErrors)
+		err := new(errs.ErrInvalidConf)
+		for _, e := range validationErrs {
+			// can translate each error one at a time.
+			err.Fields = append(err.Fields, e.Field())
+			err.Values = append(err.Values, e.Value())
+		}
+		return err
+	}
+	return nil
 }

@@ -29,9 +29,9 @@ const (
 
 // FrameworkRunnerMap is map of framework with there respective runner location
 var FrameworkRunnerMap = map[string]string{
-	"jasmine": "./node_modules/.bin/jasmine-runner",
-	"mocha":   "./node_modules/.bin/mocha-runner",
-	"jest":    "./node_modules/.bin/jest-runner",
+	"jasmine": "./node_modules/lambdatest/packages/jasmine-runner/dist/src/jasmine-runner.js",
+	"mocha":   "./node_modules/lambdatest/packages/mocha-runner/dist/src/mocha-runner.js",
+	"jest":    "./node_modules/lambdatest/packages/jest-runner/dist/src/jest-runner.js",
 }
 
 // APIHostURLMap is map of git provider with there api url

@@ -8,8 +8,10 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"runtime/debug"
+	"sync"
 	"time"
 
 	"github.com/LambdaTest/test-at-scale/config"
@@ -123,6 +125,13 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 		pl.Logger.Errorf("failed to get oauth secret %v", err)
 		return err
 	}
+	// read secrets
+	secretMap, err := pl.SecretParser.GetRepoSecret(global.RepoSecretPath)
+	if err != nil {
+		pl.Logger.Errorf("Error in fetching Repo secrets %v", err)
+		err = errs.New(errs.GenericErrRemark.Error())
+		return err
+	}
 	if pl.Cfg.DiscoverMode {
 		pl.Logger.Infof("Cloning repo ...")
 		err = pl.GitManager.Clone(ctx, pl.Payload, oauth)
@@ -140,21 +149,21 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 			return err
 		}
 	}
-
+	coverageDir := filepath.Join(global.CodeCoverageDir, payload.OrgID, payload.RepoID, payload.BuildTargetCommit)
+	if payload.CollectCoverage {
+		if err = fileutils.CreateIfNotExists(coverageDir, true); err != nil {
+			pl.Logger.Errorf("failed to create coverage directory %v", err)
+			err = errs.New(errs.GenericErrRemark.Error())
+			return err
+		}
+	}
 	// load tas yaml file
-	tasConfig, err := pl.TASConfigManager.LoadAndValidate(ctx, payload.TasFileName, payload.EventType, payload.LicenseTier)
+	version, err := pl.TASConfigManager.GetVersion(payload.TasFileName)
 	if err != nil {
 		pl.Logger.Errorf("Unable to load tas yaml file, error: %v", err)
 		err = &errs.StatusFailed{Remark: err.Error()}
 		return err
 	}
-
-	coverageDir := filepath.Join(global.CodeCoverageDir, payload.OrgID, payload.RepoID, payload.BuildTargetCommit)
-	cacheKey := fmt.Sprintf("%s/%s/%s", payload.OrgID, payload.RepoID, tasConfig.Cache.Key)
-
-	pl.Logger.Infof("Tas yaml: %+v", tasConfig)
-
-	// set testing taskID, orgID and buildID as environment variable
 	os.Setenv("TASK_ID", payload.TaskID)
 	os.Setenv("ORG_ID", payload.OrgID)
 	os.Setenv("BUILD_ID", payload.BuildID)
@@ -170,45 +179,85 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	os.Setenv("ENDPOINT_POST_TEST_RESULTS", endpointPostTestResults)
 	os.Setenv("REPO_ROOT", global.RepoDir)
 	os.Setenv("BLOCK_TESTS_FILE", global.BlockTestFileLocation)
-
-	if tasConfig.NodeVersion != "" {
-		nodeVersion := tasConfig.NodeVersion
-		// Running the `source` commands in a directory where .nvmrc is present, exits with exitCode 3
-		// https://github.com/nvm-sh/nvm/issues/1985
-		// TODO [good-to-have]: Auto-read and install from .nvmrc file, if present
-		commands := []string{
-			"source /home/nucleus/.nvm/nvm.sh",
-			fmt.Sprintf("nvm install %s", nodeVersion),
-		}
-		pl.Logger.Infof("Using user-defined node version: %v", nodeVersion)
-		err = pl.ExecutionManager.ExecuteInternalCommands(ctx, InstallNodeVer, commands, "", nil, nil)
-		if err != nil {
-			pl.Logger.Errorf("Unable to install user-defined nodeversion %v", err)
-			err = errs.New(errs.GenericErrRemark.Error())
-			return err
-		}
-		origPath := os.Getenv("PATH")
-		os.Setenv("PATH", fmt.Sprintf("/home/nucleus/.nvm/versions/node/v%s/bin:%s", nodeVersion, origPath))
+	if version >= 2 {
+		// do something
+		return pl.runNewVersion(ctx, payload, taskPayload, oauth, coverageDir, secretMap)
 	}
+	// set testing taskID, orgID and buildID as environment variable
+	os.Setenv("MODULE_PATH", "")
 
-	if payload.CollectCoverage {
-		if err = fileutils.CreateIfNotExists(coverageDir, true); err != nil {
-			pl.Logger.Errorf("failed to create coverage directory %v", err)
-			err = errs.New(errs.GenericErrRemark.Error())
-			return err
+	return pl.runOldVersion(ctx, payload, taskPayload, oauth, coverageDir, secretMap)
+}
+
+func findTaskPayloadStatus(executionResults *ExecutionResults) Status {
+	for _, result := range executionResults.Results {
+		for i := 0; i < len(result.TestPayload); i++ {
+			testResult := &result.TestPayload[i]
+			if testResult.Status == "failed" {
+				return Failed
+			}
 		}
 	}
+	return Passed
+}
 
-	// read secrets
-	secretMap, err := pl.SecretParser.GetRepoSecret(global.RepoSecretPath)
+func (pl *Pipeline) sendStats(payload ExecutionResults) error {
+	endpointNeuronReport := global.NeuronHost + "/report"
+	reqBody, err := json.Marshal(payload)
 	if err != nil {
-		pl.Logger.Errorf("Error in fetching Repo secrets %v", err)
-		err = errs.New(errs.GenericErrRemark.Error())
+		pl.Logger.Errorf("failed to marshal request body %v", err)
 		return err
 	}
 
+	req, err := http.NewRequest(http.MethodPost, endpointNeuronReport, bytes.NewBuffer(reqBody))
+	if err != nil {
+		pl.Logger.Errorf("failed to create new request %v", err)
+		return err
+	}
+
+	resp, err := pl.HTTPClient.Do(req)
+
+	if err != nil {
+		pl.Logger.Errorf("error while sending reports %v", err)
+		return err
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		pl.Logger.Errorf("error while sending reports, non 200 status")
+		return errors.New("non 200 status")
+	}
+	return nil
+}
+
+func (pl *Pipeline) runOldVersion(ctx context.Context,
+	payload *Payload,
+	taskPayload *TaskPayload,
+	oauth *Oauth,
+	coverageDir string,
+	secretMap map[string]string) error {
+	tasConfig, err := pl.TASConfigManager.LoadAndValidateV1(ctx, payload.TasFileName, payload.EventType, payload.LicenseTier)
+	if err != nil {
+		pl.Logger.Errorf("Unable to load tas yaml file, error: %v", err)
+		err = &errs.StatusFailed{Remark: err.Error()}
+		return err
+	}
+
+	cacheKey := fmt.Sprintf("%s/%s/%s", payload.OrgID, payload.RepoID, tasConfig.Cache.Key)
+
+	pl.Logger.Infof("Tas yaml: %+v", tasConfig)
+
+	if tasConfig.NodeVersion != "" {
+		nodeVersion := tasConfig.NodeVersion
+		if nodeErr := pl.installNodeVersion(ctx, nodeVersion); nodeErr != nil {
+			return nodeErr
+		}
+	}
+
 	if pl.Cfg.DiscoverMode {
-		err = pl.BlockTestService.GetBlockTests(ctx, tasConfig, payload.RepoID, payload.BranchName)
+		blYml := pl.BlockTestService.GetBlocklistYMLV1(tasConfig)
+		err = pl.BlockTestService.GetBlockTests(ctx, blYml, payload.RepoID, payload.BranchName)
 		if err != nil {
 			pl.Logger.Errorf("Unable to fetch blocklisted tests: %v", err)
 			err = errs.New(errs.GenericErrRemark.Error())
@@ -223,7 +272,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 
 		if tasConfig.Prerun != nil {
 			pl.Logger.Infof("Running pre-run steps")
-			err = pl.ExecutionManager.ExecuteUserCommands(ctx, PreRun, payload, tasConfig.Prerun, secretMap)
+			err = pl.ExecutionManager.ExecuteUserCommands(ctx, PreRun, payload, tasConfig.Prerun, secretMap, global.RepoDir)
 			if err != nil {
 				pl.Logger.Errorf("Unable to run pre-run steps %v", err)
 				err = &errs.StatusFailed{Remark: "Failed in running pre-run steps"}
@@ -298,7 +347,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 
 		if tasConfig.Postrun != nil {
 			pl.Logger.Infof("Running post-run steps")
-			err = pl.ExecutionManager.ExecuteUserCommands(ctx, PostRun, payload, tasConfig.Postrun, secretMap)
+			err = pl.ExecutionManager.ExecuteUserCommands(ctx, PostRun, payload, tasConfig.Postrun, secretMap, global.RepoDir)
 			if err != nil {
 				pl.Logger.Errorf("Unable to run post-run steps %v", err)
 				err = &errs.StatusFailed{Remark: "Failed in running post-run steps"}
@@ -311,44 +360,164 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	return nil
 }
 
-func findTaskPayloadStatus(executionResults *ExecutionResults) Status {
-	for _, result := range executionResults.Results {
-		for i := 0; i < len(result.TestPayload); i++ {
-			testResult := &result.TestPayload[i]
-			if testResult.Status == "failed" {
-				return Failed
-			}
-		}
+func (pl *Pipeline) installNodeVersion(ctx context.Context, nodeVersion string) error {
+	// Running the `source` commands in a directory where .nvmrc is present, exits with exitCode 3
+	// https://github.com/nvm-sh/nvm/issues/1985
+	// TODO [good-to-have]: Auto-read and install from .nvmrc file, if present
+	commands := []string{
+		"source /home/nucleus/.nvm/nvm.sh",
+		fmt.Sprintf("nvm install %s", nodeVersion),
 	}
-	return Passed
+	pl.Logger.Infof("Using user-defined node version: %v", nodeVersion)
+	err := pl.ExecutionManager.ExecuteInternalCommands(ctx, InstallNodeVer, commands, "", nil, nil)
+	if err != nil {
+		pl.Logger.Errorf("Unable to install user-defined nodeversion %v", err)
+		err = errs.New(errs.GenericErrRemark.Error())
+		return err
+	}
+	origPath := os.Getenv("PATH")
+	os.Setenv("PATH", fmt.Sprintf("/home/nucleus/.nvm/versions/node/v%s/bin:%s", nodeVersion, origPath))
+	return nil
 }
 
-func (pl *Pipeline) sendStats(payload ExecutionResults) error {
-	endpointNeuronReport := global.NeuronHost + "/report"
-	reqBody, err := json.Marshal(payload)
+func (pl *Pipeline) runNewVersion(ctx context.Context,
+	payload *Payload,
+	taskPayload *TaskPayload,
+	oauth *Oauth,
+	coverageDir string,
+	secretMap map[string]string) error {
+	tasConfig, err := pl.TASConfigManager.LoadAndValidateV2(ctx, payload.TasFileName, payload.EventType, payload.LicenseTier)
 	if err != nil {
-		pl.Logger.Errorf("failed to marshal request body %v", err)
+		pl.Logger.Errorf("Unable to load tas yaml file, error: %v", err)
+		err = &errs.StatusFailed{Remark: err.Error()}
 		return err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, endpointNeuronReport, bytes.NewBuffer(reqBody))
+	if pl.Cfg.DiscoverMode {
+		cacheKey := fmt.Sprintf("%s/%s/%s", payload.OrgID, payload.RepoID, tasConfig.Cache.Key)
+
+		if err = pl.CacheStore.Download(ctx, cacheKey); err != nil {
+			pl.Logger.Errorf("Unable to download cache: %v", err)
+			err = errs.New(errs.GenericErrRemark.Error())
+			return err
+		}
+		/*
+			Discovery steps
+		*/
+
+		pl.Logger.Infof("Identifying changed files ...")
+		diffExists := true
+		diff, err := pl.DiffManager.GetChangedFiles(ctx, payload, oauth)
+		if err != nil {
+			if errors.Is(err, errs.ErrGitDiffNotFound) {
+				diffExists = false
+			} else {
+				pl.Logger.Errorf("Unable to identify changed files %s", err)
+				err = errs.New("Error occurred in fetching diff from GitHub")
+				return err
+			}
+		}
+		wg := sync.WaitGroup{}
+		if payload.EventType == EventPush {
+			// iterate through all sub modules
+			for i := 0; i < len(tasConfig.PostMerge.SubModules); i++ {
+				//
+				wg.Add(1)
+				go func(subModule *SubModule) {
+					if dicoveryErr := pl.runDiscoveryForEachSubModule(ctx, payload, subModule, tasConfig, secretMap,
+						diff, diffExists, &wg); dicoveryErr != nil {
+						pl.Logger.Errorf("error while running discovery for sub module %s, error %v", subModule.Name, dicoveryErr)
+						wg.Done()
+					}
+				}(&tasConfig.PostMerge.SubModules[i])
+
+			}
+		} else {
+			// iterate through all sub modules
+			for i := 0; i < len(tasConfig.PreMerge.SubModules); i++ {
+				wg.Add(1)
+				go func(subModule *SubModule) {
+					if dicoveryErr := pl.runDiscoveryForEachSubModule(ctx, payload, subModule, tasConfig, secretMap,
+						diff, diffExists, &wg); dicoveryErr != nil {
+						pl.Logger.Errorf("error while running discovery for sub module %s, error %v", subModule.Name, dicoveryErr)
+						wg.Done()
+					}
+				}(&tasConfig.PreMerge.SubModules[i])
+			}
+			wg.Wait()
+		}
+
+		pl.Logger.Debugf("Caching workspace")
+		// Persist workspace
+		if err = pl.CacheStore.CacheWorkspace(ctx); err != nil {
+			pl.Logger.Errorf("Error caching workspace: %+v", err)
+			err = errs.New(errs.GenericErrRemark.Error())
+			return err
+		}
+
+		// Upload cache once for other builds
+		if err = pl.CacheStore.Upload(ctx, cacheKey, tasConfig.Cache.Paths...); err != nil {
+			pl.Logger.Errorf("Unable to upload cache: %v", err)
+			err = errs.New(errs.GenericErrRemark.Error())
+			return err
+		}
+		pl.Logger.Debugf("Cache uploaded successfully")
+
+		// Upload cache once for other builds
+		if err = pl.CacheStore.Upload(ctx, cacheKey, tasConfig.Cache.Paths...); err != nil {
+			pl.Logger.Errorf("Unable to upload cache: %v", err)
+			err = errs.New(errs.GenericErrRemark.Error())
+			return err
+		}
+		pl.Logger.Debugf("Cache uploaded successfully")
+
+	}
+
+	pl.Logger.Infof("Tas yaml: %+v", tasConfig)
+	return nil
+}
+
+func (pl *Pipeline) runDiscoveryForEachSubModule(ctx context.Context,
+	payload *Payload,
+	subModule *SubModule,
+	tasConfig *TASConfigV2,
+	secretMap map[string]string,
+	diff map[string]int,
+	diffExists bool,
+	wg *sync.WaitGroup) error {
+
+	blYML := pl.BlockTestService.GetBlocklistYMLV2(subModule)
+	if err := pl.BlockTestService.GetBlockTests(ctx, blYML, payload.RepoID, payload.BranchName); err != nil {
+		pl.Logger.Errorf("Unable to fetch blocklisted tests: %v", err)
+		err = errs.New(errs.GenericErrRemark.Error())
+		return err
+	}
+	modulePath := path.Join(global.RepoDir, subModule.Path)
+	// PRE RUN steps
+	if subModule.Prerun != nil {
+		pl.Logger.Infof("Running pre-run steps")
+		err := pl.ExecutionManager.ExecuteUserCommands(ctx, PreRun, payload, subModule.Prerun, secretMap, modulePath)
+		if err != nil {
+			pl.Logger.Errorf("Unable to run pre-run steps %v", err)
+			err = &errs.StatusFailed{Remark: "Failed in running pre-run steps"}
+			return err
+		}
+	}
+
+	err := pl.ExecutionManager.ExecuteInternalCommands(ctx, InstallRunners, global.InstallRunnerCmds, modulePath, nil, nil)
 	if err != nil {
-		pl.Logger.Errorf("failed to create new request %v", err)
+		pl.Logger.Errorf("Unable to install custom runners %v", err)
+		err = errs.New(errs.GenericErrRemark.Error())
 		return err
 	}
 
-	resp, err := pl.HTTPClient.Do(req)
-
+	err = pl.TestDiscoveryService.DiscoverV2(ctx, subModule, pl.Payload, secretMap,
+		tasConfig, diff, diffExists)
 	if err != nil {
-		pl.Logger.Errorf("error while sending reports %v", err)
+		pl.Logger.Errorf("Unable to perform test discovery: %+v", err)
+		err = &errs.StatusFailed{Remark: "Failed in discovering tests"}
 		return err
 	}
-
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		pl.Logger.Errorf("error while sending reports, non 200 status")
-		return errors.New("non 200 status")
-	}
+	wg.Done()
 	return nil
 }

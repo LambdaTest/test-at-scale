@@ -230,7 +230,8 @@ func TestTestBlockListService_GetBlockListedTests(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := tbs.GetBlockTests(tt.args.ctx, tt.args.tasConfig, tt.args.repoID, tt.args.branch); (err != nil) != tt.wantErr {
+			blYML := tt.args.tasConfig.Blocklist
+			if err := tbs.GetBlockTests(tt.args.ctx, blYML, tt.args.repoID, tt.args.branch); (err != nil) != tt.wantErr {
 				t.Errorf("TestBlockListService.GetBlockListedTests() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

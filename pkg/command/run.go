@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/LambdaTest/test-at-scale/pkg/core"
-	"github.com/LambdaTest/test-at-scale/pkg/global"
 	"github.com/LambdaTest/test-at-scale/pkg/logstream"
 	"github.com/LambdaTest/test-at-scale/pkg/lumber"
 )
@@ -34,7 +33,8 @@ func (m *manager) ExecuteUserCommands(ctx context.Context,
 	commandType core.CommandType,
 	payload *core.Payload,
 	runConfig *core.Run,
-	secretData map[string]string) error {
+	secretData map[string]string,
+	cwd string) error {
 	script, err := m.createScript(runConfig.Commands, secretData)
 	if err != nil {
 		return err
@@ -56,7 +56,7 @@ func (m *manager) ExecuteUserCommands(ctx context.Context,
 	maskWriter := logstream.NewMasker(multiWriter, secretData)
 
 	cmd := exec.CommandContext(ctx, "/bin/bash", "-c", script)
-	cmd.Dir = global.RepoDir
+	cmd.Dir = cwd
 	cmd.Env = envVars
 	cmd.Stdout = maskWriter
 	cmd.Stderr = maskWriter

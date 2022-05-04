@@ -212,7 +212,7 @@ func TestValidateStruct(t *testing.T) {
 				t.Errorf("Error loading testfile %s", tt.filename)
 				return
 			}
-			tasConfig, errV := ValidateStruct(ctx, ymlContent)
+			tasConfig, errV := ValidateStructTASYmlV1(ctx, ymlContent)
 			if errV != nil {
 				assert.Equal(t, errV.Error(), tt.wantErr.Error(), "Error mismatch")
 				return

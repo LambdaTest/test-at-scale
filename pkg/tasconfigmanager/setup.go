@@ -17,6 +17,7 @@ import (
 )
 
 const packageJSON = "package.json"
+const newYMLVersion = 2
 
 var tierEnumMapping = map[core.Tier]int{
 	core.XSmall: 1,
@@ -36,7 +37,7 @@ func NewTASConfigManager(logger lumber.Logger) core.TASConfigManager {
 	return &tasConfigManager{logger: logger}
 }
 
-func (tc *tasConfigManager) LoadAndValidate(ctx context.Context,
+func (tc *tasConfigManager) LoadAndValidateV1(ctx context.Context,
 	path string,
 	eventType core.EventType,
 	licenseTier core.Tier) (*core.TASConfig, error) {
@@ -53,8 +54,11 @@ func (tc *tasConfigManager) LoadAndValidate(ctx context.Context,
 		tc.logger.Errorf("Error while reading file, error %v", err)
 		return nil, errs.New(fmt.Sprintf("Error while reading configuration file at path: %s", path))
 	}
+	return tc.validateYMLV1(ctx, yamlFile, eventType, licenseTier)
+}
 
-	tasConfig, err := utils.ValidateStruct(ctx, yamlFile)
+func (tc *tasConfigManager) validateYMLV1(ctx context.Context, yamlFile []byte, eventType core.EventType, licenseTier core.Tier) (*core.TASConfig, error) {
+	tasConfig, err := utils.ValidateStructTASYmlV1(ctx, yamlFile)
 	if err != nil {
 		return nil, err
 	}
@@ -97,4 +101,100 @@ func isValidLicenseTier(yamlLicense, currentLicense core.Tier) error {
 		return fmt.Errorf("tier must not exceed max tier in license %v", currentLicense)
 	}
 	return nil
+}
+
+func (tc *tasConfigManager) validateYMLV2(ctx context.Context, yamlFile []byte, eventType core.EventType, licenseTier core.Tier) (*core.TASConfigV2, error) {
+	tasConfig, err := utils.ValidateStructTASYmlV2(ctx, yamlFile)
+	if err != nil {
+		return nil, err
+	}
+
+	if tasConfig.Cache == nil {
+		checksum, err := utils.ComputeChecksum(fmt.Sprintf("%s/%s", global.RepoDir, packageJSON))
+		if err != nil {
+			tc.logger.Errorf("Error while computing checksum, error %v", err)
+			return nil, err
+		}
+		tasConfig.Cache = &core.Cache{
+			Key:   checksum,
+			Paths: []string{},
+		}
+	}
+
+	if tasConfig.CoverageThreshold == nil {
+		tasConfig.CoverageThreshold = new(core.CoverageThreshold)
+	}
+
+	switch eventType {
+	case core.EventPullRequest:
+
+		for _, module := range tasConfig.PreMerge.SubModules {
+			if err := validateModule(&module); err != nil {
+				return nil, err
+			}
+		}
+
+	case core.EventPush:
+		for _, module := range tasConfig.PostMerge.SubModules {
+			if err := validateModule(&module); err != nil {
+				return nil, err
+			}
+		}
+	}
+	if err := isValidLicenseTier(tasConfig.Tier, licenseTier); err != nil {
+		tc.logger.Errorf("LicenseTier validation failed. error: %v", err)
+		return nil, err
+	}
+	return tasConfig, nil
+}
+
+func validateModule(module *core.SubModule) error {
+	if module.Name == "" {
+		errs.New("module name is not defined")
+	}
+	if module.Path == "" {
+		return errs.New(fmt.Sprintf("module path is not defined for module %s ", module.Name))
+	}
+	if len(module.Patterns) == 0 {
+		return errs.New(fmt.Sprintf("module %s pattern length is 0", module.Name))
+	}
+
+	return nil
+}
+
+func (tc *tasConfigManager) GetVersion(path string) (float32, error) {
+	yamlFile, err := ioutil.ReadFile(fmt.Sprintf("%s/%s", global.RepoDir, path))
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return 0, errs.New(fmt.Sprintf("Configuration file not found at path: %s", path))
+		}
+		tc.logger.Errorf("Error while reading file, error %v", err)
+		return 0, errs.New(fmt.Sprintf("Error while reading configuration file at path: %s", path))
+	}
+	versionYml, err := utils.GetVersion(yamlFile)
+	if err != nil {
+		tc.logger.Errorf("Error while reading tas yml version error %v", err)
+		return 0, errs.New("Error while reading tas yml version")
+	}
+	return versionYml, nil
+}
+
+func (tc *tasConfigManager) LoadAndValidateV2(ctx context.Context,
+	path string,
+	eventType core.EventType,
+	licenseTier core.Tier) (*core.TASConfigV2, error) {
+	path, err := utils.GetConfigFileName(path)
+	if err != nil {
+		return nil, err
+	}
+
+	yamlFile, err := ioutil.ReadFile(fmt.Sprintf("%s/%s", global.RepoDir, path))
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, errs.New(fmt.Sprintf("Configuration file not found at path: %s", path))
+		}
+		tc.logger.Errorf("Error while reading file, error %v", err)
+		return nil, errs.New(fmt.Sprintf("Error while reading configuration file at path: %s", path))
+	}
+	return tc.validateYMLV2(ctx, yamlFile, eventType, licenseTier)
 }

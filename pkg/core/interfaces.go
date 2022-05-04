@@ -15,8 +15,14 @@ type PayloadManager interface {
 
 // TASConfigManager defines operations for tas config
 type TASConfigManager interface {
-	// LoadAndValidate loads and validates the TASConfig from the given path
-	LoadAndValidate(ctx context.Context, path string, eventType EventType, licenseTier Tier) (*TASConfig, error)
+	// LoadAndValidateV1 loads and validates the TASConfig from the given path for V1 Tas YML
+	LoadAndValidateV1(ctx context.Context, path string, eventType EventType, licenseTier Tier) (*TASConfig, error)
+
+	// LoadAndValidateV2 loads and validates the TASConfig from the given path for V2 Tas YML
+	LoadAndValidateV2(ctx context.Context, path string, eventType EventType, licenseTier Tier) (*TASConfigV2, error)
+
+	// GetVersion returns TAS yml version
+	GetVersion(path string) (float32, error)
 }
 
 // GitManager manages the cloning of git repositories
@@ -34,11 +40,15 @@ type DiffManager interface {
 type TestDiscoveryService interface {
 	// Discover executes the test discovery scripts.
 	Discover(ctx context.Context, tasConfig *TASConfig, payload *Payload, secretData map[string]string, diff map[string]int, diffExists bool) error
+	// Discoverv executes the test discovery scripts for TAS V2.
+	DiscoverV2(ctx context.Context, subModule *SubModule, payload *Payload, secretData map[string]string, tasConfig *TASConfigV2, diff map[string]int, diffExists bool) error
 }
 
 // BlockTestService is used for fetching blocklisted tests
 type BlockTestService interface {
-	GetBlockTests(ctx context.Context, tasConfig *TASConfig, repo, branch string) error
+	GetBlockTests(ctx context.Context, blocklistYAML []string, repo, branch string) error
+	GetBlocklistYMLV1(tasConfig *TASConfig) []string
+	GetBlocklistYMLV2(submodule *SubModule) []string
 }
 
 // TestExecutionService services execution of tests
@@ -114,7 +124,7 @@ type SecretParser interface {
 // ExecutionManager has responsibility for executing the preRun, postRun and internal commands
 type ExecutionManager interface {
 	// ExecuteUserCommands executes the preRun or postRun commands given by user in his yaml.
-	ExecuteUserCommands(ctx context.Context, commandType CommandType, payload *Payload, runConfig *Run, secretData map[string]string) error
+	ExecuteUserCommands(ctx context.Context, commandType CommandType, payload *Payload, runConfig *Run, secretData map[string]string, cwd string) error
 	// ExecuteInternalCommands executes the commands like installing runners and test discovery.
 	ExecuteInternalCommands(ctx context.Context, commandType CommandType, commands []string, cwd string, envMap, secretData map[string]string) error
 	// GetEnvVariables get the environment variables from the env map given by user.

@@ -151,6 +151,7 @@ type DiscoveryResult struct {
 	OrgID           string             `json:"orgID"`
 	Branch          string             `json:"branch"`
 	Tier            Tier               `json:"tier"`
+	SubModule       string             `json:"subModule"`
 	ContainerImage  string             `json:"containerImage"`
 }
 
@@ -308,6 +309,7 @@ type TASConfig struct {
 	Tier              Tier               `yaml:"tier" validate:"oneof=xsmall small medium large xlarge"`
 	NodeVersion       string             `yaml:"nodeVersion" validate:"omitempty,semver"`
 	ContainerImage    string             `yaml:"containerImage"`
+	Version           float32            `yaml:"version" validate:"required"`
 }
 
 // CoverageThreshold reprents the code coverage threshold
@@ -366,3 +368,43 @@ const (
 	Blocklisted TestStatus = "blocklisted"
 	Quarantined TestStatus = "quarantined"
 )
+
+// TASConfigV2 repersent TASConfig for version 2 and above
+type TASConfigV2 struct {
+	SmartRun          bool               `yaml:"smartRun"`
+	Cache             *Cache             `yaml:"cache" validate:"omitempty"`
+	Tier              Tier               `yaml:"tier" validate:"oneof=xsmall small medium large xlarge"`
+	PostMerge         Mergev2            `yaml:"postMerge" validate:"required"`
+	PreMerge          Mergev2            `yaml:"preMerge" validate:"required"`
+	SkipCache         bool               `yaml:"skipCache"`
+	CoverageThreshold *CoverageThreshold `yaml:"coverageThreshold" validate:"omitempty"`
+	Parallelism       int                `yaml:"parallelism"` // TODO: will be supported later
+	Version           float32            `yaml:"version" validate:"required"`
+	SplitMode         SplitMode          `yaml:"splitMode" validate:"oneof=test file"`
+	ContainerImage    string             `yaml:"containerImage"`
+}
+
+// Mergev2 repersent MergeConfig for version 2 and above
+type Mergev2 struct {
+	SubModules []SubModule       `yaml:"subModules" validate:"required,gt=0"`
+	EnvMap     map[string]string `yaml:"env" validate:"omitempty,gt=0"`
+}
+
+type SubModule struct {
+	Name               string            `yaml:"name" validate:"required"`
+	Path               string            `yaml:"path" validate:"required"`
+	Patterns           []string          `yaml:"patterns" validate:"required,gt=0"`
+	Framework          string            `yaml:"framework" validate:"required,oneof=jest mocha jasmine"`
+	Blocklist          []string          `yaml:"blocklist"`
+	Prerun             *Run              `yaml:"preRun" validate:"omitempty"`
+	Postrun            *Run              `yaml:"postRun" validate:"omitempty"`
+	RunPrerunEveryTime bool              `yaml:"runPreRunEveryTime"`
+	NodeVersion        string            `yaml:"nodeVersion" validate:"omitempty,semver"`
+	Parallelism        int               `yaml:"parallelism"` // TODO: will be supported later
+	ConfigFile         string            `yaml:"configFile" validate:"omitempty"`
+	EnvMap             map[string]string `yaml:"env" validate:"omitempty,gt=0"`
+}
+
+type TasVersion struct {
+	Version float32 `yaml:"version" validate:"required"`
+}
