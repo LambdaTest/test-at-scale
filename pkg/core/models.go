@@ -202,6 +202,7 @@ type TestPayload struct {
 	StartTime       time.Time          `json:"start_time"`
 	EndTime         time.Time          `json:"end_time"`
 	Stats           []TestProcessStats `json:"stats"`
+	FailureMessage  string             `json:"failureMessage"`
 }
 
 // TestSuitePayload represents the request body for test suite execution
