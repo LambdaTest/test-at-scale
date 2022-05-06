@@ -2,7 +2,6 @@ package secrets
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -30,11 +29,11 @@ func TestWriteGitSecrets(t *testing.T) {
 	if err != nil {
 		t.Errorf("error while writing secrets: %v", err)
 	}
-	if _, err := os.Stat(expectedFile); err != nil {
-		t.Errorf("could not find the git config file: %v", err)
+	if _, errS := os.Stat(expectedFile); errS != nil {
+		t.Errorf("could not find the git config file: %v", errS)
 	}
 
-	fileContent, err := ioutil.ReadFile(expectedFile)
+	fileContent, err := os.ReadFile(expectedFile)
 	if err != nil {
 		t.Errorf("error reading git config file: %v", err)
 	}

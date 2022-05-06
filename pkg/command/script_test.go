@@ -14,14 +14,14 @@ import (
 func Test_manager_createScript(t *testing.T) {
 	logger, err := testutils.GetLogger()
 	if err != nil {
-		t.Errorf("Couldn't initialise logger, error: %v", err)
+		t.Errorf("Couldn't initialize logger, error: %v", err)
 	}
+
 	var azureClient core.AzureClient
 	commands := []string{"cmd1", "cmd2", "cmd3"}
 	secretData := map[string]string{"secret1": "s1", "secret2": "s2", "secret3": "s3"}
-
-	secretParser := new(mocks.SecretParser)    // secretParser is a mock interface which on calling SubstituteSecret returns a string and nil error
-	secretParserErr := new(mocks.SecretParser) // secretParserErr is a mock interface which on calling SubstituteSecret returns an empty string and a dummy error
+	secretParser := new(mocks.SecretParser)
+	secretParserErr := new(mocks.SecretParser)
 	want := `
 
 set -e
@@ -52,8 +52,20 @@ fakecommand
 		want    string
 		wantErr bool
 	}{
-		{"Test for success", fields{logger: logger, secretParser: secretParser, azureClient: azureClient}, args{commands: commands, secretData: secretData}, want, false},
-		{"This should throw an error", fields{logger: logger, secretParser: secretParserErr, azureClient: azureClient}, args{commands: commands, secretData: secretData}, "", true},
+		{
+			"Test for success",
+			fields{logger: logger, secretParser: secretParser, azureClient: azureClient},
+			args{commands: commands, secretData: secretData},
+			want,
+			false,
+		},
+		{
+			"This should throw an error",
+			fields{logger: logger, secretParser: secretParserErr, azureClient: azureClient},
+			args{commands: commands, secretData: secretData},
+			"",
+			true,
+		},
 	}
 
 	secretParser.On("SubstituteSecret", mock.AnythingOfType("string"), secretData).Return(

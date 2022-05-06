@@ -33,7 +33,6 @@ func TestDockerCreate(t *testing.T) {
 	if !statusCreate.Done {
 		t.Errorf("error creating container: %v", statusCreate.Error)
 	}
-
 }
 
 func TestDockerRun(t *testing.T) {
@@ -48,7 +47,6 @@ func TestDockerRun(t *testing.T) {
 		t.Errorf("error in running container : %v", status.Error)
 		return
 	}
-
 }
 
 func TestDockerWaitCompletion(t *testing.T) {
@@ -66,7 +64,6 @@ func TestDockerWaitCompletion(t *testing.T) {
 	if err := runner.WaitForCompletion(ctx, runnerOpts); err != nil {
 		t.Errorf("Error while waiting for completion of container")
 	}
-
 }
 
 func TestDockerDestroyWithoutRunning(t *testing.T) {
