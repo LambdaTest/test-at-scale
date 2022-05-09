@@ -34,7 +34,7 @@ func (t *task) UpdateStatus(ctx context.Context, payload *core.TaskPayload) erro
 		return err
 	}
 
-	if _, err := t.requests.MakeAPIRequest(ctx, http.MethodPut, t.endpoint, reqBody); err != nil {
+	if _, err := t.requests.MakeAPIRequestWithAuth(ctx, http.MethodPut, t.endpoint, reqBody); err != nil {
 		return err
 	}
 

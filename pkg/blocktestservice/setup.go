@@ -5,9 +5,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -81,6 +83,8 @@ func (tbs *TestBlockTestService) fetchBlockListFromNeuron(ctx context.Context, r
 	q.Set("repoID", repoID)
 	q.Set("branch", branch)
 	q.Set("taskID", tbs.cfg.TaskID)
+	q.Set("buildID", os.Getenv("BUILD_ID"))
+	q.Set("orgID", os.Getenv("ORG_ID"))
 	u.RawQuery = q.Encode()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
@@ -88,6 +92,8 @@ func (tbs *TestBlockTestService) fetchBlockListFromNeuron(ctx context.Context, r
 		tbs.logger.Errorf("Unable to fetch blocklist response: %+v", err)
 		return err
 	}
+
+	req.Header.Add("Authorization", fmt.Sprintf("%s %s", "Bearer", os.Getenv("TOKEN")))
 
 	resp, err := tbs.httpClient.Do(req)
 	if err != nil {

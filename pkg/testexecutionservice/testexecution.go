@@ -160,7 +160,7 @@ func (tes *testExecutionService) SendResults(ctx context.Context,
 		tes.logger.Errorf("failed to marshal request body %v", err)
 		return nil, err
 	}
-	respBody, err := tes.requests.MakeAPIRequest(ctx, http.MethodPost, tes.serverEndpoint, reqBody)
+	respBody, err := tes.requests.MakeAPIRequestWithAuth(ctx, http.MethodPost, tes.serverEndpoint, reqBody)
 	if err != nil {
 		tes.logger.Errorf("error while sending reports %v", err)
 		return nil, err

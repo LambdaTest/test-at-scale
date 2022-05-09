@@ -125,7 +125,7 @@ func (tds *testDiscoveryService) updateResult(ctx context.Context, testDiscovery
 		return err
 	}
 
-	if _, err := tds.requests.MakeAPIRequest(ctx, http.MethodPost, tds.endpoint, reqBody); err != nil {
+	if _, err := tds.requests.MakeAPIRequestWithAuth(ctx, http.MethodPost, tds.endpoint, reqBody); err != nil {
 		return err
 	}
 

@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
 
@@ -165,11 +166,26 @@ func (s *Store) GetSASURL(ctx context.Context, containerPath string, containerTy
 		s.logger.Errorf("failed to marshal request body %v", err)
 		return "", err
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("%s/%s", global.NeuronHost, "internal/sas-token"), bytes.NewBuffer(reqBody))
+
+	u, err := url.Parse(fmt.Sprintf("%s/%s", global.NeuronHost, "internal/sas-token"))
+	if err != nil {
+		s.logger.Errorf("error while parsing endpoint %s, %v", fmt.Sprintf("%s/%s", global.NeuronHost, "internal/sas-token"), err)
+		return "", err
+	}
+
+	q := u.Query()
+	q.Set("repoID", os.Getenv("REPO_ID"))
+	q.Set("buildID", os.Getenv("BUILD_ID"))
+	q.Set("orgID", os.Getenv("ORG_ID"))
+	u.RawQuery = q.Encode()
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u.String(), bytes.NewBuffer(reqBody))
 	if err != nil {
 		s.logger.Errorf("error while creating http request, error %v", err)
 		return "", err
 	}
+
+	req.Header.Add("Authorization", fmt.Sprintf("%s %s", "Bearer", os.Getenv("TOKEN")))
+
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
 		s.logger.Errorf("error while getting SAS URL, error %v", err)
