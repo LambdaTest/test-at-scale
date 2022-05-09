@@ -5,7 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -43,7 +43,7 @@ func (r *requests) MakeAPIRequest(ctx context.Context, httpMethod, endpoint stri
 
 	defer resp.Body.Close()
 
-	respBody, err := ioutil.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		r.logger.Errorf("error while sending http response body %v", err)
 		return nil, err
@@ -85,7 +85,7 @@ func (r *requests) MakeAPIRequestWithAuth(ctx context.Context, httpMethod, endpo
 
 	defer resp.Body.Close()
 
-	respBody, err := ioutil.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		r.logger.Errorf("error while sending http response body %v", err)
 		return nil, err
