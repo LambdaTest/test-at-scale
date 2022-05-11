@@ -1,16 +1,13 @@
 package azure
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
-	"os"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
 
@@ -29,9 +26,11 @@ var (
 
 // Store represents the azure storage
 type Store struct {
+	requests        core.Requests
 	containerClient azblob.ContainerClient
 	httpClient      http.Client
 	logger          lumber.Logger
+	endpoint        string
 }
 
 // request body for getting SAS URL API.
@@ -46,11 +45,13 @@ type response struct {
 }
 
 // NewAzureBlobEnv returns a new Azure blob store.
-func NewAzureBlobEnv(cfg *config.NucleusConfig, logger lumber.Logger) (core.AzureClient, error) {
+func NewAzureBlobEnv(requests core.Requests, cfg *config.NucleusConfig, logger lumber.Logger) (core.AzureClient, error) {
 	// if non coverage mode then use Azure SAS Token
 	if !cfg.CoverageMode {
 		return &Store{
-			logger: logger,
+			requests: requests,
+			logger:   logger,
+			endpoint: global.NeuronHost + "/internal/sas-token",
 			httpClient: http.Client{
 				Timeout: global.DefaultHTTPTimeout,
 			},
@@ -81,7 +82,9 @@ func NewAzureBlobEnv(cfg *config.NucleusConfig, logger lumber.Logger) (core.Azur
 	}
 
 	return &Store{
-		logger: logger,
+		requests: requests,
+		logger:   logger,
+		endpoint: global.NeuronHost + "/internal/sas-token",
 		httpClient: http.Client{
 			Timeout: global.DefaultHTTPTimeout,
 		},
@@ -166,40 +169,8 @@ func (s *Store) GetSASURL(ctx context.Context, containerPath string, containerTy
 		s.logger.Errorf("failed to marshal request body %v", err)
 		return "", err
 	}
-
-	u, err := url.Parse(fmt.Sprintf("%s/%s", global.NeuronHost, "internal/sas-token"))
+	rawBytes, err := s.requests.MakeAPIRequestWithAuth(ctx, http.MethodPost, s.endpoint, reqBody)
 	if err != nil {
-		s.logger.Errorf("error while parsing endpoint %s, %v", fmt.Sprintf("%s/%s", global.NeuronHost, "internal/sas-token"), err)
-		return "", err
-	}
-
-	q := u.Query()
-	q.Set("repoID", os.Getenv("REPO_ID"))
-	q.Set("buildID", os.Getenv("BUILD_ID"))
-	q.Set("orgID", os.Getenv("ORG_ID"))
-	u.RawQuery = q.Encode()
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u.String(), bytes.NewBuffer(reqBody))
-	if err != nil {
-		s.logger.Errorf("error while creating http request, error %v", err)
-		return "", err
-	}
-
-	req.Header.Add("Authorization", fmt.Sprintf("%s %s", "Bearer", os.Getenv("TOKEN")))
-
-	resp, err := s.httpClient.Do(req)
-	if err != nil {
-		s.logger.Errorf("error while getting SAS URL, error %v", err)
-		return "", err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		s.logger.Errorf("error while getting SAS Token, status code %d", resp.StatusCode)
-		return "", errs.ErrAPIStatus
-	}
-
-	rawBytes, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		s.logger.Errorf("error while reading SAS token response, error %v", err)
 		return "", err
 	}
 	payload := new(response)
