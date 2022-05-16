@@ -10,6 +10,7 @@ func AttachCLIFlags(rootCmd *cobra.Command) error {
 	rootCmd.PersistentFlags().StringP("config", "c", "", "the config file to use")
 	rootCmd.PersistentFlags().StringP("port", "p", "", "Port for api server to run")
 	rootCmd.PersistentFlags().StringP("payloadAddress", "l", "", "Payload address")
+	rootCmd.PersistentFlags().String("subModule", "", "submodule of a repo")
 	rootCmd.PersistentFlags().BoolP("verbose", "", false, "Run in verbose mode")
 	rootCmd.PersistentFlags().BoolP("coverage", "", false, "Run coverage only mode")
 	rootCmd.PersistentFlags().BoolP("discover", "", false, "Run nucleus in test discovery mode")

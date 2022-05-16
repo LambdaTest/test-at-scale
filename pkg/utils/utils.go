@@ -159,7 +159,7 @@ func ValidateStructTASYmlV2(ctx context.Context, ymlContent []byte) (*core.TASCo
 
 	tasConfig := &core.TASConfigV2{SmartRun: true, Tier: core.Small, SplitMode: core.TestSplit}
 	if err := yaml.Unmarshal(ymlContent, tasConfig); err != nil {
-		return nil, fmt.Errorf("Error in unmarshling tas yml file")
+		return nil, fmt.Errorf("Error in unmarshling tas yml file, error %v", err)
 	}
 	validate, err := getValidator()
 	if err != nil {

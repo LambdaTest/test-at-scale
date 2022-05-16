@@ -15,7 +15,7 @@ const (
 	WorkspaceCacheDir        = "/workspace-cache"
 	RepoDir                  = HomeDir + "/repo"
 	CodeCoverageDir          = RepoDir + "/coverage"
-	DefaultHTTPTimeout       = 45 * time.Second
+	DefaultHTTPTimeout       = 5 * time.Minute
 	SamplingTime             = 5 * time.Millisecond
 	RepoSecretPath           = "/vault/secrets/reposecrets"
 	OauthSecretPath          = "/vault/secrets/oauth"
@@ -25,6 +25,8 @@ const (
 	ExecutionResultChunkSize = 50
 	TestLocatorsDelimiter    = "#TAS#"
 	ExpiryDelta              = 15 * time.Minute
+	NewTASVersion            = 2
+	ModulePath               = "MODULE_PATH"
 )
 
 // FrameworkRunnerMap is map of framework with there respective runner location

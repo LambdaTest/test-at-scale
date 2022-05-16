@@ -395,6 +395,7 @@ type TASConfigV2 struct {
 
 // Mergev2 repersent MergeConfig for version 2 and above
 type Mergev2 struct {
+	PreRun     *Run              `yaml:"preRun" validate:"omitempty"`
 	SubModules []SubModule       `yaml:"subModules" validate:"required,gt=0"`
 	EnvMap     map[string]string `yaml:"env" validate:"omitempty,gt=0"`
 }
@@ -402,7 +403,7 @@ type Mergev2 struct {
 type SubModule struct {
 	Name               string            `yaml:"name" validate:"required"`
 	Path               string            `yaml:"path" validate:"required"`
-	Patterns           []string          `yaml:"patterns" validate:"required,gt=0"`
+	Patterns           []string          `yaml:"pattern" validate:"required,gt=0"`
 	Framework          string            `yaml:"framework" validate:"required,oneof=jest mocha jasmine"`
 	Blocklist          []string          `yaml:"blocklist"`
 	Prerun             *Run              `yaml:"preRun" validate:"omitempty"`
@@ -416,4 +417,9 @@ type SubModule struct {
 
 type TasVersion struct {
 	Version float32 `yaml:"version" validate:"required"`
+}
+
+type SubModuleList struct {
+	BuildID        string `json:"buildID"`
+	TotalSubModule int    `json:"totalSubModule"`
 }

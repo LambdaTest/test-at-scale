@@ -79,11 +79,11 @@ func (tc *tasConfigManager) validateYMLV1(ctx context.Context, yamlFile []byte, 
 	switch eventType {
 	case core.EventPullRequest:
 		if tasConfig.Premerge == nil {
-			return nil, errs.New(fmt.Sprintf("`preMerge` test cases are not configured in `%s` configuration file.", path))
+			return nil, errs.New(fmt.Sprintf("`preMerge` test cases are not configured in tas YML file configuration file."))
 		}
 	case core.EventPush:
 		if tasConfig.Postmerge == nil {
-			return nil, errs.New(fmt.Sprintf("`postMerge` test cases are not configured in `%s` configuration file.", path))
+			return nil, errs.New(fmt.Sprintf("`postMerge` test cases are not configured in  tas YML configuration file."))
 		}
 	}
 	if err := isValidLicenseTier(tasConfig.Tier, licenseTier); err != nil {
@@ -103,7 +103,10 @@ func isValidLicenseTier(yamlTier, licenseTier core.Tier) error {
 	return nil
 }
 
-func (tc *tasConfigManager) validateYMLV2(ctx context.Context, yamlFile []byte, eventType core.EventType, licenseTier core.Tier) (*core.TASConfigV2, error) {
+func (tc *tasConfigManager) validateYMLV2(ctx context.Context,
+	yamlFile []byte,
+	eventType core.EventType,
+	licenseTier core.Tier) (*core.TASConfigV2, error) {
 	tasConfig, err := utils.ValidateStructTASYmlV2(ctx, yamlFile)
 	if err != nil {
 		return nil, err

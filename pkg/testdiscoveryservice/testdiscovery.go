@@ -16,11 +16,12 @@ import (
 )
 
 type testDiscoveryService struct {
-	logger      lumber.Logger
-	execManager core.ExecutionManager
-	tdResChan   chan core.DiscoveryResult
-	requests    core.Requests
-	endpoint    string
+	logger                lumber.Logger
+	execManager           core.ExecutionManager
+	tdResChan             chan core.DiscoveryResult
+	requests              core.Requests
+	discoveryEndpoint     string
+	subModuleListEndpoint string
 }
 
 // NewTestDiscoveryService creates and returns a new testDiscoveryService instance
@@ -30,11 +31,12 @@ func NewTestDiscoveryService(ctx context.Context,
 	requests core.Requests,
 	logger lumber.Logger) core.TestDiscoveryService {
 	return &testDiscoveryService{
-		logger:      logger,
-		execManager: execManager,
-		tdResChan:   tdResChan,
-		requests:    requests,
-		endpoint:    global.NeuronHost + "/test-list",
+		logger:                logger,
+		execManager:           execManager,
+		tdResChan:             tdResChan,
+		requests:              requests,
+		discoveryEndpoint:     global.NeuronHost + "/test-list",
+		subModuleListEndpoint: global.NeuronHost + "/submodule-list",
 	}
 }
 
@@ -120,14 +122,13 @@ func (tds *testDiscoveryService) Discover(ctx context.Context,
 }
 
 func (tds *testDiscoveryService) updateResult(ctx context.Context, testDiscoveryResult *core.DiscoveryResult) error {
-	tds.logger.Debugf("discover result: %+v", testDiscoveryResult)
 	reqBody, err := json.Marshal(testDiscoveryResult)
 	if err != nil {
 		tds.logger.Errorf("error while json marshal %v", err)
 		return err
 	}
 
-	if _, err := tds.requests.MakeAPIRequest(ctx, http.MethodPost, tds.endpoint, reqBody); err != nil {
+	if _, err := tds.requests.MakeAPIRequest(ctx, http.MethodPost, tds.discoveryEndpoint, reqBody); err != nil {
 		return err
 	}
 
@@ -148,11 +149,18 @@ func (tds *testDiscoveryService) DiscoverV2(ctx context.Context,
 	} else {
 		envMap = tasConfig.PostMerge.EnvMap
 	}
-	// Add submodule specific env here , overwirte the top level env specified
+	if envMap == nil {
+		envMap = map[string]string{}
+	}
+	// Add submodule specific env here , overwrite the top level env specified
 	for k, v := range subModule.EnvMap {
 		envMap[k] = v
 	}
-
+	if path.Join(global.RepoDir, subModule.Path) == global.RepoDir {
+		envMap[global.ModulePath] = ""
+	} else {
+		envMap[global.ModulePath] = subModule.Path
+	}
 	target := subModule.Patterns
 	tasYmlModified := false
 	configFilePath, err := utils.GetConfigFileName(payload.TasFileName)
@@ -216,6 +224,24 @@ func (tds *testDiscoveryService) DiscoverV2(ctx context.Context,
 	testDiscoveryResult.Tier = tasConfig.Tier
 	testDiscoveryResult.ContainerImage = tasConfig.ContainerImage
 	if err := tds.updateResult(ctx, &testDiscoveryResult); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (tds *testDiscoveryService) UpdateSubmoduleList(ctx context.Context, buildID string, totalSubmodule int) error {
+	subModuleList := core.SubModuleList{
+		BuildID:        buildID,
+		TotalSubModule: totalSubmodule,
+	}
+	reqBody, err := json.Marshal(&subModuleList)
+	if err != nil {
+		tds.logger.Errorf("error while json marshal %v", err)
+		return err
+	}
+
+	if _, err := tds.requests.MakeAPIRequest(ctx, http.MethodPost, tds.subModuleListEndpoint, reqBody); err != nil {
+		tds.logger.Errorf("error while making submodule-list api call %v", err)
 		return err
 	}
 	return nil

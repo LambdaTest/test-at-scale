@@ -67,6 +67,8 @@ var (
 	ErrUnMarshalJSON = New("JSON unmarshal failed")
 	// ErrMissingAccessToken is returned when Oauth token is missing
 	ErrMissingAccessToken = New("Missing OAuth access token. Please add an OAuth token")
+	// ErrSubModuleNotFound will be thrown if submodule is not present in yml
+	ErrSubModuleNotFound = New("Submodule not found in tas config file")
 )
 
 type StatusFailed struct {

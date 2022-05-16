@@ -17,12 +17,13 @@ import (
 )
 
 const (
-	yarnLock                    = "yarn.lock"
-	packageLock                 = "package-lock.json"
-	npmShrinkwrap               = "npm-shrinkwrap.json"
-	nodeModules                 = "node_modules"
-	defaultCompressedFileName   = "cache.tzst"
-	workspaceCompressedFilename = "workspace.tzst"
+	yarnLock                      = "yarn.lock"
+	packageLock                   = "package-lock.json"
+	npmShrinkwrap                 = "npm-shrinkwrap.json"
+	nodeModules                   = "node_modules"
+	defaultCompressedFileName     = "cache.tzst"
+	workspaceCompressedFilenameV1 = "workspace.tzst"
+	workspaceCompressedFilenameV2 = "workspace-%s.tzst"
 )
 
 // cache represents the files/dirs that will be cached
@@ -152,8 +153,12 @@ func (c *cache) Upload(ctx context.Context, cacheKey string, itemsToCompress ...
 	return nil
 }
 
-func (c *cache) CacheWorkspace(ctx context.Context) error {
+func (c *cache) CacheWorkspace(ctx context.Context, subModule string) error {
 	tmpDir := os.TempDir()
+	workspaceCompressedFilename := workspaceCompressedFilenameV1
+	if subModule != "" {
+		workspaceCompressedFilename = fmt.Sprintf(workspaceCompressedFilenameV2, subModule)
+	}
 	if err := c.zstd.Compress(ctx, workspaceCompressedFilename, true, tmpDir, global.HomeDir); err != nil {
 		return err
 	}
@@ -165,8 +170,12 @@ func (c *cache) CacheWorkspace(ctx context.Context) error {
 	return nil
 }
 
-func (c *cache) ExtractWorkspace(ctx context.Context) error {
+func (c *cache) ExtractWorkspace(ctx context.Context, subModule string) error {
 	tmpDir := os.TempDir()
+	workspaceCompressedFilename := workspaceCompressedFilenameV1
+	if subModule != "" {
+		workspaceCompressedFilename = fmt.Sprintf(workspaceCompressedFilenameV2, subModule)
+	}
 	src := filepath.Join(global.WorkspaceCacheDir, workspaceCompressedFilename)
 	dst := filepath.Join(tmpDir, workspaceCompressedFilename)
 	if err := fileutils.CopyFile(src, dst, false); err != nil {

@@ -144,7 +144,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	} else {
 		pl.Logger.Debugf("Extracting workspace")
 		// Replicate workspace
-		if err = pl.CacheStore.ExtractWorkspace(ctx); err != nil {
+		if err = pl.CacheStore.ExtractWorkspace(ctx, pl.Cfg.SubModule); err != nil {
 			pl.Logger.Errorf("Error replicating workspace: %+v", err)
 			err = errs.New(errs.GenericErrRemark.Error())
 			return err
@@ -165,6 +165,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 		err = &errs.StatusFailed{Remark: err.Error()}
 		return err
 	}
+	pl.Logger.Infof("TAS Version %f", version)
 	os.Setenv("TASK_ID", payload.TaskID)
 	os.Setenv("ORG_ID", payload.OrgID)
 	os.Setenv("BUILD_ID", payload.BuildID)
@@ -180,14 +181,16 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	os.Setenv("ENDPOINT_POST_TEST_RESULTS", endpointPostTestResults)
 	os.Setenv("REPO_ROOT", global.RepoDir)
 	os.Setenv("BLOCK_TESTS_FILE", global.BlockTestFileLocation)
-	if version >= 2 {
-		// do something
-		return pl.runNewVersion(ctx, payload, taskPayload, oauth, coverageDir, secretMap)
+	if version >= global.NewTASVersion {
+		// run new version
+		err = pl.runNewVersion(ctx, payload, taskPayload, oauth, coverageDir, secretMap)
+		return err
 	}
 	// set testing taskID, orgID and buildID as environment variable
-	os.Setenv("MODULE_PATH", "")
+	os.Setenv(global.ModulePath, "")
 
-	return pl.runOldVersion(ctx, payload, taskPayload, oauth, coverageDir, secretMap)
+	err = pl.runOldVersion(ctx, payload, taskPayload, oauth, coverageDir, secretMap)
+	return err
 }
 
 func findTaskPayloadStatus(executionResults *ExecutionResults) Status {
@@ -257,107 +260,134 @@ func (pl *Pipeline) runOldVersion(ctx context.Context,
 	}
 
 	if pl.Cfg.DiscoverMode {
-		blYml := pl.BlockTestService.GetBlocklistYMLV1(tasConfig)
-		err = pl.BlockTestService.GetBlockTests(ctx, blYml, payload.RepoID, payload.BranchName)
-		if err != nil {
-			pl.Logger.Errorf("Unable to fetch blocklisted tests: %v", err)
-			err = errs.New(errs.GenericErrRemark.Error())
+		if err := pl.runDiscoveryV1(ctx, payload, tasConfig, cacheKey, secretMap, oauth, taskPayload); err != nil {
 			return err
 		}
-
-		if err = pl.CacheStore.Download(ctx, cacheKey); err != nil {
-			pl.Logger.Errorf("Unable to download cache: %v", err)
-			err = errs.New(errs.GenericErrRemark.Error())
-			return err
-		}
-
-		if tasConfig.Prerun != nil {
-			pl.Logger.Infof("Running pre-run steps")
-			err = pl.ExecutionManager.ExecuteUserCommands(ctx, PreRun, payload, tasConfig.Prerun, secretMap, global.RepoDir)
-			if err != nil {
-				pl.Logger.Errorf("Unable to run pre-run steps %v", err)
-				err = &errs.StatusFailed{Remark: "Failed in running pre-run steps"}
-				return err
-			}
-		}
-		err = pl.ExecutionManager.ExecuteInternalCommands(ctx, InstallRunners, global.InstallRunnerCmds, global.RepoDir, nil, nil)
-		if err != nil {
-			pl.Logger.Errorf("Unable to install custom runners %v", err)
-			err = errs.New(errs.GenericErrRemark.Error())
-			return err
-		}
-
-		pl.Logger.Debugf("Caching workspace")
-		// Persist workspace
-		if err = pl.CacheStore.CacheWorkspace(ctx); err != nil {
-			pl.Logger.Errorf("Error caching workspace: %+v", err)
-			err = errs.New(errs.GenericErrRemark.Error())
-			return err
-		}
-
-		pl.Logger.Infof("Identifying changed files ...")
-		diffExists := true
-		diff, err := pl.DiffManager.GetChangedFiles(ctx, payload, oauth)
-		if err != nil {
-			if errors.Is(err, errs.ErrGitDiffNotFound) {
-				diffExists = false
-			} else {
-				pl.Logger.Errorf("Unable to identify changed files %s", err)
-				err = errs.New("Error occurred in fetching diff from GitHub")
-				return err
-			}
-		}
-
-		// discover test cases
-		err = pl.TestDiscoveryService.Discover(ctx, tasConfig, pl.Payload, secretMap, diff, diffExists)
-		if err != nil {
-			pl.Logger.Errorf("Unable to perform test discovery: %+v", err)
-			err = &errs.StatusFailed{Remark: "Failed in discovering tests"}
-			return err
-		}
-		// mark status as passed
-		taskPayload.Status = Passed
-
-		// Upload cache once for other builds
-		if err = pl.CacheStore.Upload(ctx, cacheKey, tasConfig.Cache.Paths...); err != nil {
-			pl.Logger.Errorf("Unable to upload cache: %v", err)
-			err = errs.New(errs.GenericErrRemark.Error())
-			return err
-		}
-		pl.Logger.Debugf("Cache uploaded successfully")
 	}
 
 	if pl.Cfg.ExecuteMode || pl.Cfg.FlakyMode {
 		// execute test cases
-		executionResults, err := pl.TestExecutionService.Run(ctx, tasConfig, pl.Payload, coverageDir, secretMap)
-		if err != nil {
-			pl.Logger.Infof("Unable to perform test execution: %v", err)
-			err = &errs.StatusFailed{Remark: "Failed in executing tests."}
-			if executionResults == nil {
-				return err
-			}
-		}
-
-		resp, err := pl.TestExecutionService.SendResults(ctx, executionResults)
-		if err != nil {
-			pl.Logger.Errorf("error while sending test reports %v", err)
-			err = errs.New(errs.GenericErrRemark.Error())
+		if err := pl.runTestExecutionV1(ctx, tasConfig, coverageDir, secretMap, taskPayload, payload); err != nil {
 			return err
-		}
-		taskPayload.Status = resp.TaskStatus
-
-		if tasConfig.Postrun != nil {
-			pl.Logger.Infof("Running post-run steps")
-			err = pl.ExecutionManager.ExecuteUserCommands(ctx, PostRun, payload, tasConfig.Postrun, secretMap, global.RepoDir)
-			if err != nil {
-				pl.Logger.Errorf("Unable to run post-run steps %v", err)
-				err = &errs.StatusFailed{Remark: "Failed in running post-run steps."}
-				return err
-			}
 		}
 	}
 	pl.Logger.Debugf("Completed pipeline")
 
+	return nil
+}
+
+func (pl *Pipeline) runTestExecutionV1(ctx context.Context,
+	tasConfig *TASConfig,
+	coverageDir string,
+	secretMap map[string]string,
+	taskPayload *TaskPayload, payload *Payload) error {
+	executionResults, err := pl.TestExecutionService.RunV1(ctx, tasConfig, pl.Payload, coverageDir, secretMap)
+	if err != nil {
+		pl.Logger.Infof("Unable to perform test execution: %v", err)
+		err = &errs.StatusFailed{Remark: "Failed in executing tests."}
+		if executionResults == nil {
+			return err
+		}
+	}
+
+	resp, err := pl.TestExecutionService.SendResults(ctx, executionResults)
+	if err != nil {
+		pl.Logger.Errorf("error while sending test reports %v", err)
+		err = errs.New(errs.GenericErrRemark.Error())
+		return err
+	}
+
+	taskPayload.Status = resp.TaskStatus
+
+	if tasConfig.Postrun != nil {
+		pl.Logger.Infof("Running post-run steps")
+		err = pl.ExecutionManager.ExecuteUserCommands(ctx, PostRun, payload, tasConfig.Postrun, secretMap, global.RepoDir)
+		if err != nil {
+			pl.Logger.Errorf("Unable to run post-run steps %v", err)
+			err = &errs.StatusFailed{Remark: "Failed in running post-run steps."}
+			return err
+		}
+	}
+	return nil
+}
+
+func (pl *Pipeline) runDiscoveryV1(ctx context.Context,
+	payload *Payload,
+	tasConfig *TASConfig,
+	cacheKey string,
+	secretMap map[string]string,
+	oauth *Oauth,
+	taskPayload *TaskPayload) error {
+	// Persist workspace
+	// discover test cases
+	// mark status as passed
+	// Upload cache once for other builds
+	if postErr := pl.TestDiscoveryService.UpdateSubmoduleList(ctx, payload.BuildID, 1); postErr != nil {
+		return postErr
+	}
+	blYml := pl.BlockTestService.GetBlocklistYMLV1(tasConfig)
+	err := pl.BlockTestService.GetBlockTests(ctx, blYml, payload.RepoID, payload.BranchName)
+	if err != nil {
+		pl.Logger.Errorf("Unable to fetch blocklisted tests: %v", err)
+		err = errs.New(errs.GenericErrRemark.Error())
+		return err
+	}
+
+	if err = pl.CacheStore.Download(ctx, cacheKey); err != nil {
+		pl.Logger.Errorf("Unable to download cache: %v", err)
+		err = errs.New(errs.GenericErrRemark.Error())
+		return err
+	}
+
+	if tasConfig.Prerun != nil {
+		pl.Logger.Infof("Running pre-run steps")
+		err = pl.ExecutionManager.ExecuteUserCommands(ctx, PreRun, payload, tasConfig.Prerun, secretMap, global.RepoDir)
+		if err != nil {
+			pl.Logger.Errorf("Unable to run pre-run steps %v", err)
+			err = &errs.StatusFailed{Remark: "Failed in running pre-run steps"}
+			return err
+		}
+	}
+	err = pl.ExecutionManager.ExecuteInternalCommands(ctx, InstallRunners, global.InstallRunnerCmds, global.RepoDir, nil, nil)
+	if err != nil {
+		pl.Logger.Errorf("Unable to install custom runners %v", err)
+		err = errs.New(errs.GenericErrRemark.Error())
+		return err
+	}
+
+	pl.Logger.Debugf("Caching workspace")
+
+	if err = pl.CacheStore.CacheWorkspace(ctx, ""); err != nil {
+		pl.Logger.Errorf("Error caching workspace: %+v", err)
+		err = errs.New(errs.GenericErrRemark.Error())
+		return err
+	}
+
+	pl.Logger.Infof("Identifying changed files ...")
+	diffExists := true
+	diff, err := pl.DiffManager.GetChangedFiles(ctx, payload, oauth)
+	if err != nil {
+		if errors.Is(err, errs.ErrGitDiffNotFound) {
+			diffExists = false
+		} else {
+			pl.Logger.Errorf("Unable to identify changed files %s", err)
+			err = errs.New("Error occurred in fetching diff from GitHub")
+			return err
+		}
+	}
+	err = pl.TestDiscoveryService.Discover(ctx, tasConfig, pl.Payload, secretMap, diff, diffExists)
+	if err != nil {
+		pl.Logger.Errorf("Unable to perform test discovery: %+v", err)
+		err = &errs.StatusFailed{Remark: "Failed in discovering tests"}
+		return err
+	}
+	if err = pl.CacheStore.Upload(ctx, cacheKey, tasConfig.Cache.Paths...); err != nil {
+		pl.Logger.Errorf("Unable to upload cache: %v", err)
+		err = errs.New(errs.GenericErrRemark.Error())
+		return err
+	}
+	taskPayload.Status = Passed
+	pl.Logger.Debugf("Cache uploaded successfully")
 	return nil
 }
 
@@ -388,93 +418,151 @@ func (pl *Pipeline) runNewVersion(ctx context.Context,
 	coverageDir string,
 	secretMap map[string]string) error {
 	tasConfig, err := pl.TASConfigManager.LoadAndValidateV2(ctx, payload.TasFileName, payload.EventType, payload.LicenseTier)
+
 	if err != nil {
 		pl.Logger.Errorf("Unable to load tas yaml file, error: %v", err)
 		err = &errs.StatusFailed{Remark: err.Error()}
 		return err
 	}
-
 	if pl.Cfg.DiscoverMode {
-		cacheKey := fmt.Sprintf("%s/%s/%s", payload.OrgID, payload.RepoID, tasConfig.Cache.Key)
-
-		if err = pl.CacheStore.Download(ctx, cacheKey); err != nil {
-			pl.Logger.Errorf("Unable to download cache: %v", err)
-			err = errs.New(errs.GenericErrRemark.Error())
+		if err := pl.runDiscoveryV2(payload, tasConfig, taskPayload, ctx, oauth, secretMap); err != nil {
+			taskPayload.Status = Error
 			return err
 		}
-		/*
-			Discovery steps
-		*/
-
-		pl.Logger.Infof("Identifying changed files ...")
-		diffExists := true
-		diff, err := pl.DiffManager.GetChangedFiles(ctx, payload, oauth)
-		if err != nil {
-			if errors.Is(err, errs.ErrGitDiffNotFound) {
-				diffExists = false
-			} else {
-				pl.Logger.Errorf("Unable to identify changed files %s", err)
-				err = errs.New("Error occurred in fetching diff from GitHub")
-				return err
-			}
-		}
-		wg := sync.WaitGroup{}
-		if payload.EventType == EventPush {
-			// iterate through all sub modules
-			for i := 0; i < len(tasConfig.PostMerge.SubModules); i++ {
-				//
-				wg.Add(1)
-				go func(subModule *SubModule) {
-					if dicoveryErr := pl.runDiscoveryForEachSubModule(ctx, payload, subModule, tasConfig, secretMap,
-						diff, diffExists, &wg); dicoveryErr != nil {
-						pl.Logger.Errorf("error while running discovery for sub module %s, error %v", subModule.Name, dicoveryErr)
-						wg.Done()
-					}
-				}(&tasConfig.PostMerge.SubModules[i])
-
-			}
-		} else {
-			// iterate through all sub modules
-			for i := 0; i < len(tasConfig.PreMerge.SubModules); i++ {
-				wg.Add(1)
-				go func(subModule *SubModule) {
-					if dicoveryErr := pl.runDiscoveryForEachSubModule(ctx, payload, subModule, tasConfig, secretMap,
-						diff, diffExists, &wg); dicoveryErr != nil {
-						pl.Logger.Errorf("error while running discovery for sub module %s, error %v", subModule.Name, dicoveryErr)
-						wg.Done()
-					}
-				}(&tasConfig.PreMerge.SubModules[i])
-			}
-			wg.Wait()
-		}
-
-		pl.Logger.Debugf("Caching workspace")
-		// Persist workspace
-		if err = pl.CacheStore.CacheWorkspace(ctx); err != nil {
-			pl.Logger.Errorf("Error caching workspace: %+v", err)
-			err = errs.New(errs.GenericErrRemark.Error())
+	} else if pl.Cfg.ExecuteMode || pl.Cfg.FlakyMode {
+		if err := pl.runTestExecutionV2(ctx, payload, tasConfig, taskPayload, coverageDir, secretMap); err != nil {
 			return err
 		}
-
-		// Upload cache once for other builds
-		if err = pl.CacheStore.Upload(ctx, cacheKey, tasConfig.Cache.Paths...); err != nil {
-			pl.Logger.Errorf("Unable to upload cache: %v", err)
-			err = errs.New(errs.GenericErrRemark.Error())
-			return err
-		}
-		pl.Logger.Debugf("Cache uploaded successfully")
-
-		// Upload cache once for other builds
-		if err = pl.CacheStore.Upload(ctx, cacheKey, tasConfig.Cache.Paths...); err != nil {
-			pl.Logger.Errorf("Unable to upload cache: %v", err)
-			err = errs.New(errs.GenericErrRemark.Error())
-			return err
-		}
-		pl.Logger.Debugf("Cache uploaded successfully")
-
 	}
 
 	pl.Logger.Infof("Tas yaml: %+v", tasConfig)
+	return nil
+}
+
+func (pl *Pipeline) runDiscoveryV2(payload *Payload,
+	tasConfig *TASConfigV2,
+	taskPayload *TaskPayload,
+	ctx context.Context,
+	oauth *Oauth,
+	secretMap map[string]string) error {
+	/*
+		Discovery steps
+	*/
+	// iterate through all sub modules
+	// Persist workspace
+	// Upload cache once for other builds
+	cacheKey := fmt.Sprintf("%s/%s/%s", payload.OrgID, payload.RepoID, tasConfig.Cache.Key)
+	taskPayload.Status = Passed
+	if err := pl.CacheStore.Download(ctx, cacheKey); err != nil {
+		pl.Logger.Errorf("Unable to download cache: %v", err)
+		err = errs.New(errs.GenericErrRemark.Error())
+		return err
+	}
+	readerBuffer := new(bytes.Buffer)
+	defer func() error {
+		blobPath := fmt.Sprintf("%s/%s/%s/%s.log", payload.OrgID, payload.BuildID, os.Getenv("TASK_ID"), PreRun)
+		pl.Logger.Debugf("Writing the preRUN logs to path %s", blobPath)
+		if writeErr := <-pl.ExecutionManager.StoreCommandLogs(ctx, blobPath, readerBuffer); writeErr != nil {
+			return writeErr
+		}
+		return nil
+	}()
+
+	pl.Logger.Infof("Identifying changed files ...")
+	diffExists := true
+	diff, err := pl.DiffManager.GetChangedFiles(ctx, payload, oauth)
+	if err != nil {
+		if errors.Is(err, errs.ErrGitDiffNotFound) {
+			diffExists = false
+		} else {
+			pl.Logger.Errorf("Unable to identify changed files %s", err)
+			err = errs.New("Error occurred in fetching diff from GitHub")
+			return err
+		}
+	}
+	wg := sync.WaitGroup{}
+	if payload.EventType == EventPush {
+		pl.Logger.Debugf("TAS %+v", tasConfig.PostMerge)
+		totalSubmoduleCount := len(tasConfig.PostMerge.SubModules)
+		if apiErr := pl.TestDiscoveryService.UpdateSubmoduleList(ctx, payload.BuildID, totalSubmoduleCount); apiErr != nil {
+			return apiErr
+		}
+		errChannelList := make(chan error, len(tasConfig.PostMerge.SubModules))
+		if tasConfig.PostMerge.PreRun != nil {
+			pl.Logger.Debugf("Running Pre Run on top level")
+			if err = pl.ExecutionManager.ExecuteUserCommandsV2(ctx, PreRun, payload,
+				tasConfig.PostMerge.PreRun, secretMap, global.RepoDir, "TOP-LEVEL", readerBuffer); err != nil {
+				pl.Logger.Errorf("Error occurred running top level PreRun , err %v", err)
+				return err
+			}
+		}
+
+		for i := 0; i < totalSubmoduleCount; i++ {
+			wg.Add(1)
+			go func(subModule *SubModule) {
+				defer wg.Done()
+
+				dicoveryErr := pl.runDiscoveryForEachSubModule(ctx, payload, subModule, tasConfig, secretMap,
+					diff, diffExists, readerBuffer)
+				if dicoveryErr != nil {
+					taskPayload.Status = Error
+					pl.Logger.Errorf("error while running discovery for sub module %s, error %v", subModule.Name, dicoveryErr)
+				}
+				errChannelList <- dicoveryErr
+			}(&tasConfig.PostMerge.SubModules[i])
+		}
+		pl.Logger.Errorf("checking the discovery errors ")
+		for i := 0; i < len(tasConfig.PostMerge.SubModules); i++ {
+			e := <-errChannelList
+			if e != nil {
+				return e
+			}
+		}
+		pl.Logger.Errorf("checked the discovery errors ")
+	} else {
+		pl.Logger.Debugf("TAS %+v", tasConfig.PreMerge)
+
+		totalSubmoduleCount := len(tasConfig.PreMerge.SubModules)
+		if apiErr := pl.TestDiscoveryService.UpdateSubmoduleList(ctx, payload.BuildID, totalSubmoduleCount); apiErr != nil {
+			return apiErr
+		}
+		errChannelList := make(chan error, len(tasConfig.PreMerge.SubModules))
+		if tasConfig.PreMerge.PreRun != nil {
+			pl.Logger.Debugf("Running Pre Run on top level")
+			if err = pl.ExecutionManager.ExecuteUserCommandsV2(ctx, PreRun, payload,
+				tasConfig.PreMerge.PreRun, secretMap, global.RepoDir, "TOP-LEVEL", readerBuffer); err != nil {
+				pl.Logger.Errorf("Error occurred running top level PreRun , err %v", err)
+				return err
+			}
+		}
+		for i := 0; i < totalSubmoduleCount; i++ {
+			wg.Add(1)
+			go func(subModule *SubModule) {
+				defer wg.Done()
+				dicoveryErr := pl.runDiscoveryForEachSubModule(ctx, payload, subModule, tasConfig, secretMap,
+					diff, diffExists, readerBuffer)
+				if dicoveryErr != nil {
+					taskPayload.Status = Error
+					pl.Logger.Errorf("error while running discovery for sub module %s, error %v", subModule.Name, dicoveryErr)
+				}
+				errChannelList <- dicoveryErr
+			}(&tasConfig.PreMerge.SubModules[i])
+		}
+		pl.Logger.Errorf("checking the discovery errors ")
+		for i := 0; i < len(tasConfig.PreMerge.SubModules); i++ {
+			e := <-errChannelList
+			if e != nil {
+				return e
+			}
+		}
+	}
+	wg.Wait()
+	if err = pl.CacheStore.Upload(ctx, cacheKey, tasConfig.Cache.Paths...); err != nil {
+		pl.Logger.Errorf("Unable to upload cache: %v", err)
+		err = errs.New(errs.GenericErrRemark.Error())
+		return err
+	}
+	pl.Logger.Debugf("Cache uploaded successfully")
 	return nil
 }
 
@@ -485,8 +573,8 @@ func (pl *Pipeline) runDiscoveryForEachSubModule(ctx context.Context,
 	secretMap map[string]string,
 	diff map[string]int,
 	diffExists bool,
-	wg *sync.WaitGroup) error {
-
+	readerBuffer *bytes.Buffer) error {
+	pl.Logger.Debugf("Running discovery for sub module %s", subModule.Name)
 	blYML := pl.BlockTestService.GetBlocklistYMLV2(subModule)
 	if err := pl.BlockTestService.GetBlockTests(ctx, blYML, payload.RepoID, payload.BranchName); err != nil {
 		pl.Logger.Errorf("Unable to fetch blocklisted tests: %v", err)
@@ -497,21 +585,26 @@ func (pl *Pipeline) runDiscoveryForEachSubModule(ctx context.Context,
 	// PRE RUN steps
 	if subModule.Prerun != nil {
 		pl.Logger.Infof("Running pre-run steps")
-		err := pl.ExecutionManager.ExecuteUserCommands(ctx, PreRun, payload, subModule.Prerun, secretMap, modulePath)
+		err := pl.ExecutionManager.ExecuteUserCommandsV2(ctx, PreRun, payload, subModule.Prerun, secretMap, modulePath, subModule.Name, readerBuffer)
 		if err != nil {
 			pl.Logger.Errorf("Unable to run pre-run steps %v", err)
 			err = &errs.StatusFailed{Remark: "Failed in running pre-run steps"}
 			return err
 		}
+		pl.Logger.Debugf("error checks end")
 	}
-
 	err := pl.ExecutionManager.ExecuteInternalCommands(ctx, InstallRunners, global.InstallRunnerCmds, modulePath, nil, nil)
 	if err != nil {
 		pl.Logger.Errorf("Unable to install custom runners %v", err)
 		err = errs.New(errs.GenericErrRemark.Error())
 		return err
 	}
-
+	pl.Logger.Debugf("Caching workspace")
+	if err = pl.CacheStore.CacheWorkspace(ctx, subModule.Name); err != nil {
+		pl.Logger.Errorf("Error caching workspace: %+v", err)
+		err = errs.New(errs.GenericErrRemark.Error())
+		return err
+	}
 	err = pl.TestDiscoveryService.DiscoverV2(ctx, subModule, pl.Payload, secretMap,
 		tasConfig, diff, diffExists)
 	if err != nil {
@@ -519,6 +612,93 @@ func (pl *Pipeline) runDiscoveryForEachSubModule(ctx context.Context,
 		err = &errs.StatusFailed{Remark: "Failed in discovering tests"}
 		return err
 	}
-	wg.Done()
 	return nil
+}
+
+func (pl *Pipeline) runTestExecutionV2(ctx context.Context,
+	payload *Payload,
+	tasConfig *TASConfigV2,
+	taskPayload *TaskPayload,
+	coverageDir string,
+	secretMap map[string]string) error {
+	subModule, err := pl.findSubmodule(tasConfig, payload)
+	if err != nil {
+		pl.Logger.Errorf("Error finding sub module %s in tas config file", pl.Cfg.SubModule)
+		return err
+	}
+	var envMap map[string]string
+	var target []string
+
+	if payload.EventType == EventPullRequest {
+		target = subModule.Patterns
+		envMap = tasConfig.PreMerge.EnvMap
+	} else {
+		target = subModule.Patterns
+		envMap = tasConfig.PostMerge.EnvMap
+	}
+	// overwrite the existing env with more specific one
+	for k, v := range subModule.EnvMap {
+		envMap[k] = v
+	}
+	if envMap == nil {
+		envMap = map[string]string{}
+	}
+
+	/*
+		1. run PRE run steps
+		2. run Test execution
+		3. run POST run steps
+	*/
+
+	modulePath := path.Join(global.RepoDir, subModule.Path)
+	// PRE RUN steps should be run only if RunPrerunEveryTime is set to true
+	if subModule.Prerun != nil && subModule.RunPrerunEveryTime {
+		pl.Logger.Infof("Running pre-run steps")
+		err = pl.ExecutionManager.ExecuteUserCommands(ctx, PreRun, payload, subModule.Prerun, secretMap, modulePath)
+		if err != nil {
+			pl.Logger.Errorf("Unable to run pre-run steps %v", err)
+			err = &errs.StatusFailed{Remark: "Failed in running pre-run steps"}
+			return err
+		}
+	}
+
+	testResult, err := pl.TestExecutionService.RunV2(ctx, tasConfig, subModule, payload, coverageDir, envMap, target, secretMap)
+	if err != nil {
+		return err
+	}
+	resp, err := pl.TestExecutionService.SendResults(ctx, testResult)
+	if err != nil {
+		pl.Logger.Errorf("error while sending test reports %v", err)
+		err = errs.New(errs.GenericErrRemark.Error())
+		return err
+	}
+	taskPayload.Status = resp.TaskStatus
+
+	if subModule.Postrun != nil {
+		pl.Logger.Infof("Running post-run steps")
+		err = pl.ExecutionManager.ExecuteUserCommands(ctx, PostRun, payload, subModule.Postrun, secretMap, modulePath)
+		if err != nil {
+			pl.Logger.Errorf("Unable to run post-run steps %v", err)
+			err = &errs.StatusFailed{Remark: "Failed in running post-run steps."}
+			return err
+		}
+	}
+	return nil
+}
+
+func (pl *Pipeline) findSubmodule(tasConfig *TASConfigV2, payload *Payload) (*SubModule, error) {
+	if payload.EventType == EventPullRequest {
+		for i := 0; i < len(tasConfig.PreMerge.SubModules); i++ {
+			if tasConfig.PreMerge.SubModules[i].Name == pl.Cfg.SubModule {
+				return &tasConfig.PreMerge.SubModules[i], nil
+			}
+		}
+	} else {
+		for i := 0; i < len(tasConfig.PostMerge.SubModules); i++ {
+			if tasConfig.PostMerge.SubModules[i].Name == pl.Cfg.SubModule {
+				return &tasConfig.PostMerge.SubModules[i], nil
+			}
+		}
+	}
+	return nil, errs.ErrSubModuleNotFound
 }

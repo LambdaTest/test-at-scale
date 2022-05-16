@@ -1,6 +1,7 @@
 package core
 
 import (
+	"bytes"
 	"context"
 	"io"
 )
@@ -39,9 +40,13 @@ type DiffManager interface {
 // TestDiscoveryService services discovery of tests
 type TestDiscoveryService interface {
 	// Discover executes the test discovery scripts.
-	Discover(ctx context.Context, tasConfig *TASConfig, payload *Payload, secretData map[string]string, diff map[string]int, diffExists bool) error
+	Discover(ctx context.Context, tasConfig *TASConfig, payload *Payload, secretData map[string]string,
+		diff map[string]int, diffExists bool) error
 	// Discoverv executes the test discovery scripts for TAS V2.
-	DiscoverV2(ctx context.Context, subModule *SubModule, payload *Payload, secretData map[string]string, tasConfig *TASConfigV2, diff map[string]int, diffExists bool) error
+	DiscoverV2(ctx context.Context, subModule *SubModule, payload *Payload, secretData map[string]string,
+		tasConfig *TASConfigV2, diff map[string]int, diffExists bool) error
+	// UpdateSubmoduleList sends count of submodules to TAS server
+	UpdateSubmoduleList(ctx context.Context, buildID string, totalSubmodule int) error
 }
 
 // BlockTestService is used for fetching blocklisted tests
@@ -53,11 +58,20 @@ type BlockTestService interface {
 
 // TestExecutionService services execution of tests
 type TestExecutionService interface {
-	// Run executes the test execution scripts.
-	Run(ctx context.Context, tasConfig *TASConfig,
+	// RunV1 executes the test execution scripts for TAS version 1
+	RunV1(ctx context.Context, tasConfig *TASConfig,
 		payload *Payload, coverageDirectory string, secretMap map[string]string) (results *ExecutionResults, err error)
 	// SendResults sends the test execution results to the TAS server.
 	SendResults(ctx context.Context, payload *ExecutionResults) (resp *TestReportResponsePayload, err error)
+	// RunV2 executes the test execution scripts for TAS version 2
+	RunV2(ctx context.Context,
+		tasConfig *TASConfigV2,
+		subModule *SubModule,
+		payload *Payload,
+		coverageDir string,
+		envMap map[string]string,
+		target []string,
+		secretData map[string]string) (*ExecutionResults, error)
 }
 
 // CoverageService services coverage of tests
@@ -107,9 +121,9 @@ type CacheStore interface {
 	// Upload creates, compresses and uploads cache at cacheKey
 	Upload(ctx context.Context, cacheKey string, itemsToCompress ...string) error
 	// CacheWorkspace caches the workspace onto a mounted volume
-	CacheWorkspace(ctx context.Context) error
+	CacheWorkspace(ctx context.Context, subModule string) error
 	// ExtractWorkspace extracts the workspace cache from mounted volume
-	ExtractWorkspace(ctx context.Context) error
+	ExtractWorkspace(ctx context.Context, subModule string) error
 }
 
 // SecretParser defines operation for parsing the vault secrets in given path
@@ -128,6 +142,11 @@ type SecretParser interface {
 type ExecutionManager interface {
 	// ExecuteUserCommands executes the preRun or postRun commands given by user in his yaml.
 	ExecuteUserCommands(ctx context.Context, commandType CommandType, payload *Payload, runConfig *Run, secretData map[string]string, cwd string) error
+
+	// ExecuteUserCommands executes the preRun or postRun commands given by user in his yaml. for tas version 2
+	ExecuteUserCommandsV2(ctx context.Context, commandType CommandType, payload *Payload, runConfig *Run,
+		secretData map[string]string, cwd, subModule string, buffer *bytes.Buffer) error
+
 	// ExecuteInternalCommands executes the commands like installing runners and test discovery.
 	ExecuteInternalCommands(ctx context.Context, commandType CommandType, commands []string, cwd string, envMap, secretData map[string]string) error
 	// GetEnvVariables get the environment variables from the env map given by user.
