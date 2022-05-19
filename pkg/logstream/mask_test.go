@@ -5,6 +5,10 @@ import (
 	"testing"
 )
 
+const keyLine = `{
+  "token":"dXNlcm5hbWU6cGFzc3dvcmQ="
+}`
+
 func TestReplace(t *testing.T) {
 	secrets := map[string]string{
 		"cipher":  "lazy dog",
@@ -63,13 +67,9 @@ func TestSkipSingleCharacterMask(t *testing.T) {
 }
 
 func TestReplaceMultilineJson(t *testing.T) {
-	key := `{
-  "token":"dXNlcm5hbWU6cGFzc3dvcmQ="
-}`
+	key := keyLine
 
-	line := `{
-  "token":"dXNlcm5hbWU6cGFzc3dvcmQ="
-}`
+	line := keyLine
 
 	secrets := map[string]string{
 		"cipher": key,

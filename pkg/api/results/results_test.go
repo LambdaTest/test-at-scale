@@ -31,9 +31,19 @@ func TestHandler(t *testing.T) {
 		wantStatusText   string
 	}{
 
-		{"Test handler result route", httptest.NewRequest(http.MethodPost, "/results", bytes.NewBuffer([]byte(`{"TaskID" : "123"}`))), 200, http.StatusText(http.StatusOK)},
+		{
+			"Test handler result route",
+			httptest.NewRequest(http.MethodPost, "/results", bytes.NewBuffer([]byte(`{"TaskID" : "123"}`))),
+			200,
+			http.StatusText(http.StatusOK),
+		},
 
-		{"Test handler result route for error in jsonBinding and hence http.StatusBadRequest", httptest.NewRequest(http.MethodPost, "/results", nil), http.StatusBadRequest, `{"message":"EOF"}`},
+		{
+			"Test handler result route for error in jsonBinding and hence http.StatusBadRequest",
+			httptest.NewRequest(http.MethodPost, "/results", nil),
+			http.StatusBadRequest,
+			`{"message":"EOF"}`,
+		},
 	}
 
 	for _, tt := range tests {

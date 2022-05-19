@@ -19,12 +19,14 @@ func Test_updateWithOr(t *testing.T) {
 		dm := &diffManager{}
 		m := make(map[string]int)
 		key := "key"
-		val := rand.Intn(1000)
+		val := rand.Intn(1000) // nolint:gosec
+
 		dm.updateWithOr(m, key, val)
 		if ans, exists := m[key]; !exists || ans != val {
 			t.Errorf("Expected: %v, received: %v", val, m[key])
 		}
-		newVal := rand.Intn(1000)
+
+		newVal := rand.Intn(1000) // nolint:gosec
 		dm.updateWithOr(m, key, newVal)
 		if ans, exists := m[key]; !exists || ans != (val|newVal) {
 			t.Errorf("Expected: %v, received: %v", val|newVal, m[key])
@@ -98,7 +100,7 @@ func Test_diffManager_GetChangedFiles_PRDiff(t *testing.T) {
 				return
 			}
 
-			expResp := testutils.GetGitDiff()
+			expResp := map[string]int{"src/steps/resource.ts": 3}
 			if err != nil {
 				t.Errorf("error in getting changed files, error %v", err.Error())
 			} else if tt.args.payload.GitProvider == "github" && !reflect.DeepEqual(resp, expResp) {
