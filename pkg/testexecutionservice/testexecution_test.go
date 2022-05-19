@@ -68,8 +68,15 @@ func Test_testExecutionService_GetLocatorsFile(t *testing.T) {
 	var ts *teststats.ProcStats
 	azureClient := new(mocks.AzureClient)
 	execManager := new(mocks.ExecutionManager)
-	azureClient.On("GetSASURL", mock.AnythingOfType("*context.emptyCtx"), mock.AnythingOfType("string"), mock.AnythingOfType("core.ContainerType")).Return("sasURL", nil)
-	azureClient.On("FindUsingSASUrl", mock.AnythingOfType("*context.emptyCtx"), mock.AnythingOfType("string")).Return(io.NopCloser(strings.NewReader("Hello, world!")), nil)
+	azureClient.On("GetSASURL",
+		mock.AnythingOfType("*context.emptyCtx"),
+		mock.AnythingOfType("string"),
+		mock.AnythingOfType("core.ContainerType"),
+	).Return("sasURL", nil)
+	azureClient.On("FindUsingSASUrl",
+		mock.AnythingOfType("*context.emptyCtx"),
+		mock.AnythingOfType("string"),
+	).Return(io.NopCloser(strings.NewReader("Hello, world!")), nil)
 
 	type fields struct {
 		logger      lumber.Logger

@@ -3,7 +3,6 @@ package utils
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -14,12 +13,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func removeCreatedFile(path string) {
-	err := os.RemoveAll(path)
-	if err != nil {
-		fmt.Println("error in removing!!")
-	}
-}
+const (
+	directory = "../../testutils/testdirectory"
+)
 
 func TestMin(t *testing.T) {
 	type args struct {
@@ -79,7 +75,7 @@ func TestComputeChecksum(t *testing.T) {
 
 func TestCreateDirectory(t *testing.T) {
 	newDir := "../../testutils/nonExistingDir"
-	existDir := "../../testutils/testdirectory"
+	existDir := directory
 	type args struct {
 		path string
 	}
@@ -109,7 +105,7 @@ func TestCreateDirectory(t *testing.T) {
 }
 
 func TestWriteFileToDirectory(t *testing.T) {
-	path := "../../testutils/testdirectory"
+	path := directory
 	filename := "writeFileToDirectory"
 	data := []byte("Hello world!")
 	err := WriteFileToDirectory(path, filename, data)
@@ -118,7 +114,7 @@ func TestWriteFileToDirectory(t *testing.T) {
 		return
 	}
 	defer removeCreatedFile(filepath.Join(path, filename))
-	checkData, err := ioutil.ReadFile(filepath.Join(path, filename))
+	checkData, err := os.ReadFile(filepath.Join(path, filename))
 	if err != nil {
 		t.Errorf("Error: %v", err)
 		return
@@ -225,5 +221,12 @@ func TestValidateStruct(t *testing.T) {
 			}
 			assert.Equal(t, tt.want, tasConfig, "Struct mismatch")
 		})
+	}
+}
+
+func removeCreatedFile(path string) {
+	err := os.RemoveAll(path)
+	if err != nil {
+		fmt.Println("error in removing!!")
 	}
 }

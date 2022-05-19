@@ -31,7 +31,7 @@ func NewGitManager(logger lumber.Logger, execManager core.ExecutionManager) core
 	return &gitManager{
 		logger: logger,
 		httpClient: http.Client{
-			Timeout: global.DefaultHTTPTimeout,
+			Timeout: global.DefaultGitCloneTimeout,
 		},
 		execManager: execManager,
 	}

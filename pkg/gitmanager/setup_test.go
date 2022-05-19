@@ -5,7 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -20,21 +20,6 @@ import (
 	"github.com/LambdaTest/test-at-scale/testutils/mocks"
 	"github.com/stretchr/testify/mock"
 )
-
-func CreateDirectory(path string) {
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		if err := os.MkdirAll(path, 0755); err != nil {
-			fmt.Printf("Error: %v", err)
-		}
-	}
-}
-
-func removeFile(path string) {
-	err := os.RemoveAll(path)
-	if err != nil {
-		fmt.Println("error in removing!!")
-	}
-}
 
 func Test_downloadFile(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -111,23 +96,25 @@ func Test_copyAndExtractFile(t *testing.T) {
 	}
 	fileBody := "Hello World!"
 	resp := http.Response{
-		Body: ioutil.NopCloser(bytes.NewBufferString(fileBody)),
+		Body: io.NopCloser(bytes.NewBufferString(fileBody)),
 	}
 	path := "newFile"
+	defer removeFile(path)
 	err2 := gm.copyAndExtractFile(context.TODO(), &resp, path)
 	if err2 != nil {
 		t.Errorf("Error: %v", err2)
 		return
 	}
-	fileContent, err := ioutil.ReadFile("./newFile")
+
+	fileContent, err := os.ReadFile("./newFile")
 	if err != nil {
 		t.Errorf("Error: %v", err)
 		return
 	}
+
 	if string(fileContent) != fileBody {
 		t.Errorf("Expected file content: %v\nReceived: %v", fileBody, string(fileContent))
 	}
-	defer removeFile(path)
 }
 
 func TestClone(t *testing.T) {
@@ -203,4 +190,11 @@ func TestClone(t *testing.T) {
 	t.Run("Check the clone function", func(t *testing.T) {
 		checkClone(t)
 	})
+}
+
+func removeFile(path string) {
+	err := os.RemoveAll(path)
+	if err != nil {
+		fmt.Println("error in removing!!")
+	}
 }

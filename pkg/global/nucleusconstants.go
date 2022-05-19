@@ -15,7 +15,8 @@ const (
 	WorkspaceCacheDir        = "/workspace-cache"
 	RepoDir                  = HomeDir + "/repo"
 	CodeCoverageDir          = RepoDir + "/coverage"
-	DefaultHTTPTimeout       = 5 * time.Minute
+	DefaultHTTPTimeout       = 45 * time.Second
+	DefaultGitCloneTimeout   = 30 * time.Minute
 	SamplingTime             = 5 * time.Millisecond
 	RepoSecretPath           = "/vault/secrets/reposecrets"
 	OauthSecretPath          = "/vault/secrets/oauth"

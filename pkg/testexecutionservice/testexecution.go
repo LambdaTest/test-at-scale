@@ -141,12 +141,15 @@ func (tes *testExecutionService) RunV1(ctx context.Context,
 			tes.logger.Errorf("failed to find process for command %s with pid %d %v", cmd.String(), pid, err)
 			return nil, err
 		}
-		// not returning error because runner like jest will return error in case of test failure
-		// and we want to run test multiple times
-		if err := cmd.Wait(); err != nil {
-			tes.logger.Errorf("error in test execution: %+v", err)
-		}
+		err := cmd.Wait()
 		result := <-tes.ts.ExecutionResultOutputChannel
+		if err != nil {
+			tes.logger.Errorf("error in test execution: %+v", err)
+			// returning error when result is nil to throw execution errors like heap out of memory
+			if result == nil {
+				return nil, err
+			}
+		}
 		if result != nil {
 			executionResults.Results = append(executionResults.Results, result.Results...)
 		}
