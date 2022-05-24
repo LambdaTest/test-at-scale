@@ -140,7 +140,7 @@ func TestGetOutboundIP(t *testing.T) {
 	}
 }
 
-func TestValidateStruct(t *testing.T) {
+func TestValidateStructv1(t *testing.T) {
 	ctx := context.TODO()
 	tests := []struct {
 		name     string
@@ -193,6 +193,7 @@ func TestValidateStruct(t *testing.T) {
 				NodeVersion: "14.17.6",
 				Tier:        "small",
 				SplitMode:   core.TestSplit,
+				Version:     "1.0",
 			},
 		},
 		{
@@ -204,6 +205,7 @@ func TestValidateStruct(t *testing.T) {
 				Framework: "mocha",
 				Tier:      "small",
 				SplitMode: core.TestSplit,
+				Version:   "1.2",
 			},
 		},
 	}
@@ -214,7 +216,7 @@ func TestValidateStruct(t *testing.T) {
 				t.Errorf("Error loading testfile %s", tt.filename)
 				return
 			}
-			tasConfig, errV := ValidateStructTASYmlV1(ctx, ymlContent)
+			tasConfig, errV := ValidateStructTASYmlV1(ctx, ymlContent, tt.filename)
 			if errV != nil {
 				assert.Equal(t, errV.Error(), tt.wantErr.Error(), "Error mismatch")
 				return
@@ -228,5 +230,172 @@ func removeCreatedFile(path string) {
 	err := os.RemoveAll(path)
 	if err != nil {
 		fmt.Println("error in removing!!")
+	}
+}
+func TestValidateStructv2(t *testing.T) {
+	ctx := context.TODO()
+	tests := []struct {
+		name     string
+		filename string
+		wantErr  error
+		want     *core.TASConfigV2
+	}{
+		{
+			"Junk characters File",
+			"testutils/testdata/tasyml/junk.yml",
+			// nolint:lll
+			fmt.Errorf("`testutils/testdata/tasyml/junk.yml` configuration file contains invalid format. Please correct the `testutils/testdata/tasyml/junk.yml` file"),
+			nil,
+		},
+		{
+			"Invalid Types",
+			"testutils/testdata/tasyml/invalid_typesv2.yml",
+			// nolint:lll
+			fmt.Errorf("`testutils/testdata/tasyml/invalid_typesv2.yml` configuration file contains invalid format. Please correct the `testutils/testdata/tasyml/invalid_typesv2.yml` file"),
+			nil,
+		},
+
+		{
+			"Valid Config",
+			"testutils/testdata/tasyml/validv2.yml",
+			nil,
+			&core.TASConfigV2{
+				SmartRun:  true,
+				Tier:      "small",
+				SplitMode: core.TestSplit,
+				PostMerge: core.Mergev2{
+					SubModules: []core.SubModule{
+						{
+							Name: "some-module-1",
+							Path: "./somepath",
+							Patterns: []string{
+								"./x/y/z",
+							},
+							Framework:   "mocha",
+							NodeVersion: "17.0.1",
+							ConfigFile:  "x/y/z",
+						},
+					},
+				},
+				PreMerge: core.Mergev2{
+					SubModules: []core.SubModule{
+						{
+							Name: "some-module-1",
+							Path: "./somepath",
+							Patterns: []string{
+								"./x/y/z",
+							},
+							Framework:   "jasmine",
+							NodeVersion: "17.0.1",
+							ConfigFile:  "/x/y/z",
+						},
+					},
+				},
+				Parallelism: 1,
+				Version:     "2.0.1",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ymlContent, err := testutils.LoadFile(tt.filename)
+			if err != nil {
+				t.Errorf("Error loading testfile %s", tt.filename)
+				return
+			}
+			tasConfig, errV := ValidateStructTASYmlV2(ctx, ymlContent, tt.filename)
+			if errV != nil {
+				assert.Equal(t, errV.Error(), tt.wantErr.Error(), "Error mismatch")
+				return
+			}
+
+			assert.Equal(t, tt.want, tasConfig, "Struct mismatch")
+		})
+	}
+}
+
+func TestGetVersion(t *testing.T) {
+	tests := []struct {
+		name     string
+		filename string
+		wantErr  error
+		want     int
+	}{
+		{
+			"Test with invalid version type",
+			"testutils/testdata/tasyml/invalidVersion.yml",
+			fmt.Errorf("strconv.Atoi: parsing \"a\": invalid syntax"),
+			0,
+		},
+		{
+			"Test valid yml type for tas version 1",
+			"testutils/testdata/tasyml/valid.yml",
+			nil,
+			1,
+		},
+		{
+			"Test valid yml type for tas version 2",
+			"testutils/testdata/tasyml/validV2.yml",
+			nil,
+			2,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ymlContent, err := testutils.LoadFile(tt.filename)
+			if err != nil {
+				t.Errorf("Error loading testfile %s", tt.filename)
+				return
+			}
+			version, errV := GetVersion(ymlContent)
+			if errV != nil {
+				assert.Equal(t, errV.Error(), tt.wantErr.Error(), "Error mismatch")
+				return
+			}
+			assert.Equal(t, tt.want, version, "value mismatch")
+		})
+	}
+}
+
+func TestValidateSubModule(t *testing.T) {
+	tests := []struct {
+		name      string
+		subModule core.SubModule
+		wantErr   error
+	}{
+		{
+			"Test submodule if name is empty",
+			core.SubModule{
+				Path:     "/x/y",
+				Patterns: []string{"/a/c"},
+			},
+
+			errs.New("module name is not defined"),
+		},
+		{
+			"Test submodule if path is empty",
+			core.SubModule{
+				Name:     "some name",
+				Patterns: []string{"/a/c"},
+			},
+
+			errs.New("module path is not defined for module some name "),
+		},
+		{
+			"Test submodule if pattern length is empty",
+			core.SubModule{
+				Name: "some-name",
+				Path: "/x/y",
+			},
+
+			errs.New("module some-name pattern length is 0"),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			gotErr := ValidateSubModule(&tt.subModule)
+			assert.Equal(t, tt.wantErr, gotErr, "Error mismatch")
+		})
 	}
 }

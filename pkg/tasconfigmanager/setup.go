@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/LambdaTest/test-at-scale/pkg/errs"
@@ -26,6 +25,7 @@ var tierEnumMapping = map[core.Tier]int{
 	core.Large:  4,
 	core.XLarge: 5,
 }
+var getTasFilePathFn = getTasFilePath
 
 // tasConfigManager represents an instance of TASConfigManager instance
 type tasConfigManager struct {
@@ -41,22 +41,44 @@ func (tc *tasConfigManager) LoadAndValidateV1(ctx context.Context,
 	path string,
 	eventType core.EventType,
 	licenseTier core.Tier) (*core.TASConfig, error) {
-	path, err := utils.GetConfigFileName(path)
+	filePath, err := getTasFilePathFn(path)
+	if err != nil {
+		return nil, err
+	}
+	yamlFile, err := os.ReadFile(filePath)
+	if err != nil {
+		tc.logger.Errorf("Error while reading file %s, error %v", filePath, err)
+		return nil, errs.New(fmt.Sprintf("Error while reading configuration file at path: %s", path))
+	}
+	return tc.validateYMLV1(ctx, yamlFile, eventType, licenseTier, filePath)
+}
+
+func (tc *tasConfigManager) validateYMLV1(ctx context.Context,
+	yamlFile []byte,
+	eventType core.EventType,
+	licenseTier core.Tier,
+	filePath string) (*core.TASConfig, error) {
+	tasConfig, err := utils.ValidateStructTASYmlV1(ctx, yamlFile, filePath)
 	if err != nil {
 		return nil, err
 	}
 
-	yamlFile, err := ioutil.ReadFile(fmt.Sprintf("%s/%s", global.RepoDir, path))
-	if err != nil {
-		tc.logger.Errorf("Error while reading file, error %v", err)
-		return nil, errs.New(fmt.Sprintf("Error while reading configuration file at path: %s", path))
+	if tasConfig.CoverageThreshold == nil {
+		tasConfig.CoverageThreshold = new(core.CoverageThreshold)
 	}
-	return tc.validateYMLV1(ctx, yamlFile, eventType, licenseTier)
-}
 
-func (tc *tasConfigManager) validateYMLV1(ctx context.Context, yamlFile []byte, eventType core.EventType, licenseTier core.Tier) (*core.TASConfig, error) {
-	tasConfig, err := utils.ValidateStructTASYmlV1(ctx, yamlFile)
-	if err != nil {
+	switch eventType {
+	case core.EventPullRequest:
+		if tasConfig.Premerge == nil {
+			return nil, errs.New(fmt.Sprintf("`preMerge` test cases are not configured in `%s` configuration file.", filePath))
+		}
+	case core.EventPush:
+		if tasConfig.Postmerge == nil {
+			return nil, errs.New(fmt.Sprintf("`postMerge` test cases are not configured in `%s` configuration file.", filePath))
+		}
+	}
+	if err := isValidLicenseTier(tasConfig.Tier, licenseTier); err != nil {
+		tc.logger.Errorf("LicenseTier validation failed. error: %v", err)
 		return nil, err
 	}
 
@@ -70,25 +92,6 @@ func (tc *tasConfigManager) validateYMLV1(ctx context.Context, yamlFile []byte, 
 			Key:   checksum,
 			Paths: []string{},
 		}
-	}
-
-	if tasConfig.CoverageThreshold == nil {
-		tasConfig.CoverageThreshold = new(core.CoverageThreshold)
-	}
-
-	switch eventType {
-	case core.EventPullRequest:
-		if tasConfig.Premerge == nil {
-			return nil, errs.New(fmt.Sprintf("`preMerge` test cases are not configured in tas YML file configuration file."))
-		}
-	case core.EventPush:
-		if tasConfig.Postmerge == nil {
-			return nil, errs.New(fmt.Sprintf("`postMerge` test cases are not configured in  tas YML configuration file."))
-		}
-	}
-	if err := isValidLicenseTier(tasConfig.Tier, licenseTier); err != nil {
-		tc.logger.Errorf("LicenseTier validation failed. error: %v", err)
-		return nil, err
 	}
 	return tasConfig, nil
 }
@@ -106,12 +109,36 @@ func isValidLicenseTier(yamlTier, licenseTier core.Tier) error {
 func (tc *tasConfigManager) validateYMLV2(ctx context.Context,
 	yamlFile []byte,
 	eventType core.EventType,
-	licenseTier core.Tier) (*core.TASConfigV2, error) {
-	tasConfig, err := utils.ValidateStructTASYmlV2(ctx, yamlFile)
+	licenseTier core.Tier,
+	yamlFilePath string) (*core.TASConfigV2, error) {
+	tasConfig, err := utils.ValidateStructTASYmlV2(ctx, yamlFile, yamlFilePath)
 	if err != nil {
 		return nil, err
 	}
 
+	if tasConfig.CoverageThreshold == nil {
+		tasConfig.CoverageThreshold = new(core.CoverageThreshold)
+	}
+
+	switch eventType {
+	case core.EventPullRequest:
+		for i := 0; i < len(tasConfig.PreMerge.SubModules); i++ {
+			if err := utils.ValidateSubModule(&tasConfig.PreMerge.SubModules[i]); err != nil {
+				return nil, err
+			}
+		}
+
+	case core.EventPush:
+		for i := 0; i < len(tasConfig.PostMerge.SubModules); i++ {
+			if err := utils.ValidateSubModule(&tasConfig.PostMerge.SubModules[i]); err != nil {
+				return nil, err
+			}
+		}
+	}
+	if err := isValidLicenseTier(tasConfig.Tier, licenseTier); err != nil {
+		tc.logger.Errorf("LicenseTier validation failed. error: %v", err)
+		return nil, err
+	}
 	if tasConfig.Cache == nil {
 		checksum, err := utils.ComputeChecksum(fmt.Sprintf("%s/%s", global.RepoDir, packageJSON))
 		if err != nil {
@@ -123,50 +150,11 @@ func (tc *tasConfigManager) validateYMLV2(ctx context.Context,
 			Paths: []string{},
 		}
 	}
-
-	if tasConfig.CoverageThreshold == nil {
-		tasConfig.CoverageThreshold = new(core.CoverageThreshold)
-	}
-
-	switch eventType {
-	case core.EventPullRequest:
-
-		for _, module := range tasConfig.PreMerge.SubModules {
-			if err := validateModule(&module); err != nil {
-				return nil, err
-			}
-		}
-
-	case core.EventPush:
-		for _, module := range tasConfig.PostMerge.SubModules {
-			if err := validateModule(&module); err != nil {
-				return nil, err
-			}
-		}
-	}
-	if err := isValidLicenseTier(tasConfig.Tier, licenseTier); err != nil {
-		tc.logger.Errorf("LicenseTier validation failed. error: %v", err)
-		return nil, err
-	}
 	return tasConfig, nil
 }
 
-func validateModule(module *core.SubModule) error {
-	if module.Name == "" {
-		errs.New("module name is not defined")
-	}
-	if module.Path == "" {
-		return errs.New(fmt.Sprintf("module path is not defined for module %s ", module.Name))
-	}
-	if len(module.Patterns) == 0 {
-		return errs.New(fmt.Sprintf("module %s pattern length is 0", module.Name))
-	}
-
-	return nil
-}
-
-func (tc *tasConfigManager) GetVersion(path string) (float32, error) {
-	yamlFile, err := ioutil.ReadFile(fmt.Sprintf("%s/%s", global.RepoDir, path))
+func (tc *tasConfigManager) GetVersion(path string) (int, error) {
+	yamlFile, err := os.ReadFile(fmt.Sprintf("%s/%s", global.RepoDir, path))
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return 0, errs.New(fmt.Sprintf("Configuration file not found at path: %s", path))
@@ -186,12 +174,11 @@ func (tc *tasConfigManager) LoadAndValidateV2(ctx context.Context,
 	path string,
 	eventType core.EventType,
 	licenseTier core.Tier) (*core.TASConfigV2, error) {
-	path, err := utils.GetConfigFileName(path)
+	yamlFilePath, err := getTasFilePathFn(path)
 	if err != nil {
 		return nil, err
 	}
-
-	yamlFile, err := ioutil.ReadFile(fmt.Sprintf("%s/%s", global.RepoDir, path))
+	yamlFile, err := os.ReadFile(yamlFilePath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return nil, errs.New(fmt.Sprintf("Configuration file not found at path: %s", path))
@@ -199,5 +186,14 @@ func (tc *tasConfigManager) LoadAndValidateV2(ctx context.Context,
 		tc.logger.Errorf("Error while reading file, error %v", err)
 		return nil, errs.New(fmt.Sprintf("Error while reading configuration file at path: %s", path))
 	}
-	return tc.validateYMLV2(ctx, yamlFile, eventType, licenseTier)
+	return tc.validateYMLV2(ctx, yamlFile, eventType, licenseTier, yamlFilePath)
+}
+
+func getTasFilePath(path string) (string, error) {
+	path, err := utils.GetConfigFileName(path)
+	if err != nil {
+		return "", err
+	}
+	filePath := fmt.Sprintf("%s/%s", global.RepoDir, path)
+	return filePath, nil
 }

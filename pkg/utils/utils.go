@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/LambdaTest/test-at-scale/pkg/core"
@@ -110,16 +111,16 @@ func GetConfigFileName(path string) (string, error) {
 	return path, nil
 }
 
-func ValidateStructTASYmlV1(ctx context.Context, ymlContent []byte) (*core.TASConfig, error) {
+func ValidateStructTASYmlV1(ctx context.Context, ymlContent []byte, ymlFilename string) (*core.TASConfig, error) {
 	validate, err := getValidator()
 	if err != nil {
 		return nil, err
 	}
 	tasConfig := &core.TASConfig{SmartRun: true, Tier: core.Small, SplitMode: core.TestSplit}
 	if err := yaml.Unmarshal(ymlContent, tasConfig); err != nil {
-		return nil, fmt.Errorf("Error in unmarshling tas yml file")
+		return nil, fmt.Errorf("`%s` configuration file contains invalid format. Please correct the `%s` file", ymlFilename, ymlFilename)
 	}
-	if err := validateStruct(validate, tasConfig); err != nil {
+	if err := validateStruct(validate, tasConfig, ymlFilename); err != nil {
 		return nil, err
 	}
 	return tasConfig, nil
@@ -146,26 +147,28 @@ func configureValidator(validate *validator.Validate, trans ut.Translator) {
 	})
 }
 
-func GetVersion(ymlContent []byte) (float32, error) {
+// GetVersion returns version of tas yml file
+func GetVersion(ymlContent []byte) (int, error) {
 	tasVersion := &core.TasVersion{}
 	if err := yaml.Unmarshal(ymlContent, tasVersion); err != nil {
-		return 0.0, fmt.Errorf("Error in unmarshling tas yml file")
+		return 0, fmt.Errorf("Error in unmarshling tas yml file")
 	}
+	majorVersion := strings.Split(tasVersion.Version, ".")[0]
 
-	return tasVersion.Version, nil
+	return strconv.Atoi(majorVersion)
 }
 
-func ValidateStructTASYmlV2(ctx context.Context, ymlContent []byte) (*core.TASConfigV2, error) {
-
+// ValidateStructTASYmlV2 validates tas configuration file
+func ValidateStructTASYmlV2(ctx context.Context, ymlContent []byte, ymlFileName string) (*core.TASConfigV2, error) {
 	tasConfig := &core.TASConfigV2{SmartRun: true, Tier: core.Small, SplitMode: core.TestSplit}
 	if err := yaml.Unmarshal(ymlContent, tasConfig); err != nil {
-		return nil, fmt.Errorf("Error in unmarshling tas yml file, error %v", err)
+		return nil, fmt.Errorf("`%s` configuration file contains invalid format. Please correct the `%s` file", ymlFileName, ymlFileName)
 	}
 	validate, err := getValidator()
 	if err != nil {
 		return nil, err
 	}
-	if err := validateStruct(validate, tasConfig); err != nil {
+	if err := validateStruct(validate, tasConfig, ymlFileName); err != nil {
 		return nil, err
 	}
 
@@ -184,12 +187,17 @@ func getValidator() (*validator.Validate, error) {
 	return validate, nil
 }
 
-func validateStruct(validate *validator.Validate, config interface{}) error {
+func validateStruct(validate *validator.Validate, config interface{}, ymlFilename string) error {
 	validateErr := validate.Struct(config)
 	if validateErr != nil {
 		// translate all error at once
 		validationErrs := validateErr.(validator.ValidationErrors)
 		err := new(errs.ErrInvalidConf)
+		err.Message = errs.New(
+			fmt.Sprintf(
+				"Invalid values provided for the following fields in the `%s` configuration file: \n",
+				ymlFilename),
+		).Error()
 		for _, e := range validationErrs {
 			// can translate each error one at a time.
 			err.Fields = append(err.Fields, e.Field())
@@ -197,5 +205,20 @@ func validateStruct(validate *validator.Validate, config interface{}) error {
 		}
 		return err
 	}
+	return nil
+}
+
+// ValidateSubModule validates submodule
+func ValidateSubModule(module *core.SubModule) error {
+	if module.Name == "" {
+		return errs.New("module name is not defined")
+	}
+	if module.Path == "" {
+		return errs.New(fmt.Sprintf("module path is not defined for module %s ", module.Name))
+	}
+	if len(module.Patterns) == 0 {
+		return errs.New(fmt.Sprintf("module %s pattern length is 0", module.Name))
+	}
+
 	return nil
 }

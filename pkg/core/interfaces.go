@@ -23,7 +23,7 @@ type TASConfigManager interface {
 	LoadAndValidateV2(ctx context.Context, path string, eventType EventType, licenseTier Tier) (*TASConfigV2, error)
 
 	// GetVersion returns TAS yml version
-	GetVersion(path string) (float32, error)
+	GetVersion(path string) (int, error)
 }
 
 // GitManager manages the cloning of git repositories
@@ -115,6 +115,7 @@ type ZstdCompressor interface {
 }
 
 // CacheStore defines operation for working with the cache
+//go:generate mockery  --name  CacheStore  --keeptree  --output  ../mocks/CacheStore.go
 type CacheStore interface {
 	// Download downloads cache present at cacheKey
 	Download(ctx context.Context, cacheKey string) error
@@ -124,6 +125,8 @@ type CacheStore interface {
 	CacheWorkspace(ctx context.Context, subModule string) error
 	// ExtractWorkspace extracts the workspace cache from mounted volume
 	ExtractWorkspace(ctx context.Context, subModule string) error
+	// CacheWorkspaceV2 caches the workspace onto a mounted volume
+	// CacheWorkspaceV2(ctx context.Context, subModule string) error
 }
 
 // SecretParser defines operation for parsing the vault secrets in given path
@@ -141,14 +144,23 @@ type SecretParser interface {
 // ExecutionManager has responsibility for executing the preRun, postRun and internal commands
 type ExecutionManager interface {
 	// ExecuteUserCommands executes the preRun or postRun commands given by user in his yaml.
-	ExecuteUserCommands(ctx context.Context, commandType CommandType, payload *Payload, runConfig *Run, secretData map[string]string, cwd string) error
+	ExecuteUserCommands(ctx context.Context,
+		commandType CommandType,
+		payload *Payload,
+		runConfig *Run,
+		secretData map[string]string,
+		cwd string) error
 
 	// ExecuteUserCommands executes the preRun or postRun commands given by user in his yaml. for tas version 2
 	ExecuteUserCommandsV2(ctx context.Context, commandType CommandType, payload *Payload, runConfig *Run,
 		secretData map[string]string, cwd, subModule string, buffer *bytes.Buffer) error
 
 	// ExecuteInternalCommands executes the commands like installing runners and test discovery.
-	ExecuteInternalCommands(ctx context.Context, commandType CommandType, commands []string, cwd string, envMap, secretData map[string]string) error
+	ExecuteInternalCommands(ctx context.Context,
+		commandType CommandType,
+		commands []string,
+		cwd string, envMap,
+		secretData map[string]string) error
 	// GetEnvVariables get the environment variables from the env map given by user.
 	GetEnvVariables(envMap, secretData map[string]string) ([]string, error)
 	// StoreCommandLogs stores the command logs in the azure.

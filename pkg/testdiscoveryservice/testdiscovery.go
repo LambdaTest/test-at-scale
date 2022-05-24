@@ -153,8 +153,10 @@ func (tds *testDiscoveryService) DiscoverV2(ctx context.Context,
 		envMap = map[string]string{}
 	}
 	// Add submodule specific env here , overwrite the top level env specified
-	for k, v := range subModule.EnvMap {
-		envMap[k] = v
+	if subModule.Prerun != nil {
+		for k, v := range subModule.Prerun.EnvMap {
+			envMap[k] = v
+		}
 	}
 	if path.Join(global.RepoDir, subModule.Path) == global.RepoDir {
 		envMap[global.ModulePath] = ""

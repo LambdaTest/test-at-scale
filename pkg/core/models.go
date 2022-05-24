@@ -319,7 +319,7 @@ type TASConfig struct {
 	Tier              Tier               `yaml:"tier" validate:"oneof=xsmall small medium large xlarge"`
 	NodeVersion       string             `yaml:"nodeVersion" validate:"omitempty,semver"`
 	ContainerImage    string             `yaml:"containerImage"`
-	Version           float32            `yaml:"version" validate:"required"`
+	Version           string             `yaml:"version" validate:"required"`
 }
 
 // CoverageThreshold reprents the code coverage threshold
@@ -389,7 +389,7 @@ type TASConfigV2 struct {
 	SkipCache         bool               `yaml:"skipCache"`
 	CoverageThreshold *CoverageThreshold `yaml:"coverageThreshold" validate:"omitempty"`
 	Parallelism       int                `yaml:"parallelism"` // TODO: will be supported later
-	Version           float32            `yaml:"version" validate:"required"`
+	Version           string             `yaml:"version" validate:"required"`
 	SplitMode         SplitMode          `yaml:"splitMode" validate:"oneof=test file"`
 	ContainerImage    string             `yaml:"containerImage"`
 }
@@ -417,7 +417,7 @@ type SubModule struct {
 }
 
 type TasVersion struct {
-	Version float32 `yaml:"version" validate:"required"`
+	Version string `yaml:"version" validate:"required"`
 }
 
 type SubModuleList struct {

@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-	"sync"
 
 	"github.com/LambdaTest/test-at-scale/pkg/core"
 	"github.com/LambdaTest/test-at-scale/pkg/logstream"
@@ -19,7 +18,6 @@ type manager struct {
 	logger       lumber.Logger
 	secretParser core.SecretParser
 	azureClient  core.AzureClient
-	Lock         sync.Mutex
 }
 
 // NewExecutionManager returns new instance of manger
@@ -28,7 +26,6 @@ func NewExecutionManager(secretParser core.SecretParser,
 	logger lumber.Logger) core.ExecutionManager {
 	return &manager{logger: logger,
 		secretParser: secretParser,
-		Lock:         sync.Mutex{},
 		azureClient:  azureClient}
 }
 

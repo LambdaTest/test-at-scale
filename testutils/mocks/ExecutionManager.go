@@ -3,7 +3,9 @@
 package mocks
 
 import (
+	bytes "bytes"
 	context "context"
+
 	io "io"
 
 	core "github.com/LambdaTest/test-at-scale/pkg/core"
@@ -39,6 +41,20 @@ func (_m *ExecutionManager) ExecuteUserCommands(ctx context.Context, commandType
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, core.CommandType, *core.Payload, *core.Run, map[string]string, string) error); ok {
 		r0 = rf(ctx, commandType, payload, runConfig, secretData, cwd)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// ExecuteUserCommandsV2 provides a mock function with given fields: ctx, commandType, payload, runConfig, secretData, cwd, subModule, buffer
+func (_m *ExecutionManager) ExecuteUserCommandsV2(ctx context.Context, commandType core.CommandType, payload *core.Payload, runConfig *core.Run, secretData map[string]string, cwd string, subModule string, buffer *bytes.Buffer) error {
+	ret := _m.Called(ctx, commandType, payload, runConfig, secretData, cwd, subModule, buffer)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, core.CommandType, *core.Payload, *core.Run, map[string]string, string, string, *bytes.Buffer) error); ok {
+		r0 = rf(ctx, commandType, payload, runConfig, secretData, cwd, subModule, buffer)
 	} else {
 		r0 = ret.Error(0)
 	}

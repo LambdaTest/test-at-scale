@@ -480,83 +480,20 @@ func (pl *Pipeline) runDiscoveryV2(payload *Payload,
 			return err
 		}
 	}
-	wg := sync.WaitGroup{}
 	if payload.EventType == EventPush {
 		pl.Logger.Debugf("TAS %+v", tasConfig.PostMerge)
-		totalSubmoduleCount := len(tasConfig.PostMerge.SubModules)
-		if apiErr := pl.TestDiscoveryService.UpdateSubmoduleList(ctx, payload.BuildID, totalSubmoduleCount); apiErr != nil {
-			return apiErr
+		if discoveryErr := pl.runDiscoveryV2Helper(ctx, tasConfig.PostMerge.PreRun,
+			tasConfig.PostMerge.SubModules, payload, tasConfig,
+			taskPayload, diff, diffExists, secretMap); discoveryErr != nil {
+			return discoveryErr
 		}
-		errChannelList := make(chan error, len(tasConfig.PostMerge.SubModules))
-		if tasConfig.PostMerge.PreRun != nil {
-			pl.Logger.Debugf("Running Pre Run on top level")
-			if err = pl.ExecutionManager.ExecuteUserCommandsV2(ctx, PreRun, payload,
-				tasConfig.PostMerge.PreRun, secretMap, global.RepoDir, "TOP-LEVEL", readerBuffer); err != nil {
-				pl.Logger.Errorf("Error occurred running top level PreRun , err %v", err)
-				return err
-			}
-		}
-
-		for i := 0; i < totalSubmoduleCount; i++ {
-			wg.Add(1)
-			go func(subModule *SubModule) {
-				defer wg.Done()
-
-				dicoveryErr := pl.runDiscoveryForEachSubModule(ctx, payload, subModule, tasConfig, secretMap,
-					diff, diffExists, readerBuffer)
-				if dicoveryErr != nil {
-					taskPayload.Status = Error
-					pl.Logger.Errorf("error while running discovery for sub module %s, error %v", subModule.Name, dicoveryErr)
-				}
-				errChannelList <- dicoveryErr
-			}(&tasConfig.PostMerge.SubModules[i])
-		}
-		pl.Logger.Errorf("checking the discovery errors ")
-		for i := 0; i < len(tasConfig.PostMerge.SubModules); i++ {
-			e := <-errChannelList
-			if e != nil {
-				return e
-			}
-		}
-		pl.Logger.Errorf("checked the discovery errors ")
 	} else {
 		pl.Logger.Debugf("TAS %+v", tasConfig.PreMerge)
-
-		totalSubmoduleCount := len(tasConfig.PreMerge.SubModules)
-		if apiErr := pl.TestDiscoveryService.UpdateSubmoduleList(ctx, payload.BuildID, totalSubmoduleCount); apiErr != nil {
-			return apiErr
-		}
-		errChannelList := make(chan error, len(tasConfig.PreMerge.SubModules))
-		if tasConfig.PreMerge.PreRun != nil {
-			pl.Logger.Debugf("Running Pre Run on top level")
-			if err = pl.ExecutionManager.ExecuteUserCommandsV2(ctx, PreRun, payload,
-				tasConfig.PreMerge.PreRun, secretMap, global.RepoDir, "TOP-LEVEL", readerBuffer); err != nil {
-				pl.Logger.Errorf("Error occurred running top level PreRun , err %v", err)
-				return err
-			}
-		}
-		for i := 0; i < totalSubmoduleCount; i++ {
-			wg.Add(1)
-			go func(subModule *SubModule) {
-				defer wg.Done()
-				dicoveryErr := pl.runDiscoveryForEachSubModule(ctx, payload, subModule, tasConfig, secretMap,
-					diff, diffExists, readerBuffer)
-				if dicoveryErr != nil {
-					taskPayload.Status = Error
-					pl.Logger.Errorf("error while running discovery for sub module %s, error %v", subModule.Name, dicoveryErr)
-				}
-				errChannelList <- dicoveryErr
-			}(&tasConfig.PreMerge.SubModules[i])
-		}
-		pl.Logger.Errorf("checking the discovery errors ")
-		for i := 0; i < len(tasConfig.PreMerge.SubModules); i++ {
-			e := <-errChannelList
-			if e != nil {
-				return e
-			}
+		if discoveryErr := pl.runDiscoveryV2Helper(ctx, tasConfig.PreMerge.PreRun, tasConfig.PreMerge.SubModules,
+			payload, tasConfig, taskPayload, diff, diffExists, secretMap); discoveryErr != nil {
+			return discoveryErr
 		}
 	}
-	wg.Wait()
 	if err = pl.CacheStore.Upload(ctx, cacheKey, tasConfig.Cache.Paths...); err != nil {
 		pl.Logger.Errorf("Unable to upload cache: %v", err)
 		err = errs.New(errs.GenericErrRemark.Error())
@@ -566,7 +503,7 @@ func (pl *Pipeline) runDiscoveryV2(payload *Payload,
 	return nil
 }
 
-func (pl *Pipeline) runDiscoveryForEachSubModule(ctx context.Context,
+func (pl *Pipeline) runPreRunForEachSubModule(ctx context.Context,
 	payload *Payload,
 	subModule *SubModule,
 	tasConfig *TASConfigV2,
@@ -599,19 +536,7 @@ func (pl *Pipeline) runDiscoveryForEachSubModule(ctx context.Context,
 		err = errs.New(errs.GenericErrRemark.Error())
 		return err
 	}
-	pl.Logger.Debugf("Caching workspace")
-	if err = pl.CacheStore.CacheWorkspace(ctx, subModule.Name); err != nil {
-		pl.Logger.Errorf("Error caching workspace: %+v", err)
-		err = errs.New(errs.GenericErrRemark.Error())
-		return err
-	}
-	err = pl.TestDiscoveryService.DiscoverV2(ctx, subModule, pl.Payload, secretMap,
-		tasConfig, diff, diffExists)
-	if err != nil {
-		pl.Logger.Errorf("Unable to perform test discovery: %+v", err)
-		err = &errs.StatusFailed{Remark: "Failed in discovering tests"}
-		return err
-	}
+
 	return nil
 }
 
@@ -701,4 +626,93 @@ func (pl *Pipeline) findSubmodule(tasConfig *TASConfigV2, payload *Payload) (*Su
 		}
 	}
 	return nil, errs.ErrSubModuleNotFound
+}
+
+func (pl *Pipeline) runDiscoveryV2Helper(ctx context.Context,
+	topPreRun *Run,
+	subModuleList []SubModule,
+	payload *Payload,
+	tasConfig *TASConfigV2,
+	taskPayload *TaskPayload,
+	diff map[string]int,
+	diffExists bool,
+	secretMap map[string]string) error {
+	totalSubmoduleCount := len(subModuleList)
+	if apiErr := pl.TestDiscoveryService.UpdateSubmoduleList(ctx, payload.BuildID, totalSubmoduleCount); apiErr != nil {
+		return apiErr
+	}
+	readerBuffer := new(bytes.Buffer)
+	errChannelPreRun := make(chan error, totalSubmoduleCount)
+	preRunWaitGroup := sync.WaitGroup{}
+	if topPreRun != nil {
+		pl.Logger.Debugf("Running Pre Run on top level")
+		if err := pl.ExecutionManager.ExecuteUserCommandsV2(ctx, PreRun, payload,
+			topPreRun, secretMap, global.RepoDir, "TOP-LEVEL", readerBuffer); err != nil {
+			pl.Logger.Errorf("Error occurred running top level PreRun , err %v", err)
+			return err
+		}
+	}
+
+	for i := 0; i < totalSubmoduleCount; i++ {
+		preRunWaitGroup.Add(1)
+		go func(subModule *SubModule) {
+			defer preRunWaitGroup.Done()
+
+			dicoveryErr := pl.runPreRunForEachSubModule(ctx, payload, subModule, tasConfig, secretMap,
+				diff, diffExists, readerBuffer)
+			if dicoveryErr != nil {
+				taskPayload.Status = Error
+				pl.Logger.Errorf("error while running discovery for sub module %s, error %v", subModule.Name, dicoveryErr)
+			}
+			errChannelPreRun <- dicoveryErr
+		}(&subModuleList[i])
+	}
+	preRunWaitGroup.Wait()
+	pl.Logger.Errorf("checking the pre runs errors ")
+	for i := 0; i < totalSubmoduleCount; i++ {
+		e := <-errChannelPreRun
+		if e != nil {
+			return e
+		}
+	}
+	pl.Logger.Errorf("checked the pre run errors")
+
+	errChannelDiscovery := make(chan error, totalSubmoduleCount)
+	discoveryWaitGroup := sync.WaitGroup{}
+	for i := 0; i < totalSubmoduleCount; i++ {
+		discoveryWaitGroup.Add(1)
+		go func(subModule *SubModule) {
+			defer discoveryWaitGroup.Done()
+			err := pl.runDiscoveryForEachSubModule(ctx, subModule, tasConfig, diff, diffExists, secretMap)
+			errChannelDiscovery <- err
+		}(&subModuleList[i])
+	}
+	discoveryWaitGroup.Wait()
+	for i := 0; i < totalSubmoduleCount; i++ {
+		e := <-errChannelDiscovery
+		if e != nil {
+			return e
+		}
+	}
+	return nil
+}
+
+func (pl *Pipeline) runDiscoveryForEachSubModule(ctx context.Context, subModule *SubModule,
+	tasConfig *TASConfigV2,
+	diff map[string]int,
+	diffExists bool,
+	secretMap map[string]string) error {
+	pl.Logger.Debugf("Caching workspace")
+	if err := pl.CacheStore.CacheWorkspace(ctx, subModule.Name); err != nil {
+		pl.Logger.Errorf("Error caching workspace: %+v", err)
+		err = errs.New(errs.GenericErrRemark.Error())
+		return err
+	}
+	if err := pl.TestDiscoveryService.DiscoverV2(ctx, subModule, pl.Payload, secretMap,
+		tasConfig, diff, diffExists); err != nil {
+		pl.Logger.Errorf("Unable to perform test discovery: %+v", err)
+		err = &errs.StatusFailed{Remark: "Failed in discovering tests"}
+		return err
+	}
+	return nil
 }

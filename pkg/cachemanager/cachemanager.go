@@ -34,13 +34,14 @@ type cache struct {
 	zstd        core.ZstdCompressor
 	skipUpload  bool
 	homeDir     string
+	Lock        *sync.Mutex
 }
 
 var cacheBlobURL string
 var apiErr error
 
 // New returns a new CacheStore
-func New(z core.ZstdCompressor, azureClient core.AzureClient, logger lumber.Logger) (core.CacheStore, error) {
+func New(z core.ZstdCompressor, azureClient core.AzureClient, logger lumber.Logger, lock *sync.Mutex) (core.CacheStore, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return nil, err
@@ -50,6 +51,7 @@ func New(z core.ZstdCompressor, azureClient core.AzureClient, logger lumber.Logg
 		zstd:        z,
 		logger:      logger,
 		homeDir:     homeDir,
+		Lock:        lock,
 	}, nil
 }
 

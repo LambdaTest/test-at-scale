@@ -1,10 +1,5 @@
 ---
 framework: jest
-postMerge:
-  env:
-      NODE_ENV: development
-  pattern:
-    - "{packages,scripts}/**/__tests__/*{.js,.coffee,[!d].ts}"
 preMerge:
   env:
     NODE_ENV: development
