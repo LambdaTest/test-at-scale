@@ -13,6 +13,7 @@ import (
 	"github.com/LambdaTest/test-at-scale/config"
 	"github.com/LambdaTest/test-at-scale/pkg/core"
 	"github.com/LambdaTest/test-at-scale/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/pkg/requestutils"
 	"github.com/LambdaTest/test-at-scale/testutils"
 )
 
@@ -105,6 +106,7 @@ func TestTestBlockListService_fetchBlockListFromNeuron(t *testing.T) {
 		endpoint            string
 		blocklistedEntities map[string][]blocktest
 		errChan             chan error
+		requests            core.Requests
 	}
 	type args struct {
 		ctx    context.Context
@@ -125,6 +127,7 @@ func TestTestBlockListService_fetchBlockListFromNeuron(t *testing.T) {
 				endpoint:            server.URL + "/testBlocklist.json",
 				blocklistedEntities: blocklistedEntities,
 				errChan:             make(chan error, 1),
+				requests:            requestutils.New(logger),
 			},
 			args{
 				ctx:    context.TODO(),
@@ -142,6 +145,7 @@ func TestTestBlockListService_fetchBlockListFromNeuron(t *testing.T) {
 				endpoint:            "/dne.json",
 				blocklistedEntities: blocklistedEntities,
 				errChan:             make(chan error, 1),
+				requests:            requestutils.New(logger),
 			},
 			args{
 				ctx:    context.TODO(),
@@ -159,6 +163,7 @@ func TestTestBlockListService_fetchBlockListFromNeuron(t *testing.T) {
 				endpoint:            server2.URL + "/non200",
 				blocklistedEntities: blocklistedEntities,
 				errChan:             make(chan error, 1),
+				requests:            requestutils.New(logger),
 			},
 			args{
 				ctx:    context.TODO(),
@@ -178,6 +183,7 @@ func TestTestBlockListService_fetchBlockListFromNeuron(t *testing.T) {
 				blockTestEntities: tt.fields.blocklistedEntities,
 				once:              sync.Once{},
 				errChan:           tt.fields.errChan,
+				requests:          tt.fields.requests,
 			}
 			if err := tbs.fetchBlockListFromNeuron(tt.args.ctx, tt.args.repoID, tt.args.branch); (err != nil) != tt.wantErr {
 				t.Errorf("TestBlockListService.fetchBlockListFromNeuron() error = %v, wantErr %v", err, tt.wantErr)
