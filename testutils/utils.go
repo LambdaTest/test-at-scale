@@ -9,20 +9,26 @@ import (
 
 	"github.com/LambdaTest/test-at-scale/config"
 	"github.com/LambdaTest/test-at-scale/pkg/core"
+	"github.com/LambdaTest/test-at-scale/pkg/errs"
 	"github.com/LambdaTest/test-at-scale/pkg/lumber"
 )
 
 // getCurrentWorkingDir give the file path of this file
-func getCurrentWorkingDir() string {
-	_, filename, _, _ := runtime.Caller(1)
+func getCurrentWorkingDir() (string, error) {
+	_, filename, _, ok := runtime.Caller(1)
+	if !ok {
+		return "", errs.New("runtime.Calller(1) was unable to recover information")
+	}
 	filepath := path.Join(path.Dir(filename), "../")
-	fmt.Println(filepath)
-	return filepath
+	return filepath, nil
 }
 
-// GetConfig returns a dummy NucleusConfig using the json file pointed by ApplicationConfigPath. It returns error if it is unable to ReadFile from the provided location or if it is unable to Unmarshal the file contents
+// GetConfig returns a dummy NucleusConfig using the json file pointed by ApplicationConfigPath
 func GetConfig() (*config.NucleusConfig, error) {
-	cwd := getCurrentWorkingDir()
+	cwd, err := getCurrentWorkingDir()
+	if err != nil {
+		return nil, err
+	}
 	configJSON, err := os.ReadFile(cwd + ApplicationConfigPath) // AplicationConfigPath points to dummy config file for NucleusConfig
 	if err != nil {
 		return nil, err
@@ -35,9 +41,12 @@ func GetConfig() (*config.NucleusConfig, error) {
 	return tasConfig, nil
 }
 
-// GetTaskPayload returns a dummy core.TaskPayload using the json file pointed by TaskPayloadPath. It returns error if unable to readfile or if unable to unmarshal file components
+// GetTaskPayload returns a dummy core.TaskPayload using the json file pointed by TaskPayloadPath
 func GetTaskPayload() (*core.TaskPayload, error) {
-	cwd := getCurrentWorkingDir()
+	cwd, err := getCurrentWorkingDir()
+	if err != nil {
+		return nil, err
+	}
 	payloadJSON, err := os.ReadFile(cwd + TaskPayloadPath) // TaskPayloadPath points to json file containing dummy TaskPayload
 	if err != nil {
 		return nil, err
@@ -50,7 +59,7 @@ func GetTaskPayload() (*core.TaskPayload, error) {
 	return p, nil
 }
 
-// GetLogger returns a dummy lumber.Logger. It returns error if it is unable establish logger using lumber.NewLogger function
+// GetLogger returns a dummy lumber.Logger.
 func GetLogger() (lumber.Logger, error) {
 	logger, err := lumber.NewLogger(lumber.LoggingConfig{ConsoleLevel: lumber.Debug}, true, 1)
 	if err != nil {
@@ -60,9 +69,12 @@ func GetLogger() (lumber.Logger, error) {
 	return logger, nil
 }
 
-// GetPayload returns a dummy core.Payload using the json file pointed by PayloadPath. It returns error if unable to readfile or if unable to unmarshal file components
+// GetPayload returns a dummy core.Payload using the json file pointed by PayloadPath.
 func GetPayload() (*core.Payload, error) {
-	cwd := getCurrentWorkingDir()
+	cwd, err := getCurrentWorkingDir()
+	if err != nil {
+		return nil, err
+	}
 	payloadJSON, err := os.ReadFile(cwd + PayloadPath) // PayloadPath points to json file containing dummy PayloadPath
 	if err != nil {
 		return nil, err
@@ -75,16 +87,12 @@ func GetPayload() (*core.Payload, error) {
 	return p, nil
 }
 
-// GetGitDiff returns a dummy map[string]int for testing purpose.
-func GetGitDiff() map[string]int {
-	m := make(map[string]int)
-	m["src/steps/resource.ts"] = 3
-	return m
-}
-
-// GetGitlabCommitDiff returns a dummy GitlabCommitDiff as slice of byte data. Itreturns error if unable to readfile
+// GetGitlabCommitDiff returns a dummy GitlabCommitDiff as slice of byte data.
 func GetGitlabCommitDiff() ([]byte, error) {
-	cwd := getCurrentWorkingDir()
+	cwd, err := getCurrentWorkingDir()
+	if err != nil {
+		return nil, err
+	}
 	data, err := os.ReadFile(cwd + GitlabCommitDiff) // GitLabCommitDiff points to json file containing dummy GitLabCommitDiff
 	if err != nil {
 		return nil, err
@@ -93,7 +101,11 @@ func GetGitlabCommitDiff() ([]byte, error) {
 }
 
 func LoadFile(relativePath string) ([]byte, error) {
-	absPath := fmt.Sprintf("%s/%s", getCurrentWorkingDir(), relativePath)
+	cwd, err := getCurrentWorkingDir()
+	if err != nil {
+		return nil, err
+	}
+	absPath := fmt.Sprintf("%s/%s", cwd, relativePath)
 	data, err := os.ReadFile(absPath)
 	if err != nil {
 		return nil, err

@@ -16,6 +16,7 @@ const (
 	RepoDir                  = HomeDir + "/repo"
 	CodeCoverageDir          = RepoDir + "/coverage"
 	DefaultHTTPTimeout       = 45 * time.Second
+	DefaultGitCloneTimeout   = 30 * time.Minute
 	SamplingTime             = 5 * time.Millisecond
 	RepoSecretPath           = "/vault/secrets/reposecrets"
 	OauthSecretPath          = "/vault/secrets/oauth"

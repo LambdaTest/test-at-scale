@@ -8,25 +8,40 @@ import (
 
 	"github.com/LambdaTest/test-at-scale/pkg/core"
 	"github.com/LambdaTest/test-at-scale/pkg/global"
-	"github.com/LambdaTest/test-at-scale/pkg/lumber"
 	"github.com/LambdaTest/test-at-scale/pkg/requestutils"
 	"github.com/LambdaTest/test-at-scale/testutils"
 	"github.com/LambdaTest/test-at-scale/testutils/mocks"
 	"github.com/stretchr/testify/mock"
 )
 
+type args struct {
+	ctx        context.Context
+	tasConfig  *core.TASConfig
+	payload    *core.Payload
+	secretData map[string]string
+	diff       map[string]int
+	diffExists bool
+}
+type test struct {
+	name           string
+	args           args
+	wantErr        bool
+	wantEnvMap     map[string]string
+	wantSecretData map[string]string
+}
+
 func Test_testDiscoveryService_Discover(t *testing.T) {
 	logger, err := testutils.GetLogger()
 	if err != nil {
-		t.Errorf("Couldn't initialise logger, error: %v", err)
+		t.Errorf("Couldn't initialize logger, error: %v", err)
 	}
 	requests := requestutils.New(logger)
 	tdResChan := make(chan core.DiscoveryResult)
 	global.TestEnv = true
 	defer func() { global.TestEnv = false }()
 
-	var PassedEnvMap map[string]string        // envMap which should pass to call execManager.GetEnvVariables
-	var PassedSecretDataMap map[string]string // secretData map which should pass to call execManager.GetEnvVariables
+	var PassedEnvMap map[string]string        // envMap which should be passed to call execManager.GetEnvVariables
+	var PassedSecretDataMap map[string]string // secretData map which should be passed to call execManager.GetEnvVariables
 
 	execManager := new(mocks.ExecutionManager)
 	execManager.On("GetEnvVariables", mock.AnythingOfType("map[string]string"), mock.AnythingOfType("map[string]string")).Return(
@@ -41,32 +56,25 @@ func Test_testDiscoveryService_Discover(t *testing.T) {
 			return nil
 		},
 	)
+	tds := NewTestDiscoveryService(context.TODO(), tdResChan, execManager, requests, logger)
+	tests := getTestCases()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tds.Discover(tt.args.ctx, tt.args.tasConfig, tt.args.payload, tt.args.secretData, tt.args.diff, tt.args.diffExists)
+			if !reflect.DeepEqual(PassedEnvMap, tt.wantEnvMap) || !reflect.DeepEqual(PassedSecretDataMap, tt.wantSecretData) {
+				t.Errorf("expected Envmap: %+v, received: %+v\nexpected SecretDataMap: %+v, received: %+v\n",
+					tt.wantEnvMap, PassedEnvMap, tt.wantSecretData, PassedSecretDataMap)
+			}
+			if (err != nil) != tt.wantErr {
+				t.Errorf("got error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
 
-	type fields struct {
-		logger      lumber.Logger
-		execManager core.ExecutionManager
-	}
-	type args struct {
-		ctx        context.Context
-		tasConfig  *core.TASConfig
-		payload    *core.Payload
-		secretData map[string]string
-		diff       map[string]int
-		diffExists bool
-	}
-	tests := []struct {
-		name           string
-		fields         fields
-		args           args
-		wantErr        bool
-		wantEnvMap     map[string]string
-		wantSecretData map[string]string
-	}{
+func getTestCases() []*test {
+	testCases := []*test{
 		{"Test Discover with Premerge pattern",
-			fields{
-				logger:      logger,
-				execManager: execManager,
-			},
 			args{
 				ctx: context.TODO(),
 				tasConfig: &core.TASConfig{
@@ -91,10 +99,6 @@ func Test_testDiscoveryService_Discover(t *testing.T) {
 			map[string]string{"secret": "data"},
 		},
 		{"Test Discover with Postmerge pattern",
-			fields{
-				logger:      logger,
-				execManager: execManager,
-			},
 			args{
 				ctx: context.TODO(),
 				tasConfig: &core.TASConfig{
@@ -119,10 +123,6 @@ func Test_testDiscoveryService_Discover(t *testing.T) {
 			map[string]string{"this is": "a secret"},
 		},
 		{"Test Discover not to execute discoverAll",
-			fields{
-				logger:      logger,
-				execManager: execManager,
-			},
 			args{
 				ctx: context.TODO(),
 				tasConfig: &core.TASConfig{
@@ -149,17 +149,5 @@ func Test_testDiscoveryService_Discover(t *testing.T) {
 			map[string]string{"secret": "data"},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tds := NewTestDiscoveryService(context.TODO(), tdResChan, tt.fields.execManager, requests, tt.fields.logger)
-			err := tds.Discover(tt.args.ctx, tt.args.tasConfig, tt.args.payload, tt.args.secretData, tt.args.diff, tt.args.diffExists)
-
-			if !reflect.DeepEqual(PassedEnvMap, tt.wantEnvMap) || !reflect.DeepEqual(PassedSecretDataMap, tt.wantSecretData) {
-				t.Errorf("expected Envmap: %+v, received: %+v\nexpected SecretDataMap: %+v, received: %+v\n", tt.wantEnvMap, PassedEnvMap, tt.wantSecretData, PassedSecretDataMap)
-			}
-			if (err != nil) != tt.wantErr {
-				t.Errorf("testDiscoveryService.Discover() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
+	return testCases
 }

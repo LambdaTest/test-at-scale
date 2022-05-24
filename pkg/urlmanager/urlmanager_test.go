@@ -22,11 +22,24 @@ func TestGetCloneURL(t *testing.T) {
 		want    string
 		wantErr bool
 	}{
-		{"For github as git provider", args{"github", "https://github.com/nexe", "nexe", "abc", "nexe", "nexe/nexe"},
-			"https://api.github.com/repos/nexe/nexe/zipball/abc", false},
-		{"For non-github and gitlab as git provider", args{"gittest", "https://github.com/nexe", "nexe", "abc", "nexe", ""}, "", true},
-		{"For gitlab as git provider", args{"gitlab", "https://gitlab.com/nexe", "nexe", "abc", "nexe", ""},
-			"https://gitlab.com/nexe/-/archive/abc/nexe-abc.zip", false},
+		{
+			"For github as git provider",
+			args{"github", "https://github.com/nexe", "nexe", "abc", "nexe", "nexe/nexe"},
+			"https://api.github.com/repos/nexe/nexe/zipball/abc",
+			false,
+		},
+		{
+			"For non-github and gitlab as git provider",
+			args{"gittest", "https://github.com/nexe", "nexe", "abc", "nexe", ""},
+			"",
+			true,
+		},
+		{
+			"For gitlab as git provider",
+			args{"gitlab", "https://gitlab.com/nexe", "nexe", "abc", "nexe", ""},
+			"https://gitlab.com/nexe/-/archive/abc/nexe-abc.zip",
+			false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -56,9 +69,24 @@ func TestGetCommitDiffURL(t *testing.T) {
 		want    string
 		wantErr bool
 	}{
-		{"For github as git provider", args{"github", "/tests/nexe", "abc", "xyz", ""}, "https://api.github.com/repos/tests/nexe/compare/abc...xyz", false},
-		{"For non-github and gitlab as git provider", args{"gittest", "tests/nexe", "abc", "xyz", ""}, "", true},
-		{"For gitlab as git provider", args{"gitlab", "/tests/nexe", "abc", "xyz", ""}, global.APIHostURLMap["gitlab"] + "/" + url.QueryEscape("tests/nexe") + "/repository/compare?from=abc&to=xyz", false},
+		{
+			"For github as git provider",
+			args{"github", "/tests/nexe", "abc", "xyz", ""},
+			"https://api.github.com/repos/tests/nexe/compare/abc...xyz",
+			false,
+		},
+		{
+			"For non-github and gitlab as git provider",
+			args{"gittest", "tests/nexe", "abc", "xyz", ""},
+			"",
+			true,
+		},
+		{
+			"For gitlab as git provider",
+			args{"gitlab", "/tests/nexe", "abc", "xyz", ""},
+			global.APIHostURLMap["gitlab"] + "/" + url.QueryEscape("tests/nexe") + "/repository/compare?from=abc&to=xyz",
+			false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -86,9 +114,23 @@ func TestGetPullRequestDiffURL(t *testing.T) {
 		want    string
 		wantErr bool
 	}{
-		{"For github as git provider", args{"github", "/tests/nexe", 2}, "https://api.github.com/repos/tests/nexe/pulls/2", false},
-		{"For non-github and gitlab as git provider", args{"gittest", "tests/nexe", 2}, "", true},
-		{"For gitlab as git provider", args{"gitlab", "/tests/nexe", 2}, global.APIHostURLMap["gitlab"] + "/" + url.QueryEscape("tests/nexe") + "/merge_requests/2/changes", false},
+		{
+			"For github as git provider",
+			args{"github", "/tests/nexe", 2},
+			"https://api.github.com/repos/tests/nexe/pulls/2",
+			false,
+		},
+		{
+			"For non-github and gitlab as git provider",
+			args{"gittest", "tests/nexe", 2},
+			"",
+			true},
+		{
+			"For gitlab as git provider",
+			args{"gitlab", "/tests/nexe", 2},
+			global.APIHostURLMap["gitlab"] + "/" + url.QueryEscape("tests/nexe") + "/merge_requests/2/changes",
+			false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -21,7 +21,7 @@ import (
 func TestNewExecutionManager(t *testing.T) {
 	logger, err := testutils.GetLogger()
 	if err != nil {
-		t.Errorf("Couldn't initialise logger, error: %v", err)
+		t.Errorf("Couldn't initialize logger, error: %v", err)
 	}
 	azureClient := new(mocks.AzureClient)
 	secretParser := secret.New(logger)
@@ -59,7 +59,7 @@ func TestNewExecutionManager(t *testing.T) {
 func Test_manager_GetEnvVariables(t *testing.T) {
 	logger, err := testutils.GetLogger()
 	if err != nil {
-		t.Errorf("Couldn't initialise logger, error: %v", err)
+		t.Errorf("Couldn't initialize logger, error: %v", err)
 	}
 
 	secretParser := secret.New(logger)
@@ -120,34 +120,10 @@ func Test_manager_GetEnvVariables(t *testing.T) {
 	}
 }
 
-func mockUtil(azureClient *mocks.AzureClient, msgGet, msgCreate, errGet, errCreate string, wantErrGet, wantErrCreate bool) {
-	azureClient.On("GetSASURL", mock.AnythingOfType("*context.emptyCtx"), mock.AnythingOfType("string"), mock.AnythingOfType("core.ContainerType")).Return(
-		func(ctx context.Context, containerPath string, containerType core.ContainerType) string {
-			return msgGet
-		},
-		func(ctx context.Context, containerPath string, containerType core.ContainerType) error {
-			if !wantErrGet {
-				return nil
-			}
-			return errs.New(errGet)
-		})
-
-	azureClient.On("CreateUsingSASURL", mock.AnythingOfType("*context.emptyCtx"), mock.AnythingOfType("string"), mock.AnythingOfType("*mocks.Reader"), "text/plain").Return(
-		func(ctx context.Context, sasURL string, reader io.Reader, mimeType string) string {
-			return msgCreate
-		},
-		func(ctx context.Context, sasURL string, reader io.Reader, mimeType string) error {
-			if !wantErrCreate {
-				return nil
-			}
-			return errs.New(errCreate)
-		})
-}
-
 func Test_manager_StoreCommandLogs(t *testing.T) {
 	logger, err := testutils.GetLogger()
 	if err != nil {
-		t.Errorf("Couldn't initialise logger, error: %v", err)
+		t.Errorf("Couldn't initialize logger, error: %v", err)
 	}
 	secretParser := new(mocks.SecretParser)
 	azureClientGetSASURL := new(mocks.AzureClient)
@@ -169,9 +145,7 @@ func Test_manager_StoreCommandLogs(t *testing.T) {
 	defer func() { close(errSuccess) }()
 
 	type fields struct {
-		logger       lumber.Logger
-		secretParser core.SecretParser
-		azureClient  core.AzureClient
+		azureClient core.AzureClient
 	}
 	type args struct {
 		ctx      context.Context
@@ -186,9 +160,8 @@ func Test_manager_StoreCommandLogs(t *testing.T) {
 		wantErr bool
 	}{
 		{"Test StoreCommandLogs for getSASURL error",
-			fields{logger: logger,
-				secretParser: secretParser,
-				azureClient:  azureClientGetSASURL,
+			fields{
+				azureClient: azureClientGetSASURL,
 			},
 			args{
 				ctx:      context.TODO(),
@@ -199,9 +172,8 @@ func Test_manager_StoreCommandLogs(t *testing.T) {
 			true,
 		},
 		{"Test StoreCommandLogs for CreateUsingSASURL error",
-			fields{logger: logger,
-				secretParser: secretParser,
-				azureClient:  azureClientCreateSASURL,
+			fields{
+				azureClient: azureClientCreateSASURL,
 			},
 			args{
 				ctx:      context.TODO(),
@@ -212,9 +184,8 @@ func Test_manager_StoreCommandLogs(t *testing.T) {
 			true,
 		},
 		{"Test StoreCommandLogs for success",
-			fields{logger: logger,
-				secretParser: secretParser,
-				azureClient:  azureClientSuccess,
+			fields{
+				azureClient: azureClientSuccess,
 			},
 			args{
 				ctx:      context.TODO(),
@@ -231,19 +202,17 @@ func Test_manager_StoreCommandLogs(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &manager{
-				logger:       tt.fields.logger,
-				secretParser: tt.fields.secretParser,
+				logger:       logger,
+				secretParser: secretParser,
 				azureClient:  tt.fields.azureClient,
 			}
 			got := m.StoreCommandLogs(tt.args.ctx, tt.args.blobPath, tt.args.reader)
-
 			if !tt.wantErr {
 				if len(got) != 0 {
 					t.Errorf("Expected channel to be empty, received: %v", <-got)
 				}
 				return
 			}
-
 			received := <-got
 			want := <-tt.want
 			if received.Error() != want.Error() {
@@ -251,4 +220,30 @@ func Test_manager_StoreCommandLogs(t *testing.T) {
 			}
 		})
 	}
+}
+
+func mockUtil(azureClient *mocks.AzureClient, msgGet, msgCreate, errGet, errCreate string, wantErrGet, wantErrCreate bool) {
+	azureClient.On("GetSASURL", mock.AnythingOfType("*context.emptyCtx"),
+		mock.AnythingOfType("string"), mock.AnythingOfType("core.ContainerType")).Return(
+		func(ctx context.Context, containerPath string, containerType core.ContainerType) string {
+			return msgGet
+		},
+		func(ctx context.Context, containerPath string, containerType core.ContainerType) error {
+			if !wantErrGet {
+				return nil
+			}
+			return errs.New(errGet)
+		})
+
+	azureClient.On("CreateUsingSASURL", mock.AnythingOfType("*context.emptyCtx"),
+		mock.AnythingOfType("string"), mock.AnythingOfType("*mocks.Reader"), "text/plain").Return(
+		func(ctx context.Context, sasURL string, reader io.Reader, mimeType string) string {
+			return msgCreate
+		},
+		func(ctx context.Context, sasURL string, reader io.Reader, mimeType string) error {
+			if !wantErrCreate {
+				return nil
+			}
+			return errs.New(errCreate)
+		})
 }

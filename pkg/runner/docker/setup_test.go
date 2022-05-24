@@ -20,20 +20,20 @@ var cfg *config.SynapseConfig
 var secretsManager core.SecretsManager
 var runner core.DockerRunner
 
-func createNetworkIfNotExists(client *client.Client, networkName string) error {
+func createNetworkIfNotExists(dockerClient *client.Client, networkName string) error {
 	opts := types.NetworkListOptions{
 		Filters: filters.NewArgs(filters.Arg("name", networkName)),
 	}
-	networkList, err := client.NetworkList(context.TODO(), opts)
+	networkList, err := dockerClient.NetworkList(context.TODO(), opts)
 	if err != nil {
 		return err
 	}
-	for _, network := range networkList {
-		if network.Name == networkName {
+	for idx := 0; idx < len(networkList); idx++ {
+		if networkList[idx].Name == networkName {
 			return nil
 		}
 	}
-	if _, err := client.NetworkCreate(context.TODO(), networkName, types.NetworkCreate{
+	if _, err := dockerClient.NetworkCreate(context.TODO(), networkName, types.NetworkCreate{
 		Internal: true,
 	}); err != nil {
 		return err
@@ -41,18 +41,18 @@ func createNetworkIfNotExists(client *client.Client, networkName string) error {
 	return nil
 }
 
-func deletNetworkIfExists(client *client.Client, networkName string) error {
+func deletNetworkIfExists(dockerClient *client.Client, networkName string) error {
 	ctx := context.TODO()
 	opts := types.NetworkListOptions{
 		Filters: filters.NewArgs(filters.Arg("name", networkName)),
 	}
-	networkList, err := client.NetworkList(ctx, opts)
+	networkList, err := dockerClient.NetworkList(ctx, opts)
 	if err != nil {
 		return err
 	}
-	for _, network := range networkList {
-		if network.Name == networkName {
-			return client.NetworkRemove(ctx, networkName)
+	for idx := 0; idx < len(networkList); idx++ {
+		if networkList[idx].Name == networkName {
+			return dockerClient.NetworkRemove(ctx, networkName)
 		}
 	}
 	return nil
@@ -68,12 +68,12 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		os.Exit(1)
 	}
-	client, err := client.NewClientWithOpts(client.FromEnv)
+	cl, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
 		os.Exit(1)
 	}
 
-	if err := createNetworkIfNotExists(client, networkName); err != nil {
+	if errC := createNetworkIfNotExists(cl, networkName); errC != nil {
 		logger.Errorf("Error in creating network %s", networkName)
 		os.Exit(1)
 	}
@@ -84,7 +84,7 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 	exitCode := m.Run()
-	if err := deletNetworkIfExists(client, networkName); err != nil {
+	if err := deletNetworkIfExists(cl, networkName); err != nil {
 		logger.Errorf("Error in deleting network %s", networkName)
 		os.Exit(1)
 	}
