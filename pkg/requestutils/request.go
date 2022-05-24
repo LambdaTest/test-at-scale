@@ -25,7 +25,8 @@ func New(logger lumber.Logger) core.Requests {
 	}
 }
 
-func (r *requests) MakeAPIRequestWithAuth(ctx context.Context, httpMethod, endpoint string, body []byte, params, auth map[string]string) (rawBody []byte, statusCode int, err error) {
+func (r *requests) MakeAPIRequestWithAuth(ctx context.Context, httpMethod, endpoint string, body []byte, params,
+	auth map[string]string) (rawBody []byte, statusCode int, err error) {
 	u, err := url.Parse(endpoint)
 	if err != nil {
 		r.logger.Errorf("error while parsing endpoint %s, %v", endpoint, err)
