@@ -4,11 +4,9 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 
 	"github.com/LambdaTest/test-at-scale/pkg/core"
 	"github.com/LambdaTest/test-at-scale/pkg/global"
@@ -27,30 +25,31 @@ func New(logger lumber.Logger) core.Requests {
 	}
 }
 
-func (r *requests) MakeAPIRequestWithAuth(ctx context.Context, httpMethod, endpoint string, body []byte) ([]byte, error) {
+func (r *requests) MakeAPIRequestWithAuth(ctx context.Context, httpMethod, endpoint string, body []byte, params, auth map[string]string) ([]byte, int, error) {
 	u, err := url.Parse(endpoint)
 	if err != nil {
 		r.logger.Errorf("error while parsing endpoint %s, %v", endpoint, err)
-		return nil, err
+		return nil, http.StatusInternalServerError, err
 	}
 	q := u.Query()
-	q.Set("repoID", os.Getenv("REPO_ID"))
-	q.Set("buildID", os.Getenv("BUILD_ID"))
-	q.Set("orgID", os.Getenv("ORG_ID"))
+	for id, val := range params {
+		q.Set(id, val)
+	}
 	u.RawQuery = q.Encode()
 
 	req, err := http.NewRequestWithContext(ctx, httpMethod, u.String(), bytes.NewBuffer(body))
 	if err != nil {
 		r.logger.Errorf("error while creating http request %v", err)
-		return nil, err
+		return nil, http.StatusInternalServerError, err
 	}
-
-	req.Header.Add("Authorization", fmt.Sprintf("%s %s", "Bearer", os.Getenv("TOKEN")))
+	for id, val := range auth {
+		req.Header.Add(id, val)
+	}
 
 	resp, err := r.client.Do(req)
 	if err != nil {
 		r.logger.Errorf("error while sending http request %v", err)
-		return nil, err
+		return nil, http.StatusInternalServerError, err
 	}
 
 	defer resp.Body.Close()
@@ -58,13 +57,13 @@ func (r *requests) MakeAPIRequestWithAuth(ctx context.Context, httpMethod, endpo
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		r.logger.Errorf("error while sending http response body %v", err)
-		return nil, err
+		return nil, resp.StatusCode, err
 	}
 
 	if resp.StatusCode != http.StatusOK {
 		r.logger.Errorf("non 200 status code %s", string(respBody))
-		return nil, errors.New("non 200 status code")
+		return nil, resp.StatusCode, errors.New("non 200 status code")
 	}
 
-	return respBody, nil
+	return respBody, resp.StatusCode, nil
 }

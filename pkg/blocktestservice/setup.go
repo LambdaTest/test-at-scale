@@ -4,11 +4,9 @@ package blocktestservice
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 	"os"
 	"strings"
 	"sync"
@@ -18,6 +16,7 @@ import (
 	"github.com/LambdaTest/test-at-scale/pkg/core"
 	"github.com/LambdaTest/test-at-scale/pkg/global"
 	"github.com/LambdaTest/test-at-scale/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/pkg/requestutils"
 )
 
 const (
@@ -47,6 +46,7 @@ type blocktestLocator struct {
 // TestBlockTestService represents an instance of ConfManager instance
 type TestBlockTestService struct {
 	cfg               *config.NucleusConfig
+	requests          core.Requests
 	logger            lumber.Logger
 	httpClient        http.Client
 	endpoint          string
@@ -61,6 +61,7 @@ func NewTestBlockTestService(cfg *config.NucleusConfig, logger lumber.Logger) (*
 	return &TestBlockTestService{
 		cfg:               cfg,
 		logger:            logger,
+		requests:          requestutils.New(logger),
 		endpoint:          global.NeuronHost + "/blocktest",
 		blockTestEntities: make(map[string][]blocktest),
 		errChan:           make(chan error, 1),
@@ -74,51 +75,26 @@ func NewTestBlockTestService(cfg *config.NucleusConfig, logger lumber.Logger) (*
 
 func (tbs *TestBlockTestService) fetchBlockListFromNeuron(ctx context.Context, repoID, branch string) error {
 	var inp []blocktestAPIResponse
-	u, err := url.Parse(tbs.endpoint)
-	if err != nil {
-		tbs.logger.Errorf("error while parsing endpoint %s, %v", tbs.endpoint, err)
-		return err
+	params := map[string]string{
+		"repoID":  os.Getenv("REPO_ID"),
+		"buildID": os.Getenv("BUILD_ID"),
+		"orgID":   os.Getenv("ORG_ID"),
+		"branch":  branch,
+		"taskID":  tbs.cfg.TaskID,
 	}
-	q := u.Query()
-	q.Set("repoID", repoID)
-	q.Set("branch", branch)
-	q.Set("taskID", tbs.cfg.TaskID)
-	q.Set("buildID", os.Getenv("BUILD_ID"))
-	q.Set("orgID", os.Getenv("ORG_ID"))
-	u.RawQuery = q.Encode()
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
-	if err != nil {
-		tbs.logger.Errorf("Unable to fetch blocklist response: %+v", err)
-		return err
+	auth := map[string]string{
+		"Authorization": fmt.Sprintf("%s %s", "Bearer", os.Getenv("TOKEN")),
 	}
 
-	req.Header.Add("Authorization", fmt.Sprintf("%s %s", "Bearer", os.Getenv("TOKEN")))
-
-	resp, err := tbs.httpClient.Do(req)
-	if err != nil {
-		tbs.logger.Errorf("Unable to fetch blocklist response: %v", err)
-		return err
-	}
-
-	defer resp.Body.Close()
-
-	if resp.StatusCode == http.StatusNotFound {
+	rawBytes, statusCode, err := tbs.requests.MakeAPIRequestWithAuth(ctx, http.MethodGet, tbs.endpoint, nil, params, auth)
+	if statusCode == http.StatusNotFound {
 		return nil
 	}
-	if resp.StatusCode != http.StatusOK {
-		err = errors.New("non 200 status")
-		tbs.logger.Errorf("Unable to fetch blocklist response: %v", err)
-		return err
-	}
-
-	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		tbs.logger.Errorf("Unable to fetch blocklist response: %v", err)
 		return err
 	}
 
-	if jsonErr := json.Unmarshal(body, &inp); jsonErr != nil {
+	if jsonErr := json.Unmarshal(rawBytes, &inp); jsonErr != nil {
 		tbs.logger.Errorf("Unable to fetch blocklist response: %v", jsonErr)
 		return jsonErr
 	}

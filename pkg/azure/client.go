@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
 
@@ -169,7 +170,15 @@ func (s *Store) GetSASURL(ctx context.Context, containerPath string, containerTy
 		s.logger.Errorf("failed to marshal request body %v", err)
 		return "", err
 	}
-	rawBytes, err := s.requests.MakeAPIRequestWithAuth(ctx, http.MethodPost, s.endpoint, reqBody)
+	params := map[string]string{
+		"repoID":  os.Getenv("REPO_ID"),
+		"buildID": os.Getenv("BUILD_ID"),
+		"orgID":   os.Getenv("ORG_ID"),
+	}
+	auth := map[string]string{
+		"Authorization": fmt.Sprintf("%s %s", "Bearer", os.Getenv("TOKEN")),
+	}
+	rawBytes, _, err := s.requests.MakeAPIRequestWithAuth(ctx, http.MethodPost, s.endpoint, reqBody, params, auth)
 	if err != nil {
 		return "", err
 	}

@@ -130,5 +130,5 @@ type ExecutionManager interface {
 // Requests is a util interface for making API Requests
 type Requests interface {
 	// MakeAPIRequest makes an HTTP request with auth
-	MakeAPIRequestWithAuth(ctx context.Context, httpMethod, endpoint string, body []byte) ([]byte, error)
+	MakeAPIRequestWithAuth(ctx context.Context, httpMethod, endpoint string, body []byte, params, auth map[string]string) ([]byte, int, error)
 }

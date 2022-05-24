@@ -160,7 +160,15 @@ func (tes *testExecutionService) SendResults(ctx context.Context,
 		tes.logger.Errorf("failed to marshal request body %v", err)
 		return nil, err
 	}
-	respBody, err := tes.requests.MakeAPIRequestWithAuth(ctx, http.MethodPost, tes.serverEndpoint, reqBody)
+	params := map[string]string{
+		"repoID":  os.Getenv("REPO_ID"),
+		"buildID": os.Getenv("BUILD_ID"),
+		"orgID":   os.Getenv("ORG_ID"),
+	}
+	auth := map[string]string{
+		"Authorization": fmt.Sprintf("%s %s", "Bearer", os.Getenv("TOKEN")),
+	}
+	respBody, _, err := tes.requests.MakeAPIRequestWithAuth(ctx, http.MethodPost, tes.serverEndpoint, reqBody, params, auth)
 	if err != nil {
 		tes.logger.Errorf("error while sending reports %v", err)
 		return nil, err

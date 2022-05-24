@@ -4,7 +4,9 @@ package testdiscoveryservice
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"os"
 	"os/exec"
 
 	"github.com/LambdaTest/test-at-scale/pkg/core"
@@ -124,8 +126,15 @@ func (tds *testDiscoveryService) updateResult(ctx context.Context, testDiscovery
 		tds.logger.Errorf("error while json marshal %v", err)
 		return err
 	}
-
-	if _, err := tds.requests.MakeAPIRequestWithAuth(ctx, http.MethodPost, tds.endpoint, reqBody); err != nil {
+	params := map[string]string{
+		"repoID":  os.Getenv("REPO_ID"),
+		"buildID": os.Getenv("BUILD_ID"),
+		"orgID":   os.Getenv("ORG_ID"),
+	}
+	auth := map[string]string{
+		"Authorization": fmt.Sprintf("%s %s", "Bearer", os.Getenv("TOKEN")),
+	}
+	if _, _, err := tds.requests.MakeAPIRequestWithAuth(ctx, http.MethodPost, tds.endpoint, reqBody, params, auth); err != nil {
 		return err
 	}
 

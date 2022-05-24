@@ -3,7 +3,9 @@ package task
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/LambdaTest/test-at-scale/pkg/core"
 	"github.com/LambdaTest/test-at-scale/pkg/global"
@@ -33,8 +35,15 @@ func (t *task) UpdateStatus(ctx context.Context, payload *core.TaskPayload) erro
 		t.logger.Errorf("error while json marshal %v", err)
 		return err
 	}
-
-	if _, err := t.requests.MakeAPIRequestWithAuth(ctx, http.MethodPut, t.endpoint, reqBody); err != nil {
+	params := map[string]string{
+		"repoID":  os.Getenv("REPO_ID"),
+		"buildID": os.Getenv("BUILD_ID"),
+		"orgID":   os.Getenv("ORG_ID"),
+	}
+	auth := map[string]string{
+		"Authorization": fmt.Sprintf("%s %s", "Bearer", os.Getenv("TOKEN")),
+	}
+	if _, _, err := t.requests.MakeAPIRequestWithAuth(ctx, http.MethodPut, t.endpoint, reqBody, params, auth); err != nil {
 		return err
 	}
 
