@@ -10,13 +10,13 @@ import (
 	"os"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/LambdaTest/test-at-scale/config"
 	"github.com/LambdaTest/test-at-scale/pkg/core"
 	"github.com/LambdaTest/test-at-scale/pkg/global"
 	"github.com/LambdaTest/test-at-scale/pkg/lumber"
 	"github.com/LambdaTest/test-at-scale/pkg/requestutils"
+	"github.com/LambdaTest/test-at-scale/pkg/utils"
 )
 
 const (
@@ -48,7 +48,6 @@ type TestBlockTestService struct {
 	cfg               *config.NucleusConfig
 	requests          core.Requests
 	logger            lumber.Logger
-	httpClient        http.Client
 	endpoint          string
 	blockTestEntities map[string][]blocktest
 	once              sync.Once
@@ -65,28 +64,20 @@ func NewTestBlockTestService(cfg *config.NucleusConfig, logger lumber.Logger) (*
 		endpoint:          global.NeuronHost + "/blocktest",
 		blockTestEntities: make(map[string][]blocktest),
 		errChan:           make(chan error, 1),
-		httpClient: http.Client{
-			Timeout: 15 * time.Second,
-			Transport: &http.Transport{
-				DisableKeepAlives: true,
-			},
-		}}, nil
+	}, nil
 }
 
 func (tbs *TestBlockTestService) fetchBlockListFromNeuron(ctx context.Context, repoID, branch string) error {
 	var inp []blocktestAPIResponse
-	params := map[string]string{
-		"repoID":  os.Getenv("REPO_ID"),
-		"buildID": os.Getenv("BUILD_ID"),
-		"orgID":   os.Getenv("ORG_ID"),
-		"branch":  branch,
-		"taskID":  tbs.cfg.TaskID,
-	}
-	auth := map[string]string{
+	params := utils.FetchQueryParams()
+	params["branch"] = branch
+	params["taskID"] = tbs.cfg.TaskID
+
+	headers := map[string]string{
 		"Authorization": fmt.Sprintf("%s %s", "Bearer", os.Getenv("TOKEN")),
 	}
 
-	rawBytes, statusCode, err := tbs.requests.MakeAPIRequestWithAuth(ctx, http.MethodGet, tbs.endpoint, nil, params, auth)
+	rawBytes, statusCode, err := tbs.requests.MakeAPIRequest(ctx, http.MethodGet, tbs.endpoint, nil, params, headers)
 	if statusCode == http.StatusNotFound {
 		return nil
 	}

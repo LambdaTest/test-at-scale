@@ -17,6 +17,7 @@ import (
 	"github.com/LambdaTest/test-at-scale/pkg/errs"
 	"github.com/LambdaTest/test-at-scale/pkg/global"
 	"github.com/LambdaTest/test-at-scale/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/pkg/utils"
 )
 
 var (
@@ -170,15 +171,11 @@ func (s *Store) GetSASURL(ctx context.Context, containerPath string, containerTy
 		s.logger.Errorf("failed to marshal request body %v", err)
 		return "", err
 	}
-	params := map[string]string{
-		"repoID":  os.Getenv("REPO_ID"),
-		"buildID": os.Getenv("BUILD_ID"),
-		"orgID":   os.Getenv("ORG_ID"),
-	}
-	auth := map[string]string{
+	params := utils.FetchQueryParams()
+	headers := map[string]string{
 		"Authorization": fmt.Sprintf("%s %s", "Bearer", os.Getenv("TOKEN")),
 	}
-	rawBytes, _, err := s.requests.MakeAPIRequestWithAuth(ctx, http.MethodPost, s.endpoint, reqBody, params, auth)
+	rawBytes, _, err := s.requests.MakeAPIRequest(ctx, http.MethodPost, s.endpoint, reqBody, params, headers)
 	if err != nil {
 		return "", err
 	}

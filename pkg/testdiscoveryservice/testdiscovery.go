@@ -126,15 +126,11 @@ func (tds *testDiscoveryService) updateResult(ctx context.Context, testDiscovery
 		tds.logger.Errorf("error while json marshal %v", err)
 		return err
 	}
-	params := map[string]string{
-		"repoID":  os.Getenv("REPO_ID"),
-		"buildID": os.Getenv("BUILD_ID"),
-		"orgID":   os.Getenv("ORG_ID"),
-	}
-	auth := map[string]string{
+	params := utils.FetchQueryParams()
+	headers := map[string]string{
 		"Authorization": fmt.Sprintf("%s %s", "Bearer", os.Getenv("TOKEN")),
 	}
-	if _, _, err := tds.requests.MakeAPIRequestWithAuth(ctx, http.MethodPost, tds.endpoint, reqBody, params, auth); err != nil {
+	if _, _, err := tds.requests.MakeAPIRequest(ctx, http.MethodPost, tds.endpoint, reqBody, params, headers); err != nil {
 		return err
 	}
 

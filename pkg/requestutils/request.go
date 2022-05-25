@@ -25,8 +25,8 @@ func New(logger lumber.Logger) core.Requests {
 	}
 }
 
-func (r *requests) MakeAPIRequestWithAuth(ctx context.Context, httpMethod, endpoint string, body []byte, params,
-	auth map[string]string) (rawBody []byte, statusCode int, err error) {
+func (r *requests) MakeAPIRequest(ctx context.Context, httpMethod, endpoint string, body []byte, params,
+	headers map[string]string) (rawBody []byte, statusCode int, err error) {
 	u, err := url.Parse(endpoint)
 	if err != nil {
 		r.logger.Errorf("error while parsing endpoint %s, %v", endpoint, err)
@@ -43,7 +43,7 @@ func (r *requests) MakeAPIRequestWithAuth(ctx context.Context, httpMethod, endpo
 		r.logger.Errorf("error while creating http request %v", err)
 		return nil, http.StatusInternalServerError, err
 	}
-	for id, val := range auth {
+	for id, val := range headers {
 		req.Header.Add(id, val)
 	}
 

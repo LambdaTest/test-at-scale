@@ -10,6 +10,7 @@ import (
 	"github.com/LambdaTest/test-at-scale/pkg/core"
 	"github.com/LambdaTest/test-at-scale/pkg/global"
 	"github.com/LambdaTest/test-at-scale/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/pkg/utils"
 )
 
 // task represents each instance of nucleus spawned by neuron
@@ -35,15 +36,11 @@ func (t *task) UpdateStatus(ctx context.Context, payload *core.TaskPayload) erro
 		t.logger.Errorf("error while json marshal %v", err)
 		return err
 	}
-	params := map[string]string{
-		"repoID":  os.Getenv("REPO_ID"),
-		"buildID": os.Getenv("BUILD_ID"),
-		"orgID":   os.Getenv("ORG_ID"),
-	}
-	auth := map[string]string{
+	params := utils.FetchQueryParams()
+	headers := map[string]string{
 		"Authorization": fmt.Sprintf("%s %s", "Bearer", os.Getenv("TOKEN")),
 	}
-	if _, _, err := t.requests.MakeAPIRequestWithAuth(ctx, http.MethodPut, t.endpoint, reqBody, params, auth); err != nil {
+	if _, _, err := t.requests.MakeAPIRequest(ctx, http.MethodPut, t.endpoint, reqBody, params, headers); err != nil {
 		return err
 	}
 

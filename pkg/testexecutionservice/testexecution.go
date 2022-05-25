@@ -20,6 +20,7 @@ import (
 	"github.com/LambdaTest/test-at-scale/pkg/logstream"
 	"github.com/LambdaTest/test-at-scale/pkg/lumber"
 	"github.com/LambdaTest/test-at-scale/pkg/service/teststats"
+	"github.com/LambdaTest/test-at-scale/pkg/utils"
 )
 
 const locatorFile = "locators"
@@ -163,15 +164,11 @@ func (tes *testExecutionService) SendResults(ctx context.Context,
 		tes.logger.Errorf("failed to marshal request body %v", err)
 		return nil, err
 	}
-	params := map[string]string{
-		"repoID":  os.Getenv("REPO_ID"),
-		"buildID": os.Getenv("BUILD_ID"),
-		"orgID":   os.Getenv("ORG_ID"),
-	}
-	auth := map[string]string{
+	params := utils.FetchQueryParams()
+	headers := map[string]string{
 		"Authorization": fmt.Sprintf("%s %s", "Bearer", os.Getenv("TOKEN")),
 	}
-	respBody, _, err := tes.requests.MakeAPIRequestWithAuth(ctx, http.MethodPost, tes.serverEndpoint, reqBody, params, auth)
+	respBody, _, err := tes.requests.MakeAPIRequest(ctx, http.MethodPost, tes.serverEndpoint, reqBody, params, headers)
 	if err != nil {
 		tes.logger.Errorf("error while sending reports %v", err)
 		return nil, err
