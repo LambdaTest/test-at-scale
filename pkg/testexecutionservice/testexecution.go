@@ -63,6 +63,7 @@ func (tes *testExecutionService) Run(ctx context.Context,
 	errChan := tes.execManager.StoreCommandLogs(ctx, blobPath, azureReader)
 	defer tes.closeAndWriteLog(azureWriter, errChan)
 	logWriter := lumber.NewWriter(tes.logger)
+	defer logWriter.Close()
 	multiWriter := io.MultiWriter(logWriter, azureWriter)
 	maskWriter := logstream.NewMasker(multiWriter, secretData)
 

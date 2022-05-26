@@ -49,7 +49,7 @@ func (m *manager) ExecuteUserCommands(ctx context.Context,
 
 	blobPath := fmt.Sprintf("%s/%s/%s/%s.log", payload.OrgID, payload.BuildID, os.Getenv("TASK_ID"), commandType)
 	errChan := m.StoreCommandLogs(ctx, blobPath, azureReader)
-
+	defer m.closeAndWriteLog(azureWriter, errChan, commandType)
 	logWriter := lumber.NewWriter(m.logger)
 	defer logWriter.Close()
 	multiWriter := io.MultiWriter(logWriter, azureWriter)
@@ -69,11 +69,6 @@ func (m *manager) ExecuteUserCommands(ctx context.Context,
 	if execErr := cmd.Wait(); execErr != nil {
 		m.logger.Errorf("command %s, exited with error: %v", commandType, execErr)
 		return execErr
-	}
-	azureWriter.Close()
-	if uploadErr := <-errChan; uploadErr != nil {
-		m.logger.Errorf("failed to upload logs for command %s, error: %v", commandType, uploadErr)
-		return uploadErr
 	}
 	return nil
 }
@@ -134,4 +129,11 @@ func (m *manager) StoreCommandLogs(ctx context.Context, blobPath string, reader 
 		m.logger.Debugf("created blob path %s", blobPath)
 	}()
 	return errChan
+}
+
+func (m *manager) closeAndWriteLog(azureWriter *io.PipeWriter, errChan <-chan error, commandType core.CommandType) {
+	azureWriter.Close()
+	if uploadErr := <-errChan; uploadErr != nil {
+		m.logger.Errorf("failed to upload logs for command %s, error: %v", commandType, uploadErr)
+	}
 }
