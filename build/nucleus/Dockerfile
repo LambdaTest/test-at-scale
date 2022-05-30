@@ -37,6 +37,7 @@ RUN tar -zcf /custom-runners/custom-runners.tgz node_modules
 RUN rm -rf /tmp/custom-runners
 
 RUN useradd -u 8877 -ms /bin/bash nucleus
+RUN usermod -aG sudo nucleus
 
 # install nvm for nucleus user
 RUN su - nucleus -c "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | /bin/bash"
