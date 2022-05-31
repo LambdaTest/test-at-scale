@@ -114,10 +114,10 @@ jobs:
 
       - name: Run Go Report Card
         run: |
-          issues_threshold=13
+          issues_threshold=6
           gofmt_score_threshold=100
           go_vet_score_threshold=100
-          gocyclo_score_threshold=91
+          gocyclo_score_threshold=93
           git clone https://github.com/gojp/goreportcard.git
           cd goreportcard
           make install

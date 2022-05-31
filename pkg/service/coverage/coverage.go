@@ -64,7 +64,7 @@ func New(execManager core.ExecutionManager,
 		codeCoveragParentDir: global.CodeCoverageDir,
 		endpoint:             global.NeuronHost + "/coverage",
 		httpClient: http.Client{
-			Timeout: global.DefaultHTTPTimeout,
+			Timeout: global.DefaultAPITimeout,
 		}}, nil
 
 }

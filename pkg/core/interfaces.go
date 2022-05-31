@@ -39,7 +39,7 @@ type TestDiscoveryService interface {
 
 // BlockTestService is used for fetching blocklisted tests
 type BlockTestService interface {
-	GetBlockTests(ctx context.Context, tasConfig *TASConfig, repo, branch string) error
+	GetBlockTests(ctx context.Context, tasConfig *TASConfig, branch string) error
 }
 
 // TestExecutionService services execution of tests

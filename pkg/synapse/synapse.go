@@ -11,9 +11,9 @@ import (
 	"github.com/LambdaTest/test-at-scale/pkg/global"
 	"github.com/LambdaTest/test-at-scale/pkg/lumber"
 	"github.com/LambdaTest/test-at-scale/pkg/utils"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/denisbrodbeck/machineid"
 	"github.com/gorilla/websocket"
-	"github.com/lestrrat-go/backoff"
 	"github.com/spf13/viper"
 )
 
@@ -80,41 +80,39 @@ exponential backoff factor
 */
 func (s *synapse) openAndMaintainConnection(ctx context.Context, connectionFailed chan struct{}) {
 	// setup exponential backoff for retrying control websocket connection
-	var policy = backoff.NewExponential(
-		backoff.WithInterval(500*time.Millisecond),           // base interval
-		backoff.WithJitterFactor(0.05),                       // 5% jitter
-		backoff.WithMaxRetries(global.MaxConnectionAttempts), // If not specified, default number of retries is 10
-	)
-
-	b, cancel := policy.Start(context.Background())
-	defer cancel()
+	exponentialBackoff := backoff.NewExponentialBackOff()
+	exponentialBackoff.InitialInterval = 500 * time.Millisecond
+	exponentialBackoff.RandomizationFactor = 0.05
+	exponentialBackoff.MaxElapsedTime = 10 * time.Minute
 	s.logger.Debugf("starting socket connection at URL %s", global.SocketURL[viper.GetString("env")])
-	for backoff.Continue(b) {
-		s.logger.Debugf("trying to connect to lamdatest server")
+	operation := func() error {
+		s.logger.Debugf("trying to connect to TAS server")
 		select {
 		case <-ctx.Done():
-			return
+			return nil
 		default:
 			conn, _, err := websocket.DefaultDialer.Dial(global.SocketURL[viper.GetString("env")], nil)
 			if err != nil {
-				s.logger.Errorf("error connecting synapse to lambdatest %+v", err)
-				continue
+				s.logger.Errorf("error connecting synapse to TAS %+v", err)
+				return err
 			}
 			s.conn = conn
-			s.logger.Debugf("synapse connected to lambdatest server")
+			s.logger.Debugf("synapse connected to TAS server")
 			s.login()
 			if !s.connectionHandler(ctx, conn, connectionFailed) {
-				return
+				return nil
 			}
 			s.MsgErrChan = make(chan struct{})
+			// re-listen for any connection breaks
 			go s.openAndMaintainConnection(ctx, connectionFailed)
-			return
-
+			return nil
 		}
 	}
-	s.logger.Errorf("Unable to establish connection with lambdatest server. exiting...")
-	connectionFailed <- struct{}{}
-	s.LogoutRequired = false
+	if err := backoff.Retry(operation, exponentialBackoff); err != nil {
+		s.logger.Errorf("Unable to establish connection with lambdatest server. exiting...")
+		connectionFailed <- struct{}{}
+		s.LogoutRequired = false
+	}
 }
 
 /*

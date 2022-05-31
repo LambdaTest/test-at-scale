@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 	"os"
 	"path/filepath"
 	"runtime/debug"
@@ -27,9 +26,6 @@ func NewPipeline(cfg *config.NucleusConfig, logger lumber.Logger) (*Pipeline, er
 	return &Pipeline{
 		Cfg:    cfg,
 		Logger: logger,
-		HTTPClient: http.Client{
-			Timeout: 45 * time.Second,
-		},
 	}, nil
 }
 
@@ -207,7 +203,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	}
 
 	if pl.Cfg.DiscoverMode {
-		err = pl.BlockTestService.GetBlockTests(ctx, tasConfig, payload.RepoID, payload.BranchName)
+		err = pl.BlockTestService.GetBlockTests(ctx, tasConfig, payload.BranchName)
 		if err != nil {
 			pl.Logger.Errorf("Unable to fetch blocklisted tests: %v", err)
 			err = errs.New(errs.GenericErrRemark.Error())

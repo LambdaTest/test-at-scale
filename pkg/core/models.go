@@ -4,7 +4,6 @@
 package core
 
 import (
-	"net/http"
 	"time"
 
 	"github.com/LambdaTest/test-at-scale/config"
@@ -136,7 +135,6 @@ type Pipeline struct {
 	TestStats            TestStats
 	Task                 Task
 	SecretParser         SecretParser
-	HTTPClient           http.Client
 }
 
 type DiscoveryResult struct {

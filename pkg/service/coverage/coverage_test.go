@@ -448,7 +448,7 @@ func newCodeCoverageService(logger lumber.Logger,
 		azureClient:          azureClient,
 		zstd:                 zstd,
 		httpClient: http.Client{
-			Timeout: global.DefaultHTTPTimeout,
+			Timeout: global.DefaultAPITimeout,
 		},
 		endpoint: endpoint,
 	}
