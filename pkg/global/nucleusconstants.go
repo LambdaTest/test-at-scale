@@ -15,6 +15,7 @@ const (
 	WorkspaceCacheDir        = "/workspace-cache"
 	RepoDir                  = HomeDir + "/repo"
 	CodeCoverageDir          = RepoDir + "/coverage"
+	RepoCacheDir             = RepoDir + "/__tas"
 	DefaultAPITimeout        = 45 * time.Second
 	DefaultGitCloneTimeout   = 30 * time.Minute
 	SamplingTime             = 5 * time.Millisecond
@@ -26,6 +27,7 @@ const (
 	ExecutionResultChunkSize = 50
 	TestLocatorsDelimiter    = "#TAS#"
 	ExpiryDelta              = 15 * time.Minute
+	CacheVersion             = "v1"
 )
 
 // FrameworkRunnerMap is map of framework with there respective runner location

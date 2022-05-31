@@ -61,8 +61,9 @@ func (tc *tasConfigManager) LoadAndValidate(ctx context.Context,
 			return nil, err
 		}
 		tasConfig.Cache = &core.Cache{
-			Key:   checksum,
-			Paths: []string{},
+			Key:     checksum,
+			Paths:   []string{},
+			Version: global.CacheVersion,
 		}
 	}
 

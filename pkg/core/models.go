@@ -329,8 +329,9 @@ type CoverageThreshold struct {
 
 // Cache represents the user's cached directories
 type Cache struct {
-	Key   string   `yaml:"key" validate:"required"`
-	Paths []string `yaml:"paths" validate:"required"`
+	Key     string   `yaml:"key" validate:"required"`
+	Paths   []string `yaml:"paths" validate:"required"`
+	Version string
 }
 
 // Modifier defines struct for modifier

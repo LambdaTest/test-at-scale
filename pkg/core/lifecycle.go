@@ -14,6 +14,7 @@ import (
 	"github.com/LambdaTest/test-at-scale/pkg/fileutils"
 	"github.com/LambdaTest/test-at-scale/pkg/global"
 	"github.com/LambdaTest/test-at-scale/pkg/lumber"
+	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -83,10 +84,12 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	payload.TaskType = taskPayload.Type
 	pl.Logger.Infof("Running nucleus in %s mode", taskPayload.Type)
 
-	// marking task to running state
-	if err = pl.Task.UpdateStatus(context.Background(), taskPayload); err != nil {
-		pl.Logger.Fatalf("failed to update task status %v", err)
-	}
+	go func() {
+		// marking task to running state
+		if err = pl.Task.UpdateStatus(context.Background(), taskPayload); err != nil {
+			pl.Logger.Fatalf("failed to update task status %v", err)
+		}
+	}()
 
 	// update task status when pipeline exits
 	defer func() {
@@ -145,7 +148,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	}
 
 	coverageDir := filepath.Join(global.CodeCoverageDir, payload.OrgID, payload.RepoID, payload.BuildTargetCommit)
-	cacheKey := fmt.Sprintf("%s/%s/%s", payload.OrgID, payload.RepoID, tasConfig.Cache.Key)
+	cacheKey := fmt.Sprintf("%s/%s/%s/%s", tasConfig.Cache.Version, payload.OrgID, payload.RepoID, tasConfig.Cache.Key)
 
 	pl.Logger.Infof("Tas yaml: %+v", tasConfig)
 
@@ -165,6 +168,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	os.Setenv("ENDPOINT_POST_TEST_RESULTS", endpointPostTestResults)
 	os.Setenv("REPO_ROOT", global.RepoDir)
 	os.Setenv("BLOCK_TESTS_FILE", global.BlockTestFileLocation)
+	os.Setenv("REPO_CACHE_DIR", global.RepoCacheDir)
 
 	if tasConfig.NodeVersion != "" {
 		nodeVersion := tasConfig.NodeVersion
@@ -203,16 +207,44 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	}
 
 	if pl.Cfg.DiscoverMode {
-		err = pl.BlockTestService.GetBlockTests(ctx, tasConfig, payload.BranchName)
-		if err != nil {
-			pl.Logger.Errorf("Unable to fetch blocklisted tests: %v", err)
-			err = errs.New(errs.GenericErrRemark.Error())
-			return err
-		}
+		g, errCtx := errgroup.WithContext(ctx)
+		g.Go(func() error {
+			if errG := pl.BlockTestService.GetBlockTests(errCtx, tasConfig, payload.BranchName); errG != nil {
+				pl.Logger.Errorf("Unable to fetch blocklisted tests: %v", errG)
+				errG = errs.New(errs.GenericErrRemark.Error())
+				return errG
+			}
+			return nil
+		})
 
-		if err = pl.CacheStore.Download(ctx, cacheKey); err != nil {
-			pl.Logger.Errorf("Unable to download cache: %v", err)
-			err = errs.New(errs.GenericErrRemark.Error())
+		g.Go(func() error {
+			if errG := pl.CacheStore.Download(errCtx, cacheKey); errG != nil {
+				pl.Logger.Errorf("Unable to download cache: %v", errG)
+				errG = errs.New(errs.GenericErrRemark.Error())
+				return errG
+			}
+			return nil
+		})
+
+		diffExists := true
+		diff := map[string]int{}
+		g.Go(func() error {
+			diffC, errG := pl.DiffManager.GetChangedFiles(errCtx, payload, oauth)
+			if errG != nil {
+				if errors.Is(errG, errs.ErrGitDiffNotFound) {
+					diffExists = false
+				} else {
+					pl.Logger.Errorf("Unable to identify changed files %s", errG)
+					errG = errs.New("Error occurred in fetching diff from GitHub")
+					return errG
+				}
+			}
+			diff = diffC
+			return nil
+		})
+
+		err = g.Wait()
+		if err != nil {
 			return err
 		}
 
@@ -240,19 +272,6 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 			return err
 		}
 
-		pl.Logger.Infof("Identifying changed files ...")
-		diffExists := true
-		diff, err := pl.DiffManager.GetChangedFiles(ctx, payload, oauth)
-		if err != nil {
-			if errors.Is(err, errs.ErrGitDiffNotFound) {
-				diffExists = false
-			} else {
-				pl.Logger.Errorf("Unable to identify changed files %s", err)
-				err = errs.New("Error occurred in fetching diff from GitHub")
-				return err
-			}
-		}
-
 		// discover test cases
 		err = pl.TestDiscoveryService.Discover(ctx, tasConfig, pl.Payload, secretMap, diff, diffExists)
 		if err != nil {
@@ -264,10 +283,8 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 		taskPayload.Status = Passed
 
 		// Upload cache once for other builds
-		if err = pl.CacheStore.Upload(ctx, cacheKey, tasConfig.Cache.Paths...); err != nil {
-			pl.Logger.Errorf("Unable to upload cache: %v", err)
-			err = errs.New(errs.GenericErrRemark.Error())
-			return err
+		if errU := pl.CacheStore.Upload(ctx, cacheKey, tasConfig.Cache.Paths...); errU != nil {
+			pl.Logger.Errorf("Unable to upload cache: %v", errU)
 		}
 		pl.Logger.Debugf("Cache uploaded successfully")
 	}
@@ -283,22 +300,33 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 			}
 		}
 
-		resp, err := pl.TestExecutionService.SendResults(ctx, executionResults)
-		if err != nil {
-			pl.Logger.Errorf("error while sending test reports %v", err)
-			err = errs.New(errs.GenericErrRemark.Error())
-			return err
-		}
-		taskPayload.Status = resp.TaskStatus
+		g, errCtx := errgroup.WithContext(ctx)
+		g.Go(func() error {
+			resp, errG := pl.TestExecutionService.SendResults(errCtx, executionResults)
+			if errG != nil {
+				pl.Logger.Errorf("error while sending test reports %v", errG)
+				errG = errs.New(errs.GenericErrRemark.Error())
+				return errG
+			}
+			taskPayload.Status = resp.TaskStatus
+			return nil
+		})
 
 		if tasConfig.Postrun != nil {
-			pl.Logger.Infof("Running post-run steps")
-			err = pl.ExecutionManager.ExecuteUserCommands(ctx, PostRun, payload, tasConfig.Postrun, secretMap)
-			if err != nil {
-				pl.Logger.Errorf("Unable to run post-run steps %v", err)
-				err = &errs.StatusFailed{Remark: "Failed in running post-run steps."}
-				return err
-			}
+			g.Go(func() error {
+				pl.Logger.Infof("Running post-run steps")
+				errG := pl.ExecutionManager.ExecuteUserCommands(errCtx, PostRun, payload, tasConfig.Postrun, secretMap)
+				if errG != nil {
+					pl.Logger.Errorf("Unable to run post-run steps %v", errG)
+					errG = &errs.StatusFailed{Remark: "Failed in running post-run steps."}
+					return errG
+				}
+				return nil
+			})
+		}
+		err = g.Wait()
+		if err != nil {
+			return err
 		}
 	}
 	pl.Logger.Debugf("Completed pipeline")
