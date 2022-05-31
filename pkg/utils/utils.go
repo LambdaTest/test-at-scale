@@ -166,3 +166,13 @@ func configureValidator(validate *validator.Validate, trans ut.Translator) {
 		return t
 	})
 }
+
+// FetchQueryParams returns the params which are required in API
+func FetchQueryParams() (params map[string]string) {
+	params = map[string]string{
+		"repoID":  os.Getenv("REPO_ID"),
+		"buildID": os.Getenv("BUILD_ID"),
+		"orgID":   os.Getenv("ORG_ID"),
+	}
+	return params
+}
