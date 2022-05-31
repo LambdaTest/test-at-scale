@@ -103,10 +103,7 @@ func run(cmd *cobra.Command, args []string) {
 	if err != nil {
 		logger.Fatalf("failed to initialize test stats service: %v", err)
 	}
-
-	backoffStrategy := backoff.NewExponentialBackOff()
-	backoffStrategy.MaxElapsedTime = global.DefaultAPITimeout
-	defaultRequests := requestutils.New(logger, global.DefaultAPITimeout, backoffStrategy)
+	defaultRequests := requestutils.New(logger, global.DefaultAPITimeout, backoff.NewExponentialBackOff())
 
 	azureClient, err := azure.NewAzureBlobEnv(cfg, defaultRequests, logger)
 	if err != nil {

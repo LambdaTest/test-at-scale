@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/LambdaTest/test-at-scale/pkg/core"
 	"github.com/LambdaTest/test-at-scale/pkg/global"
@@ -54,20 +55,13 @@ func (tds *testDiscoveryService) Discover(ctx context.Context,
 		target = tasConfig.Postmerge.Patterns
 		envMap = tasConfig.Postmerge.EnvMap
 	}
-	tasYmlModified := false
 	configFilePath, err := utils.GetConfigFileName(payload.TasFileName)
 	if err != nil {
 		return err
 	}
-	if _, ok := diff[configFilePath]; ok {
-		tasYmlModified = true
-	}
-
-	// discover all tests if tas.yml modified or smart run feature is set to false
-	discoverAll := tasYmlModified || !tasConfig.SmartRun
-
+	impactAll := tds.shouldImpactAll(tasConfig, configFilePath, diff)
 	args := []string{"--command", "discover"}
-	if !discoverAll {
+	if !impactAll {
 		if len(diff) == 0 && diffExists {
 			// empty diff; in PR, a commit added and then reverted to cause an overall empty PR diff
 			args = append(args, "--diff")
@@ -135,5 +129,18 @@ func (tds *testDiscoveryService) updateResult(ctx context.Context, testDiscovery
 	}
 
 	return nil
+}
 
+func (tds *testDiscoveryService) shouldImpactAll(tasConfig *core.TASConfig, configFilePath string, diff map[string]int) bool {
+	impactAll := !tasConfig.SmartRun
+	if _, ok := diff[configFilePath]; ok {
+		impactAll = true
+	}
+	for diffFile := range diff {
+		if strings.HasSuffix(diffFile, global.PackageJSON) {
+			impactAll = true
+			break
+		}
+	}
+	return impactAll
 }

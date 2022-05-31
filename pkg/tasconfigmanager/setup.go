@@ -14,8 +14,6 @@ import (
 	"github.com/LambdaTest/test-at-scale/pkg/utils"
 )
 
-const packageJSON = "package.json"
-
 var tierEnumMapping = map[core.Tier]int{
 	core.XSmall: 1,
 	core.Small:  2,
@@ -55,7 +53,7 @@ func (tc *tasConfigManager) LoadAndValidate(ctx context.Context,
 	}
 
 	if tasConfig.Cache == nil {
-		checksum, err := utils.ComputeChecksum(fmt.Sprintf("%s/%s", global.RepoDir, packageJSON))
+		checksum, err := utils.ComputeChecksum(fmt.Sprintf("%s/%s", global.RepoDir, global.PackageJSON))
 		if err != nil {
 			tc.logger.Errorf("Error while computing checksum, error %v", err)
 			return nil, err

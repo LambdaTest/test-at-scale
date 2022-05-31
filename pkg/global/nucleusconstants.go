@@ -28,6 +28,7 @@ const (
 	TestLocatorsDelimiter    = "#TAS#"
 	ExpiryDelta              = 15 * time.Minute
 	CacheVersion             = "v1"
+	PackageJSON              = "package.json"
 )
 
 // FrameworkRunnerMap is map of framework with there respective runner location
