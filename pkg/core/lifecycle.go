@@ -144,7 +144,8 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	} else {
 		pl.Logger.Debugf("Extracting workspace")
 		// Replicate workspace
-		if err = pl.CacheStore.ExtractWorkspace(ctx, pl.Cfg.SubModule); err != nil {
+		// TODO this will be changed after parallel discovery support
+		if err = pl.CacheStore.ExtractWorkspace(ctx, ""); err != nil {
 			pl.Logger.Errorf("Error replicating workspace: %+v", err)
 			err = errs.New(errs.GenericErrRemark.Error())
 			return err
@@ -453,11 +454,14 @@ func (pl *Pipeline) runDiscoveryV2(payload *Payload,
 	// Upload cache once for other builds
 	cacheKey := fmt.Sprintf("%s/%s/%s", payload.OrgID, payload.RepoID, tasConfig.Cache.Key)
 	taskPayload.Status = Passed
+	pl.Logger.Debugf("Downloading cache for pre Runs")
 	if err := pl.CacheStore.Download(ctx, cacheKey); err != nil {
 		pl.Logger.Errorf("Unable to download cache: %v", err)
 		err = errs.New(errs.GenericErrRemark.Error())
 		return err
 	}
+	pl.Logger.Debugf("Downloaded cache for pre Runs")
+
 	readerBuffer := new(bytes.Buffer)
 	defer func() error {
 		blobPath := fmt.Sprintf("%s/%s/%s/%s.log", payload.OrgID, payload.BuildID, os.Getenv("TASK_ID"), PreRun)
@@ -484,13 +488,13 @@ func (pl *Pipeline) runDiscoveryV2(payload *Payload,
 		pl.Logger.Debugf("TAS %+v", tasConfig.PostMerge)
 		if discoveryErr := pl.runDiscoveryV2Helper(ctx, tasConfig.PostMerge.PreRun,
 			tasConfig.PostMerge.SubModules, payload, tasConfig,
-			taskPayload, diff, diffExists, secretMap); discoveryErr != nil {
+			taskPayload, diff, diffExists, readerBuffer, secretMap); discoveryErr != nil {
 			return discoveryErr
 		}
 	} else {
 		pl.Logger.Debugf("TAS %+v", tasConfig.PreMerge)
 		if discoveryErr := pl.runDiscoveryV2Helper(ctx, tasConfig.PreMerge.PreRun, tasConfig.PreMerge.SubModules,
-			payload, tasConfig, taskPayload, diff, diffExists, secretMap); discoveryErr != nil {
+			payload, tasConfig, taskPayload, diff, diffExists, readerBuffer, secretMap); discoveryErr != nil {
 			return discoveryErr
 		}
 	}
@@ -561,12 +565,16 @@ func (pl *Pipeline) runTestExecutionV2(ctx context.Context,
 		target = subModule.Patterns
 		envMap = tasConfig.PostMerge.EnvMap
 	}
-	// overwrite the existing env with more specific one
-	for k, v := range subModule.EnvMap {
-		envMap[k] = v
-	}
 	if envMap == nil {
 		envMap = map[string]string{}
+	}
+
+	// overwrite the existing env with more specific one
+
+	if subModule.Prerun.EnvMap != nil {
+		for k, v := range subModule.Prerun.EnvMap {
+			envMap[k] = v
+		}
 	}
 
 	/*
@@ -585,8 +593,16 @@ func (pl *Pipeline) runTestExecutionV2(ctx context.Context,
 			err = &errs.StatusFailed{Remark: "Failed in running pre-run steps"}
 			return err
 		}
+		err = pl.ExecutionManager.ExecuteInternalCommands(ctx, InstallRunners, global.InstallRunnerCmds, global.RepoDir, nil, nil)
+		if err != nil {
+			pl.Logger.Errorf("Unable to install custom runners %v", err)
+			err = errs.New(errs.GenericErrRemark.Error())
+			return err
+		}
 	}
-
+	// TO BE removed
+	// pl.Logger.Debugf("Sleep time for debug")
+	// time.Sleep(time.Minute * 10)
 	testResult, err := pl.TestExecutionService.RunV2(ctx, tasConfig, subModule, payload, coverageDir, envMap, target, secretMap)
 	if err != nil {
 		return err
@@ -636,14 +652,19 @@ func (pl *Pipeline) runDiscoveryV2Helper(ctx context.Context,
 	taskPayload *TaskPayload,
 	diff map[string]int,
 	diffExists bool,
+	readerBuffer *bytes.Buffer,
 	secretMap map[string]string) error {
 	totalSubmoduleCount := len(subModuleList)
 	if apiErr := pl.TestDiscoveryService.UpdateSubmoduleList(ctx, payload.BuildID, totalSubmoduleCount); apiErr != nil {
 		return apiErr
 	}
-	readerBuffer := new(bytes.Buffer)
 	errChannelPreRun := make(chan error, totalSubmoduleCount)
 	preRunWaitGroup := sync.WaitGroup{}
+	if tasConfig.NodeVersion != "" {
+		if err := pl.installNodeVersion(ctx, tasConfig.NodeVersion); err != nil {
+			return err
+		}
+	}
 	if topPreRun != nil {
 		pl.Logger.Debugf("Running Pre Run on top level")
 		if err := pl.ExecutionManager.ExecuteUserCommandsV2(ctx, PreRun, payload,
@@ -676,6 +697,13 @@ func (pl *Pipeline) runDiscoveryV2Helper(ctx context.Context,
 		}
 	}
 	pl.Logger.Errorf("checked the pre run errors")
+	pl.Logger.Debugf("Caching workspace")
+	// TODO: this will be change after we move to parallel pod executuon
+	if err := pl.CacheStore.CacheWorkspace(ctx, ""); err != nil {
+		pl.Logger.Errorf("Error caching workspace: %+v", err)
+		err = errs.New(errs.GenericErrRemark.Error())
+		return err
+	}
 
 	errChannelDiscovery := make(chan error, totalSubmoduleCount)
 	discoveryWaitGroup := sync.WaitGroup{}
@@ -702,12 +730,7 @@ func (pl *Pipeline) runDiscoveryForEachSubModule(ctx context.Context, subModule 
 	diff map[string]int,
 	diffExists bool,
 	secretMap map[string]string) error {
-	pl.Logger.Debugf("Caching workspace")
-	if err := pl.CacheStore.CacheWorkspace(ctx, subModule.Name); err != nil {
-		pl.Logger.Errorf("Error caching workspace: %+v", err)
-		err = errs.New(errs.GenericErrRemark.Error())
-		return err
-	}
+
 	if err := pl.TestDiscoveryService.DiscoverV2(ctx, subModule, pl.Payload, secretMap,
 		tasConfig, diff, diffExists); err != nil {
 		pl.Logger.Errorf("Unable to perform test discovery: %+v", err)

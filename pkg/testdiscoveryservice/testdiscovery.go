@@ -215,7 +215,7 @@ func (tds *testDiscoveryService) DiscoverV2(ctx context.Context,
 
 	tds.logger.Debugf("Executing test discovery command: %s", cmd.String())
 	if err := cmd.Run(); err != nil {
-		tds.logger.Errorf("command %s of type %s failed with error: %v", cmd.String(), core.Discovery, err)
+		tds.logger.Errorf("command %s of type %s failed for submodule %s with error: %v", cmd.String(), core.Discovery, subModule.Name, err)
 		return err
 	}
 

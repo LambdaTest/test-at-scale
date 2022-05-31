@@ -392,6 +392,7 @@ type TASConfigV2 struct {
 	Version           string             `yaml:"version" validate:"required"`
 	SplitMode         SplitMode          `yaml:"splitMode" validate:"oneof=test file"`
 	ContainerImage    string             `yaml:"containerImage"`
+	NodeVersion       string             `yaml:"nodeVersion" validate:"omitempty,semver"`
 }
 
 // Mergev2 repersent MergeConfig for version 2 and above
@@ -402,18 +403,17 @@ type Mergev2 struct {
 }
 
 type SubModule struct {
-	Name               string            `yaml:"name" validate:"required"`
-	Path               string            `yaml:"path" validate:"required"`
-	Patterns           []string          `yaml:"pattern" validate:"required,gt=0"`
-	Framework          string            `yaml:"framework" validate:"required,oneof=jest mocha jasmine"`
-	Blocklist          []string          `yaml:"blocklist"`
-	Prerun             *Run              `yaml:"preRun" validate:"omitempty"`
-	Postrun            *Run              `yaml:"postRun" validate:"omitempty"`
-	RunPrerunEveryTime bool              `yaml:"runPreRunEveryTime"`
-	NodeVersion        string            `yaml:"nodeVersion" validate:"omitempty,semver"`
-	Parallelism        int               `yaml:"parallelism"` // TODO: will be supported later
-	ConfigFile         string            `yaml:"configFile" validate:"omitempty"`
-	EnvMap             map[string]string `yaml:"env" validate:"omitempty,gt=0"`
+	Name               string   `yaml:"name" validate:"required"`
+	Path               string   `yaml:"path" validate:"required"`
+	Patterns           []string `yaml:"pattern" validate:"required,gt=0"`
+	Framework          string   `yaml:"framework" validate:"required,oneof=jest mocha jasmine"`
+	Blocklist          []string `yaml:"blocklist"`
+	Prerun             *Run     `yaml:"preRun" validate:"omitempty"`
+	Postrun            *Run     `yaml:"postRun" validate:"omitempty"`
+	RunPrerunEveryTime bool     `yaml:"runPreRunEveryTime"`
+	NodeVersion        string   `yaml:"nodeVersion" validate:"omitempty,semver"`
+	Parallelism        int      `yaml:"parallelism"` // TODO: will be supported later
+	ConfigFile         string   `yaml:"configFile" validate:"omitempty"`
 }
 
 type TasVersion struct {
