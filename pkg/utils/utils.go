@@ -75,6 +75,14 @@ func CreateDirectory(path string) error {
 	return nil
 }
 
+// DeleteDirectory deletes directory and all its children
+func DeleteDirectory(path string) error {
+	if err := os.RemoveAll(path); err != nil {
+		return errs.ErrDirDel(err.Error())
+	}
+	return nil
+}
+
 // WriteFileToDirectory writes `data` file to `filename`/`path`
 func WriteFileToDirectory(path, filename string, data []byte) error {
 	location := fmt.Sprintf("%s/%s", path, filename)
