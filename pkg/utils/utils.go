@@ -78,7 +78,7 @@ func CreateDirectory(path string) error {
 // DeleteDirectory deletes directory and all its children
 func DeleteDirectory(path string) error {
 	if err := os.RemoveAll(path); err != nil {
-		return errs.ERR_DIR_DEL(err.Error())
+		return errs.ErrDirDel(err.Error())
 	}
 	return nil
 }
