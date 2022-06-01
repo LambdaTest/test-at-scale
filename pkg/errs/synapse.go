@@ -166,6 +166,13 @@ func ERR_DIR_CRT(err string) Err {
 		Message: fmt.Sprintf("Unable to create directory :  \n%s", err)}
 }
 
+// ERR_DIR_DEL function returns error with code "ERR::DIR::DEL"
+func ERR_DIR_DEL(err string) Err {
+	return Err{
+		Code:    "ERR::DIR::DEL",
+		Message: fmt.Sprintf("Unable to delete directory :  \n%s", err)}
+}
+
 // ERR_FIL_CRT function returns error with code ERR::FIL::CRT
 func ERR_FIL_CRT(err string) Err {
 	return Err{

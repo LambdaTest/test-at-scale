@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/LambdaTest/test-at-scale/config"
+	"github.com/LambdaTest/test-at-scale/pkg/cron"
 	"github.com/LambdaTest/test-at-scale/pkg/global"
 	"github.com/LambdaTest/test-at-scale/pkg/lumber"
 	"github.com/LambdaTest/test-at-scale/pkg/proxyserver"
@@ -94,6 +95,10 @@ func run(cmd *cobra.Command, args []string) {
 	if err != nil {
 		logger.Fatalf("Could not instantiate proxyhandler %v", err)
 	}
+
+	// setting up cron handler
+	wg.Add(1)
+	go cron.Setup(ctx, &wg, logger)
 
 	// All attempts to connect to lambdatest server failed
 	connectionFailed := make(chan struct{})
