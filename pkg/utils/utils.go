@@ -221,6 +221,8 @@ func ValidateSubModule(module *core.SubModule) error {
 	}
 
 	return nil
+}
+
 // FetchQueryParams returns the params which are required in API
 func FetchQueryParams() (params map[string]string) {
 	params = map[string]string{
