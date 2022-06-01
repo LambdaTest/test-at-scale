@@ -3,7 +3,7 @@ package cron
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"sync"
 	"time"
 
@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	buildCacheExpiry time.Duration = 4 * time.Hour
+	buildCacheExpiry time.Duration = 1 * time.Minute
 	buildCacheDir    string        = "/tmp/synapse"
 )
 
@@ -22,29 +22,30 @@ func Setup(ctx context.Context, wg *sync.WaitGroup, logger lumber.Logger) {
 	defer wg.Done()
 
 	c := cron.New()
-	if _, err := c.AddFunc("@every 5m", func() { cleanupBuildCache(logger) }); err != nil {
+	if _, err := c.AddFunc("@every 1m", func() { cleanupBuildCache(logger) }); err != nil {
 		logger.Errorf("error setting up cron")
 		return
 	}
 	c.Start()
 
-	select {
-	case <-ctx.Done():
-		c.Stop()
-		logger.Infof("Caller has requested graceful shutdown. Returning.....")
-		return
-	}
+	<-ctx.Done()
+	c.Stop()
+	logger.Infof("Caller has requested graceful shutdown. Returning.....")
 }
 
 func cleanupBuildCache(logger lumber.Logger) {
-	files, err := ioutil.ReadDir(buildCacheDir)
+	files, err := os.ReadDir(buildCacheDir)
 	if err != nil {
 		logger.Errorf("error in reading directory: %s", err)
 		return
 	}
 	for _, file := range files {
 		now := time.Now()
-		if diff := now.Sub(file.ModTime()); diff > buildCacheExpiry {
+		info, err := file.Info()
+		if err != nil {
+			logger.Errorf("error retrieving file info")
+		}
+		if diff := now.Sub(info.ModTime()); diff > buildCacheExpiry {
 			filePath := fmt.Sprintf("%s/%s", buildCacheDir, file.Name())
 			if err := utils.DeleteDirectory(filePath); err != nil {
 				logger.Errorf("error deleting directory: %s", err.Error())
