@@ -14,6 +14,7 @@ import (
 	"github.com/LambdaTest/test-at-scale/config"
 	"github.com/LambdaTest/test-at-scale/pkg/core"
 	"github.com/LambdaTest/test-at-scale/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/pkg/requestutils"
 	"github.com/LambdaTest/test-at-scale/testutils"
 )
 
@@ -32,12 +33,7 @@ func TestNewTestBlockListService(t *testing.T) {
 		endpoint:          "endpoint",
 		blockTestEntities: make(map[string][]blocktest),
 		errChan:           make(chan error, 1),
-		httpClient: http.Client{
-			Timeout: 15 * time.Second,
-			Transport: &http.Transport{
-				DisableKeepAlives: true,
-			},
-		}}
+	}
 	type args struct {
 		cfg    *config.NucleusConfig
 		logger lumber.Logger
@@ -93,12 +89,6 @@ func TestTestBlockListService_fetchBlockListFromNeuron(t *testing.T) {
 	if err != nil {
 		t.Errorf("Couldn't initialize logger, error: %v", err)
 	}
-	httpClient := http.Client{
-		Timeout: 15 * time.Second,
-		Transport: &http.Transport{
-			DisableKeepAlives: true,
-		},
-	}
 	blocklistedEntities := make(map[string][]blocktest)
 
 	type args struct {
@@ -147,11 +137,11 @@ func TestTestBlockListService_fetchBlockListFromNeuron(t *testing.T) {
 			tbs := &TestBlockTestService{
 				cfg:               cfg,
 				logger:            logger,
-				httpClient:        httpClient,
 				endpoint:          tt.args.endpoint,
 				blockTestEntities: blocklistedEntities,
 				once:              sync.Once{},
 				errChan:           make(chan error, 1),
+				requests:          requestutils.New(logger),
 			}
 			if err := tbs.fetchBlockListFromNeuron(tt.args.ctx, tt.args.repoID, tt.args.branch); (err != nil) != tt.wantErr {
 				t.Errorf("TestBlockListService.fetchBlockListFromNeuron() error = %v, wantErr %v", err, tt.wantErr)
@@ -280,7 +270,6 @@ func TestTestBlockListService_populateBlockList(t *testing.T) {
 			tbs := &TestBlockTestService{
 				cfg:               tt.fields.cfg,
 				logger:            tt.fields.logger,
-				httpClient:        tt.fields.httpClient,
 				endpoint:          tt.fields.endpoint,
 				blockTestEntities: tt.fields.blocklistedEntities,
 				once:              sync.Once{},

@@ -102,7 +102,8 @@ func run(cmd *cobra.Command, args []string) {
 	if err != nil {
 		logger.Fatalf("failed to initialize test stats service: %v", err)
 	}
-	azureClient, err := azure.NewAzureBlobEnv(cfg, logger)
+	requests := requestutils.New(logger)
+	azureClient, err := azure.NewAzureBlobEnv(requests, cfg, logger)
 	if err != nil {
 		logger.Fatalf("failed to initialize azure blob: %v", err)
 	}
@@ -114,7 +115,6 @@ func run(cmd *cobra.Command, args []string) {
 	pm := payloadmanager.NewPayloadManger(azureClient, logger, cfg)
 	secretParser := secret.New(logger)
 	tcm := tasconfigmanager.NewTASConfigManager(logger)
-	requests := requestutils.New(logger)
 	execManager := command.NewExecutionManager(secretParser, azureClient, logger)
 	gm := gitmanager.NewGitManager(logger, execManager)
 	dm := diffmanager.NewDiffManager(cfg, logger)

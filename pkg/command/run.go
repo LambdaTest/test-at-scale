@@ -50,7 +50,7 @@ func (m *manager) ExecuteUserCommands(ctx context.Context,
 
 	blobPath := fmt.Sprintf("%s/%s/%s/%s.log", payload.OrgID, payload.BuildID, os.Getenv("TASK_ID"), commandType)
 	errChan := m.StoreCommandLogs(ctx, blobPath, azureReader)
-
+	defer m.closeAndWriteLog(azureWriter, errChan, commandType)
 	logWriter := lumber.NewWriter(m.logger)
 	defer logWriter.Close()
 	multiWriter := io.MultiWriter(logWriter, azureWriter)
@@ -78,7 +78,7 @@ func (m *manager) ExecuteUserCommands(ctx context.Context,
 	return nil
 }
 
-// ExecuteUserCommands executes user commands for version 2
+// ExecuteUserCommandsV2 executes user commands for version 2
 func (m *manager) ExecuteUserCommandsV2(ctx context.Context,
 	commandType core.CommandType,
 	payload *core.Payload,
@@ -120,7 +120,6 @@ func (m *manager) ExecuteUserCommandsV2(ctx context.Context,
 		m.logger.Errorf("command %s, exited with error: %v", commandType, execErr)
 		return execErr
 	}
-	azureWriter.Close()
 	if uploadErr := <-errChan; uploadErr != nil {
 		m.logger.Errorf("failed to upload logs for command %s, error: %v", commandType, uploadErr)
 		return uploadErr
@@ -205,4 +204,10 @@ func (m *manager) writeCommandLogsToBuffer(ctx context.Context,
 		m.logger.Debugf("written logs for sub module %s to buffer", submodule)
 	}()
 	return errChan
+}
+func (m *manager) closeAndWriteLog(azureWriter *io.PipeWriter, errChan <-chan error, commandType core.CommandType) {
+	azureWriter.Close()
+	if uploadErr := <-errChan; uploadErr != nil {
+		m.logger.Errorf("failed to upload logs for command %s, error: %v", commandType, uploadErr)
+	}
 }
