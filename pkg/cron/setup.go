@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	buildCacheExpiry time.Duration = 1 * time.Minute
+	buildCacheExpiry time.Duration = 4 * time.Hour
 	buildCacheDir    string        = "/tmp/synapse"
 )
 
@@ -22,7 +22,7 @@ func Setup(ctx context.Context, wg *sync.WaitGroup, logger lumber.Logger) {
 	defer wg.Done()
 
 	c := cron.New()
-	if _, err := c.AddFunc("@every 1m", func() { cleanupBuildCache(logger) }); err != nil {
+	if _, err := c.AddFunc("@every 5m", func() { cleanupBuildCache(logger) }); err != nil {
 		logger.Errorf("error setting up cron")
 		return
 	}
