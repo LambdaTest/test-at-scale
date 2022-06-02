@@ -26,11 +26,10 @@ var (
 	coverageContainerName = "coverage"
 )
 
-// Store represents the azure storage
-type Store struct {
+// store represents the azure storage
+type store struct {
 	requests        core.Requests
 	containerClient azblob.ContainerClient
-	httpClient      http.Client
 	logger          lumber.Logger
 	endpoint        string
 }
@@ -47,24 +46,21 @@ type response struct {
 }
 
 // NewAzureBlobEnv returns a new Azure blob store.
-func NewAzureBlobEnv(requests core.Requests, cfg *config.NucleusConfig, logger lumber.Logger) (core.AzureClient, error) {
+func NewAzureBlobEnv(cfg *config.NucleusConfig, requests core.Requests, logger lumber.Logger) (core.AzureClient, error) {
 	// if non coverage mode then use Azure SAS Token
 	if !cfg.CoverageMode {
-		return &Store{
+		return &store{
 			requests: requests,
 			logger:   logger,
 			endpoint: global.NeuronHost + "/internal/sas-token",
-			httpClient: http.Client{
-				Timeout: global.DefaultHTTPTimeout,
-			},
 		}, nil
 	}
 	// FIXME: Hack for synapse
 	if cfg.LocalRunner {
-		cfg.Azure.StorageAccountName = "dummy"
-		cfg.Azure.StorageAccessKey = "dummy"
+		cfg.Azure.StorageAccountName = "dummy-account"
+		cfg.Azure.StorageAccessKey = "dummy-access-key"
 	}
-	if len(cfg.Azure.StorageAccountName) == 0 || len(cfg.Azure.StorageAccessKey) == 0 {
+	if cfg.Azure.StorageAccountName == "" || cfg.Azure.StorageAccessKey == "" {
 		return nil, errors.New("either the storage account or storage access key environment variable is not set")
 	}
 	credential, err := azblob.NewSharedKeyCredential(cfg.Azure.StorageAccountName, cfg.Azure.StorageAccessKey)
@@ -83,19 +79,16 @@ func NewAzureBlobEnv(requests core.Requests, cfg *config.NucleusConfig, logger l
 		return nil, err
 	}
 
-	return &Store{
-		requests: requests,
-		logger:   logger,
-		endpoint: global.NeuronHost + "/internal/sas-token",
-		httpClient: http.Client{
-			Timeout: global.DefaultHTTPTimeout,
-		},
+	return &store{
+		requests:        requests,
+		logger:          logger,
+		endpoint:        global.NeuronHost + "/internal/sas-token",
 		containerClient: serviceClient.NewContainerClient(coverageContainerName),
 	}, nil
 }
 
 // FindUsingSASUrl download object based on sasURL
-func (s *Store) FindUsingSASUrl(ctx context.Context, sasURL string) (io.ReadCloser, error) {
+func (s *store) FindUsingSASUrl(ctx context.Context, sasURL string) (io.ReadCloser, error) {
 	u, err := url.Parse(sasURL)
 	if err != nil {
 		return nil, err
@@ -115,7 +108,7 @@ func (s *Store) FindUsingSASUrl(ctx context.Context, sasURL string) (io.ReadClos
 }
 
 // CreateUsingSASURL creates object using sasURL
-func (s *Store) CreateUsingSASURL(ctx context.Context, sasURL string, reader io.Reader, mimeType string) (string, error) {
+func (s *store) CreateUsingSASURL(ctx context.Context, sasURL string, reader io.Reader, mimeType string) (string, error) {
 	u, err := url.Parse(sasURL)
 	if err != nil {
 		return "", err
@@ -137,7 +130,7 @@ func (s *Store) CreateUsingSASURL(ctx context.Context, sasURL string, reader io.
 }
 
 // Find function downloads blob based on URI
-func (s *Store) Find(ctx context.Context, path string) (io.ReadCloser, error) {
+func (s *store) Find(ctx context.Context, path string) (io.ReadCloser, error) {
 	blobClient := s.containerClient.NewBlockBlobClient(path)
 	out, err := blobClient.Download(ctx, &azblob.DownloadBlobOptions{})
 	if err != nil {
@@ -149,7 +142,7 @@ func (s *Store) Find(ctx context.Context, path string) (io.ReadCloser, error) {
 }
 
 // Create function ulploads blob to URI
-func (s *Store) Create(ctx context.Context, path string, reader io.Reader, mimeType string) (string, error) {
+func (s *store) Create(ctx context.Context, path string, reader io.Reader, mimeType string) (string, error) {
 	blobClient := s.containerClient.NewBlockBlobClient(path)
 	_, err := blobClient.UploadStreamToBlockBlob(ctx, reader, azblob.UploadStreamToBlockBlobOptions{
 		HTTPHeaders: &azblob.BlobHTTPHeaders{BlobContentType: &mimeType},
@@ -161,7 +154,7 @@ func (s *Store) Create(ctx context.Context, path string, reader io.Reader, mimeT
 }
 
 // GetSASURL calls request neuron to get the SAS url
-func (s *Store) GetSASURL(ctx context.Context, containerPath string, containerType core.ContainerType) (string, error) {
+func (s *store) GetSASURL(ctx context.Context, containerPath string, containerType core.ContainerType) (string, error) {
 	reqPayload := &request{
 		BlobPath: containerPath,
 		BlobType: containerType,
@@ -189,7 +182,7 @@ func (s *Store) GetSASURL(ctx context.Context, containerPath string, containerTy
 }
 
 // Exists checks the blob if exists
-func (s *Store) Exists(ctx context.Context, path string) (bool, error) {
+func (s *store) Exists(ctx context.Context, path string) (bool, error) {
 	blobClient := s.containerClient.NewBlockBlobClient(path)
 	get, err := blobClient.GetProperties(ctx, &azblob.GetBlobPropertiesOptions{})
 	if err != nil {
@@ -206,11 +199,9 @@ func handleError(err error) error {
 	}
 	var errResp *azblob.StorageError
 	if internalErr, ok := err.(*azblob.InternalError); ok && internalErr.As(&errResp) {
-		switch errResp.ErrorCode { // Compare serviceCode to ServiceCodeXxx constants
-		case azblob.StorageErrorCodeBlobNotFound:
+		if errResp.ErrorCode == azblob.StorageErrorCodeBlobNotFound {
 			return errs.ErrNotFound
 		}
 	}
 	return err
-
 }

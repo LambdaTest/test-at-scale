@@ -12,9 +12,12 @@ import (
 
 	"github.com/LambdaTest/test-at-scale/config"
 	"github.com/LambdaTest/test-at-scale/pkg/core"
+	"github.com/LambdaTest/test-at-scale/pkg/global"
 	"github.com/LambdaTest/test-at-scale/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/pkg/requestutils"
 	"github.com/LambdaTest/test-at-scale/testutils"
 	"github.com/LambdaTest/test-at-scale/testutils/mocks"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -79,7 +82,8 @@ func Test_payloadManager_FetchPayload(t *testing.T) {
 		fmt.Printf("error in reading file: %+v\n", err)
 	}
 
-	pm := NewPayloadManger(azureClient, logger, cfg)
+	requests := requestutils.New(logger, global.DefaultAPITimeout, &backoff.StopBackOff{})
+	pm := NewPayloadManger(azureClient, logger, cfg, requests)
 
 	type args struct {
 		ctx            context.Context
@@ -137,7 +141,8 @@ func Test_payloadManager_ValidatePayload(t *testing.T) {
 		cfg.Locators = tt.args.locators
 		cfg.TaskID = tt.args.taskID
 
-		pm := NewPayloadManger(azureClient, logger, cfg)
+		requests := requestutils.New(logger, global.DefaultAPITimeout, &backoff.StopBackOff{})
+		pm := NewPayloadManger(azureClient, logger, cfg, requests)
 		t.Run(tt.name, func(t *testing.T) {
 			if err := pm.ValidatePayload(tt.args.ctx, tt.args.payload); (err != nil) != tt.wantErr {
 				t.Errorf("payloadManager.ValidatePayload() error = %v, wantErr %v", err, tt.wantErr)

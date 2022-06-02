@@ -9,60 +9,17 @@ import (
 	"reflect"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/LambdaTest/test-at-scale/config"
 	"github.com/LambdaTest/test-at-scale/pkg/core"
+	"github.com/LambdaTest/test-at-scale/pkg/global"
 	"github.com/LambdaTest/test-at-scale/pkg/lumber"
 	"github.com/LambdaTest/test-at-scale/pkg/requestutils"
 	"github.com/LambdaTest/test-at-scale/testutils"
+	"github.com/cenkalti/backoff/v4"
 )
 
 const buildID = "buildID"
-
-func TestNewTestBlockListService(t *testing.T) {
-	cfg := config.GlobalNucleusConfig
-	logger, err := testutils.GetLogger()
-	if err != nil {
-		t.Errorf("Couldn't initialize logger, error: %v", err)
-	}
-
-	want := TestBlockTestService{
-		cfg:               cfg,
-		logger:            logger,
-		endpoint:          "endpoint",
-		blockTestEntities: make(map[string][]blocktest),
-		errChan:           make(chan error, 1),
-	}
-	type args struct {
-		cfg    *config.NucleusConfig
-		logger lumber.Logger
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    *TestBlockTestService
-		wantErr bool
-	}{
-		{"Test NewTestBlockListService, it should give new TestBlockListService struct with provided arguments",
-			args{
-				cfg:    cfg,
-				logger: logger,
-			},
-			&want,
-			false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			_, err := NewTestBlockTestService(tt.args.cfg, tt.args.logger)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("NewTestBlockListService() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-		})
-	}
-}
 
 func TestTestBlockListService_fetchBlockListFromNeuron(t *testing.T) {
 	server := httptest.NewServer( // mock server
@@ -141,9 +98,9 @@ func TestTestBlockListService_fetchBlockListFromNeuron(t *testing.T) {
 				blockTestEntities: blocklistedEntities,
 				once:              sync.Once{},
 				errChan:           make(chan error, 1),
-				requests:          requestutils.New(logger),
+				requests:          requestutils.New(logger, global.DefaultAPITimeout, &backoff.StopBackOff{}),
 			}
-			if err := tbs.fetchBlockListFromNeuron(tt.args.ctx, tt.args.repoID, tt.args.branch); (err != nil) != tt.wantErr {
+			if err := tbs.fetchBlockListFromNeuron(tt.args.ctx, tt.args.branch); (err != nil) != tt.wantErr {
 				t.Errorf("TestBlockListService.fetchBlockListFromNeuron() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -162,10 +119,8 @@ func TestTestBlockListService_GetBlockListedTests(t *testing.T) {
 	if err != nil {
 		t.Errorf("Couldn't initialize logger, error: %v", err)
 	}
-	tbs, err := NewTestBlockTestService(cfg, logger)
-	if err != nil {
-		t.Errorf("New TestBlockListService object couldn't be initialized, error: %v", err)
-	}
+	requests := requestutils.New(logger, global.DefaultAPITimeout, &backoff.StopBackOff{})
+	tbs := NewTestBlockTestService(cfg, requests, logger)
 
 	tbs.endpoint = server.URL + "/testBlocklist.json"
 
@@ -194,7 +149,7 @@ func TestTestBlockListService_GetBlockListedTests(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := tbs.GetBlockTests(tt.args.ctx, tt.args.tasConfig, tt.args.repoID, tt.args.branch); (err != nil) != tt.wantErr {
+			if err := tbs.GetBlockTests(tt.args.ctx, tt.args.tasConfig, tt.args.branch); (err != nil) != tt.wantErr {
 				t.Errorf("TestBlockListService.GetBlockListedTests() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -206,12 +161,6 @@ func TestTestBlockListService_populateBlockList(t *testing.T) {
 	logger, err := testutils.GetLogger()
 	if err != nil {
 		t.Errorf("Couldn't initialize logger, error: %v", err)
-	}
-	httpClient := http.Client{
-		Timeout: 15 * time.Second,
-		Transport: &http.Transport{
-			DisableKeepAlives: true,
-		},
 	}
 	blocklistLocators := []*blocktestLocator{}
 	firstLocator := &blocktestLocator{
@@ -228,7 +177,6 @@ func TestTestBlockListService_populateBlockList(t *testing.T) {
 	type fields struct {
 		cfg                 *config.NucleusConfig
 		logger              lumber.Logger
-		httpClient          http.Client
 		endpoint            string
 		blocklistedEntities map[string][]blocktest
 		errChan             chan error
@@ -244,10 +192,9 @@ func TestTestBlockListService_populateBlockList(t *testing.T) {
 	}{
 		{"Test populateBlockList",
 			fields{
-				cfg:        cfg,
-				logger:     logger,
-				httpClient: httpClient,
-				endpoint:   "/blocktest",
+				cfg:      cfg,
+				logger:   logger,
+				endpoint: "/blocktest",
 				blocklistedEntities: map[string][]blocktest{
 					"src/test/api1.js": {
 						blocktest{

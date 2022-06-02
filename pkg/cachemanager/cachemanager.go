@@ -88,9 +88,7 @@ func (c *cache) Download(ctx context.Context, cacheKey string) error {
 	if _, err := io.Copy(out, resp); err != nil {
 		return err
 	}
-	//decompress
 	return c.zstd.Decompress(ctx, cachedFilePath, true, global.RepoDir)
-
 }
 
 func (c *cache) Upload(ctx context.Context, cacheKey string, itemsToCompress ...string) error {
@@ -101,12 +99,13 @@ func (c *cache) Upload(ctx context.Context, cacheKey string, itemsToCompress ...
 
 	validatedItems := make([]string, 0, len(itemsToCompress))
 	if len(itemsToCompress) == 0 {
-		dir, err := c.getDefaultDirs()
+		dirs, err := c.getDefaultDirs()
+		c.logger.Debugf("Dirs: %+v", dirs)
 		if err != nil {
 			c.logger.Errorf("failed to get default cache directories, error %v", err)
 			return nil
 		}
-		itemsToCompress = append(itemsToCompress, dir)
+		itemsToCompress = append(itemsToCompress, dirs...)
 	}
 	// validate the file or dir paths if it exists.
 	for _, item := range itemsToCompress {
@@ -178,27 +177,32 @@ func (c *cache) ExtractWorkspace(ctx context.Context) error {
 	return nil
 }
 
-func (c *cache) getDefaultDirs() (string, error) {
+func (c *cache) getDefaultDirs() ([]string, error) {
+	defaultDirs := []string{}
 	f, err := os.Open(global.RepoDir)
 	if err != nil {
-		return "", err
+		return defaultDirs, err
 	}
 
 	dirs, err := f.ReadDir(-1)
 	if err != nil {
-		return "", err
+		return defaultDirs, err
 	}
 
+	defaultDirs = append(defaultDirs, global.RepoCacheDir)
 	for _, d := range dirs {
 		// if yarn.lock present cache yarn folder
 		if d.Name() == yarnLock {
-			return filepath.Join(c.homeDir, ".cache", "yarn"), nil
+			defaultDirs = append(defaultDirs, filepath.Join(c.homeDir, ".cache", "yarn"))
+			return defaultDirs, nil
 		}
 		// if package-lock.json or npm-shrinkwrap.json cache .npm cache
 		if d.Name() == packageLock || d.Name() == npmShrinkwrap {
-			return filepath.Join(c.homeDir, ".npm"), nil
+			defaultDirs = append(defaultDirs, filepath.Join(c.homeDir, ".npm"))
+			return defaultDirs, nil
 		}
 	}
 	// If none present cache node_modules
-	return nodeModules, nil
+	defaultDirs = append(defaultDirs, nodeModules)
+	return defaultDirs, nil
 }
