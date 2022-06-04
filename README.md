@@ -39,7 +39,7 @@ To learn more about TAS features and capabilities, see our [product page](https:
 - Supports Javascript monorepos
 - Smart depdency caching to speedup subsequent test runs
 - Easily customizable to support all major language and frameworks
-- Available as (https://lambdatest.com/test-at-scale)[hosted solution] as well as self-hosted opensource runner
+- Available as [hosted solution](https://lambdatest.com/test-at-scale) as well as self-hosted opensource runner
 - [Upcoming] Smart flaky test management 🪄
 
 ## Table of contents 
