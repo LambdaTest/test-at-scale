@@ -23,10 +23,13 @@ type manager struct {
 // NewExecutionManager returns new instance of manger
 func NewExecutionManager(secretParser core.SecretParser,
 	azureClient core.AzureClient,
-	logger lumber.Logger) core.ExecutionManager {
-	return &manager{logger: logger,
+	logger lumber.Logger,
+) core.ExecutionManager {
+	return &manager{
+		logger:       logger,
 		secretParser: secretParser,
-		azureClient:  azureClient}
+		azureClient:  azureClient,
+	}
 }
 
 // ExecuteUserCommands executes user commands
@@ -34,7 +37,8 @@ func (m *manager) ExecuteUserCommands(ctx context.Context,
 	commandType core.CommandType,
 	payload *core.Payload,
 	runConfig *core.Run,
-	secretData map[string]string) error {
+	secretData map[string]string,
+) error {
 	script, err := m.createScript(runConfig.Commands, secretData)
 	if err != nil {
 		return err
@@ -78,7 +82,8 @@ func (m *manager) ExecuteInternalCommands(ctx context.Context,
 	commandType core.CommandType,
 	commands []string,
 	cwd string,
-	envMap, secretData map[string]string) error {
+	envMap, secretData map[string]string,
+) error {
 	bashCommands := strings.Join(commands, " && ")
 	cmd := exec.CommandContext(ctx, "/bin/bash", "-c", bashCommands)
 	if cwd != "" {

@@ -58,7 +58,7 @@ func (s *secertManager) WriteGitSecrets(path string) error {
 	return nil
 }
 
-func (s *secertManager) WriteRepoSecrets(repo string, path string) error {
+func (s *secertManager) WriteRepoSecrets(repo, path string) error {
 	val, ok := s.cfg.RepoSecrets[repo]
 	if !ok {
 		return errors.New("no secrets found in configuration file")

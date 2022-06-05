@@ -10,8 +10,10 @@ import (
 	"github.com/LambdaTest/test-at-scale/pkg/tests"
 )
 
-var cfg *config.SynapseConfig
-var secretsManager core.SecretsManager
+var (
+	cfg            *config.SynapseConfig
+	secretsManager core.SecretsManager
+)
 
 const testdDataDir = "./testdata"
 

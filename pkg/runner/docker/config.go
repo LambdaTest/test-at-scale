@@ -26,7 +26,6 @@ const (
 )
 
 func (d *docker) getContainerConfiguration(r *core.RunnerOptions) *container.Config {
-
 	return &container.Config{
 		Image:   r.DockerImage,
 		Env:     r.Env,

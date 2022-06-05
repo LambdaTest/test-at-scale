@@ -48,7 +48,8 @@ func New(execManager core.ExecutionManager,
 	azureClient core.AzureClient,
 	zstd core.ZstdCompressor,
 	cfg *config.NucleusConfig,
-	logger lumber.Logger) (core.CoverageService, error) {
+	logger lumber.Logger,
+) (core.CoverageService, error) {
 	// if coverage mode not enabled do not initialize the service
 	if !cfg.CoverageMode {
 		return nil, nil
@@ -65,11 +66,11 @@ func New(execManager core.ExecutionManager,
 		endpoint:             global.NeuronHost + "/coverage",
 		httpClient: http.Client{
 			Timeout: global.DefaultAPITimeout,
-		}}, nil
-
+		},
+	}, nil
 }
 
-//mergeCodeCoverageFiles merge all the coverage.json into single entity
+// mergeCodeCoverageFiles merge all the coverage.json into single entity
 func (c *codeCoverageService) mergeCodeCoverageFiles(ctx context.Context, commitDir, coverageManifestPath string, threshold bool) error {
 	if _, err := os.Stat(commitDir); os.IsNotExist(err) {
 		c.logger.Errorf("coverage files not found, skipping merge")
@@ -78,7 +79,7 @@ func (c *codeCoverageService) mergeCodeCoverageFiles(ctx context.Context, commit
 
 	coverageFiles := make([]string, 0)
 	if err := filepath.WalkDir(commitDir, func(path string, d fs.DirEntry, err error) error {
-		//add all individual coverage json files
+		// add all individual coverage json files
 		if d.Name() == coverageJSONFileName {
 			coverageFiles = append(coverageFiles, path)
 		}
@@ -136,7 +137,7 @@ func (c *codeCoverageService) MergeAndUpload(ctx context.Context, payload *core.
 			c.logger.Errorf("failed to parse manifest file: %s, error :%v", commitDir, err)
 			return err
 		}
-		//skip copy of parent directory if all test files executed
+		// skip copy of parent directory if all test files executed
 		if !manifestPayload.AllFilesExecuted {
 			if err := c.copyFromParentCommitDir(parentCommitDir, commitDir, manifestPayload.Removedfiles...); err != nil {
 				c.logger.Errorf("failed to copy coverage files from %s to %s, error :%v", parentCommitDir, commitDir, err)
@@ -179,7 +180,7 @@ func (c *codeCoverageService) MergeAndUpload(ctx context.Context, payload *core.
 		}
 		blobURL = strings.TrimSuffix(blobURL, fmt.Sprintf("/%s", mergedcoverageJSON))
 		coveragePayload = append(coveragePayload, coverageData{BuildID: payload.BuildID, RepoID: payload.RepoID, CommitID: commit.Sha, BlobLink: blobURL, TotalCoverage: totalCoverage})
-		//current commit dir becomes parent for next commit
+		// current commit dir becomes parent for next commit
 		parentCommitDir = commitDir
 	}
 	return c.sendCoverageData(coveragePayload)
@@ -276,9 +277,9 @@ func (c *codeCoverageService) copyFromParentCommitDir(parentCommitDir, commitDir
 		if info.IsDir() && info.Name() != filepath.Base(parentCommitDir) {
 			if len(removedFiles) > 0 {
 				for index, removedfile := range removedFiles {
-					//if testfile is now removed don't copy to current commit directory
+					// if testfile is now removed don't copy to current commit directory
 					if info.Name() == removedfile {
-						//remove file from slice
+						// remove file from slice
 						removedFiles = append(removedFiles[:index], removedFiles[index+1:]...)
 						return filepath.SkipDir
 					}
@@ -286,15 +287,15 @@ func (c *codeCoverageService) copyFromParentCommitDir(parentCommitDir, commitDir
 			}
 			testfileDir := filepath.Join(commitDir, info.Name())
 
-			//TODO: check if copied dir size is not 0
-			//if file already exists then don't copy from parent directory
+			// TODO: check if copied dir size is not 0
+			// if file already exists then don't copy from parent directory
 			if _, err := os.Stat(testfileDir); os.IsNotExist(err) {
 				if err := fileutils.CopyDir(path, testfileDir, false); err != nil {
 					c.logger.Errorf("failed to copy directory from src %s to dest %s, error %v", path, testfileDir, err)
 					return err
 				}
 			}
-			//all files copied now we can move next sub directory
+			// all files copied now we can move next sub directory
 			return filepath.SkipDir
 		}
 		return nil
@@ -322,7 +323,6 @@ func (c *codeCoverageService) getParentCommitCoverageDir(repoID, commitID string
 	}
 
 	resp, err := c.httpClient.Do(req)
-
 	if err != nil {
 		c.logger.Errorf("error while getting coverage details for parent commitID %s, %v", commitID, err)
 		return coverage, err
@@ -360,7 +360,6 @@ func (c *codeCoverageService) sendCoverageData(payload []coverageData) error {
 	}
 
 	resp, err := c.httpClient.Do(req)
-
 	if err != nil {
 		c.logger.Errorf("error while sending coverage data %v", err)
 		return err

@@ -35,7 +35,6 @@ func NewProxyHandler(logger lumber.Logger) (*ProxyHandler, error) {
 
 // HandlerProxy handles the proxy server
 func (ph *ProxyHandler) HandlerProxy(w http.ResponseWriter, r *http.Request) {
-
 	proxy := httputil.NewSingleHostReverseProxy(ph.remote)
 	proxy.Director = func(req *http.Request) {
 		req.Header = r.Header

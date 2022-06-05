@@ -35,7 +35,8 @@ func NewTASConfigManager(logger lumber.Logger) core.TASConfigManager {
 func (tc *tasConfigManager) LoadAndValidate(ctx context.Context,
 	path string,
 	eventType core.EventType,
-	licenseTier core.Tier) (*core.TASConfig, error) {
+	licenseTier core.Tier,
+) (*core.TASConfig, error) {
 	path, err := utils.GetConfigFileName(path)
 	if err != nil {
 		return nil, err

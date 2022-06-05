@@ -30,7 +30,8 @@ func NewTestDiscoveryService(ctx context.Context,
 	tdResChan chan core.DiscoveryResult,
 	execManager core.ExecutionManager,
 	requests core.Requests,
-	logger lumber.Logger) core.TestDiscoveryService {
+	logger lumber.Logger,
+) core.TestDiscoveryService {
 	return &testDiscoveryService{
 		logger:      logger,
 		execManager: execManager,
@@ -45,7 +46,8 @@ func (tds *testDiscoveryService) Discover(ctx context.Context,
 	payload *core.Payload,
 	secretData map[string]string,
 	diff map[string]int,
-	diffExists bool) error {
+	diffExists bool,
+) error {
 	var target []string
 	var envMap map[string]string
 	if payload.EventType == core.EventPullRequest {

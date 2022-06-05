@@ -35,10 +35,12 @@ func TestNewExecutionManager(t *testing.T) {
 		args args
 		want core.ExecutionManager
 	}{
-		{"Test initialisation func",
-			args{secretParser: secretParser,
-				azureClient: azureClient,
-				logger:      logger,
+		{
+			"Test initialisation func",
+			args{
+				secretParser: secretParser,
+				azureClient:  azureClient,
+				logger:       logger,
 			},
 			&manager{
 				logger:       logger,
@@ -82,7 +84,8 @@ func Test_manager_GetEnvVariables(t *testing.T) {
 		want    []string
 		wantErr bool
 	}{
-		{"Test GetEnvVariables for success",
+		{
+			"Test GetEnvVariables for success",
 			fields{
 				logger:       logger,
 				secretParser: secretParser,
@@ -159,7 +162,8 @@ func Test_manager_StoreCommandLogs(t *testing.T) {
 		want    <-chan error
 		wantErr bool
 	}{
-		{"Test StoreCommandLogs for getSASURL error",
+		{
+			"Test StoreCommandLogs for getSASURL error",
 			fields{
 				azureClient: azureClientGetSASURL,
 			},
@@ -171,7 +175,8 @@ func Test_manager_StoreCommandLogs(t *testing.T) {
 			errGetSASURL,
 			true,
 		},
-		{"Test StoreCommandLogs for CreateUsingSASURL error",
+		{
+			"Test StoreCommandLogs for CreateUsingSASURL error",
 			fields{
 				azureClient: azureClientCreateSASURL,
 			},
@@ -183,7 +188,8 @@ func Test_manager_StoreCommandLogs(t *testing.T) {
 			errCreateUsingSASURL,
 			true,
 		},
-		{"Test StoreCommandLogs for success",
+		{
+			"Test StoreCommandLogs for success",
 			fields{
 				azureClient: azureClientSuccess,
 			},

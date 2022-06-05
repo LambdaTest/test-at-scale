@@ -20,7 +20,7 @@ import (
 	"github.com/LambdaTest/test-at-scale/pkg/urlmanager"
 )
 
-//TODO: add logger
+// TODO: add logger
 
 type diffManager struct {
 	cfg    *config.NucleusConfig
@@ -95,7 +95,7 @@ func (dm *diffManager) getCommitDiff(gitprovider, repoURL string, oauth *core.Oa
 	}
 	defer resp.Body.Close()
 
-	//TODO: Handle initial commit case
+	// TODO: Handle initial commit case
 	if resp.StatusCode != http.StatusOK {
 		return nil, errs.ErrGitDiffNotFound
 	}
@@ -127,7 +127,6 @@ func (dm *diffManager) getPRDiff(gitprovider, repoURL string, prNumber int, oaut
 	req.Header.Set("Accept", "application/vnd.github.v3.diff")
 
 	resp, err := dm.client.Do(req)
-
 	if err != nil {
 		dm.logger.Errorf("failed to get changedlist url api error: %v", err)
 		return nil, err
@@ -139,7 +138,6 @@ func (dm *diffManager) getPRDiff(gitprovider, repoURL string, prNumber int, oaut
 	}
 
 	return ioutil.ReadAll(resp.Body)
-
 }
 
 func (dm *diffManager) parseDiff(diff string) map[string]int {

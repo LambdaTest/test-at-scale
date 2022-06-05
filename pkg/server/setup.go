@@ -12,7 +12,6 @@ import (
 
 // ListenAndServe initializes a server to respond to HTTP network requests.
 func ListenAndServe(ctx context.Context, router api.Router, config *config.NucleusConfig, logger lumber.Logger) error {
-
 	// set gin to release mode
 	gin.SetMode(gin.ReleaseMode)
 
@@ -49,5 +48,4 @@ func ListenAndServe(ctx context.Context, router api.Router, config *config.Nucle
 	case <-done:
 		return nil
 	}
-
 }

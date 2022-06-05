@@ -45,5 +45,4 @@ func (t *task) UpdateStatus(ctx context.Context, payload *core.TaskPayload) erro
 	}
 
 	return nil
-
 }

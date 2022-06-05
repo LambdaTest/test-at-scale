@@ -26,7 +26,8 @@ type payloadManager struct {
 
 // NewPayloadManger creates and returns a new PayloadManager instance
 func NewPayloadManger(azureClient core.AzureClient,
-	logger lumber.Logger, cfg *config.NucleusConfig, requests core.Requests) core.PayloadManager {
+	logger lumber.Logger, cfg *config.NucleusConfig, requests core.Requests,
+) core.PayloadManager {
 	return &payloadManager{
 		azureClient: azureClient,
 		logger:      logger,

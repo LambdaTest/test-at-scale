@@ -166,7 +166,6 @@ func run(cmd *cobra.Command, args []string) {
 	case <-done:
 		os.Exit(0)
 	}
-
 }
 
 func setEnv() {

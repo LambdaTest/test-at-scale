@@ -8,8 +8,8 @@ import (
 const (
 	GracefulTimeout       = 100 * time.Second
 	ProxyServerPort       = "8000"
-	DirectoryPermissions  = 0755
-	FilePermissions       = 0755
+	DirectoryPermissions  = 0o755
+	FilePermissions       = 0o755
 	GitConfigFileName     = "oauth"
 	RepoSecretsFileName   = "reposecrets"
 	SynapseContainerURL   = "http://synapse:8000"

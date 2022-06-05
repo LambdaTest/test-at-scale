@@ -63,7 +63,8 @@ func newDockerClient(secretsManager core.SecretsManager) (*docker, error) {
 // New initialize a new docker configuration
 func New(secretsManager core.SecretsManager,
 	logger lumber.Logger,
-	cfg *config.SynapseConfig) (core.DockerRunner, error) {
+	cfg *config.SynapseConfig,
+) (core.DockerRunner, error) {
 	dockerConfig, err := newDockerClient(secretsManager)
 	if err != nil {
 		return nil, err

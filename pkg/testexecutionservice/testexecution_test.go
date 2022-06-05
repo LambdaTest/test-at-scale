@@ -47,9 +47,11 @@ func TestNewTestExecutionService(t *testing.T) {
 		args args
 		want *testExecutionService
 	}{
-		{"TestNewTestExecutionService",
+		{
+			"TestNewTestExecutionService",
 			args{execManager, azureClient, ts, logger},
-			&testExecutionService{logger, azureClient, cfg, ts, execManager, requests, global.NeuronHost + "/report"}},
+			&testExecutionService{logger, azureClient, cfg, ts, execManager, requests, global.NeuronHost + "/report"},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -96,7 +98,8 @@ func Test_testExecutionService_GetLocatorsFile(t *testing.T) {
 		want    string
 		wantErr bool
 	}{
-		{"Test GetLocatorsFile",
+		{
+			"Test GetLocatorsFile",
 			fields{
 				logger:      logger,
 				azureClient: azureClient,
