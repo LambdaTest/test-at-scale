@@ -29,7 +29,7 @@ func TestWriteGitSecrets(t *testing.T) {
 	if err != nil {
 		t.Errorf("error while writing secrets: %v", err)
 	}
-	if _, errS := os.Stat(expectedFile); errS != nil {
+	if _, errS := os.Lstat(expectedFile); errS != nil {
 		t.Errorf("could not find the git config file: %v", errS)
 	}
 
