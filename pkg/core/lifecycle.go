@@ -341,7 +341,7 @@ func (pl *Pipeline) runDiscoveryV1(ctx context.Context,
 	}
 
 	if tasConfig.Prerun != nil {
-		pl.Logger.Infof("Running pre-run steps")
+		pl.Logger.Infof("Running pre-run steps for top module")
 		err = pl.ExecutionManager.ExecuteUserCommands(ctx, PreRun, payload, tasConfig.Prerun, secretMap, global.RepoDir)
 		if err != nil {
 			pl.Logger.Errorf("Unable to run pre-run steps %v", err)
@@ -436,7 +436,6 @@ func (pl *Pipeline) runNewVersion(ctx context.Context,
 		}
 	}
 
-	pl.Logger.Infof("Tas yaml: %+v", tasConfig)
 	return nil
 }
 
@@ -485,14 +484,12 @@ func (pl *Pipeline) runDiscoveryV2(payload *Payload,
 		}
 	}
 	if payload.EventType == EventPush {
-		pl.Logger.Debugf("TAS %+v", tasConfig.PostMerge)
 		if discoveryErr := pl.runDiscoveryV2Helper(ctx, tasConfig.PostMerge.PreRun,
 			tasConfig.PostMerge.SubModules, payload, tasConfig,
 			taskPayload, diff, diffExists, readerBuffer, secretMap); discoveryErr != nil {
 			return discoveryErr
 		}
 	} else {
-		pl.Logger.Debugf("TAS %+v", tasConfig.PreMerge)
 		if discoveryErr := pl.runDiscoveryV2Helper(ctx, tasConfig.PreMerge.PreRun, tasConfig.PreMerge.SubModules,
 			payload, tasConfig, taskPayload, diff, diffExists, readerBuffer, secretMap); discoveryErr != nil {
 			return discoveryErr
@@ -525,7 +522,7 @@ func (pl *Pipeline) runPreRunForEachSubModule(ctx context.Context,
 	modulePath := path.Join(global.RepoDir, subModule.Path)
 	// PRE RUN steps
 	if subModule.Prerun != nil {
-		pl.Logger.Infof("Running pre-run steps")
+		pl.Logger.Infof("Running pre-run steps for submodule %s", subModule.Name)
 		err := pl.ExecutionManager.ExecuteUserCommandsV2(ctx, PreRun, payload, subModule.Prerun, secretMap, modulePath, subModule.Name, readerBuffer)
 		if err != nil {
 			pl.Logger.Errorf("Unable to run pre-run steps %v", err)
@@ -586,7 +583,7 @@ func (pl *Pipeline) runTestExecutionV2(ctx context.Context,
 	modulePath := path.Join(global.RepoDir, subModule.Path)
 	// PRE RUN steps should be run only if RunPrerunEveryTime is set to true
 	if subModule.Prerun != nil && subModule.RunPrerunEveryTime {
-		pl.Logger.Infof("Running pre-run steps")
+		pl.Logger.Infof("Running pre-run steps for submodule %s", subModule.Name)
 		err = pl.ExecutionManager.ExecuteUserCommands(ctx, PreRun, payload, subModule.Prerun, secretMap, modulePath)
 		if err != nil {
 			pl.Logger.Errorf("Unable to run pre-run steps %v", err)
@@ -673,7 +670,7 @@ func (pl *Pipeline) runDiscoveryV2Helper(ctx context.Context,
 			return err
 		}
 	}
-
+	pl.Logger.Debugf("pre run on top level ended")
 	for i := 0; i < totalSubmoduleCount; i++ {
 		preRunWaitGroup.Add(1)
 		go func(subModule *SubModule) {

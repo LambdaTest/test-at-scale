@@ -133,7 +133,7 @@ func (tds *testDiscoveryService) updateResult(ctx context.Context, testDiscovery
 	headers := map[string]string{
 		"Authorization": fmt.Sprintf("%s %s", "Bearer", os.Getenv("TOKEN")),
 	}
-	if _, _, err := tds.requests.MakeAPIRequest(ctx, http.MethodPost, tds.endpoint, reqBody, params, headers); err != nil {
+	if _, _, err := tds.requests.MakeAPIRequest(ctx, http.MethodPost, tds.discoveryEndpoint, reqBody, params, headers); err != nil {
 		return err
 	}
 
@@ -246,9 +246,13 @@ func (tds *testDiscoveryService) UpdateSubmoduleList(ctx context.Context, buildI
 		tds.logger.Errorf("error while json marshal %v", err)
 		return err
 	}
-
-	if _, err := tds.requests.MakeAPIRequest(ctx, http.MethodPost, tds.subModuleListEndpoint, reqBody); err != nil {
-		tds.logger.Errorf("error while making submodule-list api call %v", err)
+	params := utils.FetchQueryParams()
+	headers := map[string]string{
+		"Authorization": fmt.Sprintf("%s %s", "Bearer", os.Getenv("TOKEN")),
+	}
+	if _, statusCode, err := tds.requests.MakeAPIRequest(ctx, http.MethodPost, tds.subModuleListEndpoint,
+		reqBody, params, headers); err != nil || statusCode != 200 {
+		tds.logger.Errorf("error while making submodule-list api call status code %d, err %v", statusCode, err)
 		return err
 	}
 	return nil

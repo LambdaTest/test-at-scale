@@ -120,6 +120,7 @@ func (m *manager) ExecuteUserCommandsV2(ctx context.Context,
 		m.logger.Errorf("command %s, exited with error: %v", commandType, execErr)
 		return execErr
 	}
+	azureWriter.Close()
 	if uploadErr := <-errChan; uploadErr != nil {
 		m.logger.Errorf("failed to upload logs for command %s, error: %v", commandType, uploadErr)
 		return uploadErr
