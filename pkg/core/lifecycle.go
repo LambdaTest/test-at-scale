@@ -3,10 +3,8 @@ package core
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
 	"os"
 	"path"
 	"path/filepath"
@@ -19,6 +17,7 @@ import (
 	"github.com/LambdaTest/test-at-scale/pkg/fileutils"
 	"github.com/LambdaTest/test-at-scale/pkg/global"
 	"github.com/LambdaTest/test-at-scale/pkg/lumber"
+	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -31,9 +30,6 @@ func NewPipeline(cfg *config.NucleusConfig, logger lumber.Logger) (*Pipeline, er
 	return &Pipeline{
 		Cfg:    cfg,
 		Logger: logger,
-		HTTPClient: http.Client{
-			Timeout: 45 * time.Second,
-		},
 	}, nil
 }
 
@@ -41,7 +37,6 @@ func NewPipeline(cfg *config.NucleusConfig, logger lumber.Logger) (*Pipeline, er
 func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-
 	startTime := time.Now()
 
 	pl.Logger.Debugf("Starting pipeline.....")
@@ -91,10 +86,12 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	payload.TaskType = taskPayload.Type
 	pl.Logger.Infof("Running nucleus in %s mode", taskPayload.Type)
 
-	// marking task to running state
-	if err = pl.Task.UpdateStatus(context.Background(), taskPayload); err != nil {
-		pl.Logger.Fatalf("failed to update task status %v", err)
-	}
+	go func() {
+		// marking task to running state
+		if err = pl.Task.UpdateStatus(context.Background(), taskPayload); err != nil {
+			pl.Logger.Fatalf("failed to update task status %v", err)
+		}
+	}()
 
 	// update task status when pipeline exits
 	defer func() {
@@ -167,6 +164,8 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 		return err
 	}
 	pl.Logger.Infof("TAS Version %f", version)
+
+	// set testing taskID, orgID and buildID as environment variable
 	os.Setenv("TASK_ID", payload.TaskID)
 	os.Setenv("ORG_ID", payload.OrgID)
 	os.Setenv("BUILD_ID", payload.BuildID)
@@ -194,48 +193,6 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	return err
 }
 
-func findTaskPayloadStatus(executionResults *ExecutionResults) Status {
-	for _, result := range executionResults.Results {
-		for i := 0; i < len(result.TestPayload); i++ {
-			testResult := &result.TestPayload[i]
-			if testResult.Status == "failed" {
-				return Failed
-			}
-		}
-	}
-	return Passed
-}
-
-func (pl *Pipeline) sendStats(payload ExecutionResults) error {
-	endpointNeuronReport := global.NeuronHost + "/report"
-	reqBody, err := json.Marshal(payload)
-	if err != nil {
-		pl.Logger.Errorf("failed to marshal request body %v", err)
-		return err
-	}
-
-	req, err := http.NewRequest(http.MethodPost, endpointNeuronReport, bytes.NewBuffer(reqBody))
-	if err != nil {
-		pl.Logger.Errorf("failed to create new request %v", err)
-		return err
-	}
-
-	resp, err := pl.HTTPClient.Do(req)
-
-	if err != nil {
-		pl.Logger.Errorf("error while sending reports %v", err)
-		return err
-	}
-
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		pl.Logger.Errorf("error while sending reports, non 200 status")
-		return errors.New("non 200 status")
-	}
-	return nil
-}
-
 func (pl *Pipeline) runOldVersion(ctx context.Context,
 	payload *Payload,
 	taskPayload *TaskPayload,
@@ -249,9 +206,9 @@ func (pl *Pipeline) runOldVersion(ctx context.Context,
 		return err
 	}
 
-	cacheKey := fmt.Sprintf("%s/%s/%s", payload.OrgID, payload.RepoID, tasConfig.Cache.Key)
-
+	cacheKey := fmt.Sprintf("%s/%s/%s/%s", tasConfig.Cache.Version, payload.OrgID, payload.RepoID, tasConfig.Cache.Key)
 	pl.Logger.Infof("Tas yaml: %+v", tasConfig)
+	os.Setenv("REPO_CACHE_DIR", global.RepoCacheDir)
 
 	if tasConfig.NodeVersion != "" {
 		nodeVersion := tasConfig.NodeVersion
@@ -326,17 +283,46 @@ func (pl *Pipeline) runDiscoveryV1(ctx context.Context,
 	if postErr := pl.TestDiscoveryService.UpdateSubmoduleList(ctx, payload.BuildID, 1); postErr != nil {
 		return postErr
 	}
-	blYml := pl.BlockTestService.GetBlocklistYMLV1(tasConfig)
-	err := pl.BlockTestService.GetBlockTests(ctx, blYml, payload.RepoID, payload.BranchName)
-	if err != nil {
-		pl.Logger.Errorf("Unable to fetch blocklisted tests: %v", err)
-		err = errs.New(errs.GenericErrRemark.Error())
-		return err
-	}
+	g, errCtx := errgroup.WithContext(ctx)
+	g.Go(func() error {
+		blYml := pl.BlockTestService.GetBlocklistYMLV1(tasConfig)
+		if errG := pl.BlockTestService.GetBlockTests(errCtx, blYml, payload.BranchName); errG != nil {
+			pl.Logger.Errorf("Unable to fetch blocklisted tests: %v", errG)
+			errG = errs.New(errs.GenericErrRemark.Error())
+			return errG
+		}
+		return nil
+	})
 
-	if err = pl.CacheStore.Download(ctx, cacheKey); err != nil {
-		pl.Logger.Errorf("Unable to download cache: %v", err)
-		err = errs.New(errs.GenericErrRemark.Error())
+	g.Go(func() error {
+		if errG := pl.CacheStore.Download(errCtx, cacheKey); errG != nil {
+			pl.Logger.Errorf("Unable to download cache: %v", errG)
+			errG = errs.New(errs.GenericErrRemark.Error())
+			return errG
+		}
+		return nil
+	})
+
+	pl.Logger.Infof("Identifying changed files ...")
+	diffExists := true
+	diff := map[string]int{}
+	g.Go(func() error {
+		diffC, errG := pl.DiffManager.GetChangedFiles(errCtx, payload, oauth)
+		if errG != nil {
+			if errors.Is(errG, errs.ErrGitDiffNotFound) {
+				diffExists = false
+			} else {
+				pl.Logger.Errorf("Unable to identify changed files %s", errG)
+				errG = errs.New("Error occurred in fetching diff from GitHub")
+				return errG
+			}
+		}
+		diff = diffC
+		return nil
+	})
+
+	err := g.Wait()
+	if err != nil {
 		return err
 	}
 
@@ -364,18 +350,6 @@ func (pl *Pipeline) runDiscoveryV1(ctx context.Context,
 		return err
 	}
 
-	pl.Logger.Infof("Identifying changed files ...")
-	diffExists := true
-	diff, err := pl.DiffManager.GetChangedFiles(ctx, payload, oauth)
-	if err != nil {
-		if errors.Is(err, errs.ErrGitDiffNotFound) {
-			diffExists = false
-		} else {
-			pl.Logger.Errorf("Unable to identify changed files %s", err)
-			err = errs.New("Error occurred in fetching diff from GitHub")
-			return err
-		}
-	}
 	err = pl.TestDiscoveryService.Discover(ctx, tasConfig, pl.Payload, secretMap, diff, diffExists)
 	if err != nil {
 		pl.Logger.Errorf("Unable to perform test discovery: %+v", err)
@@ -451,15 +425,38 @@ func (pl *Pipeline) runDiscoveryV2(payload *Payload,
 	// iterate through all sub modules
 	// Persist workspace
 	// Upload cache once for other builds
-	cacheKey := fmt.Sprintf("%s/%s/%s", payload.OrgID, payload.RepoID, tasConfig.Cache.Key)
+	cacheKey := fmt.Sprintf("%s/%s/%s/%s", tasConfig.Cache.Version, payload.OrgID, payload.RepoID, tasConfig.Cache.Key)
+
 	taskPayload.Status = Passed
-	pl.Logger.Debugf("Downloading cache for pre Runs")
-	if err := pl.CacheStore.Download(ctx, cacheKey); err != nil {
-		pl.Logger.Errorf("Unable to download cache: %v", err)
-		err = errs.New(errs.GenericErrRemark.Error())
+	g, errCtx := errgroup.WithContext(ctx)
+	g.Go(func() error {
+		if errG := pl.CacheStore.Download(errCtx, cacheKey); errG != nil {
+			pl.Logger.Errorf("Unable to download cache: %v", errG)
+			errG = errs.New(errs.GenericErrRemark.Error())
+			return errG
+		}
+		return nil
+	})
+	diffExists := true
+	diff := map[string]int{}
+	g.Go(func() error {
+		diffC, errG := pl.DiffManager.GetChangedFiles(errCtx, payload, oauth)
+		if errG != nil {
+			if errors.Is(errG, errs.ErrGitDiffNotFound) {
+				diffExists = false
+			} else {
+				pl.Logger.Errorf("Unable to identify changed files %s", errG)
+				errG = errs.New("Error occurred in fetching diff from GitHub")
+				return errG
+			}
+		}
+		diff = diffC
+		return nil
+	})
+	err := g.Wait()
+	if err != nil {
 		return err
 	}
-	pl.Logger.Debugf("Downloaded cache for pre Runs")
 
 	readerBuffer := new(bytes.Buffer)
 	defer func() error {
@@ -471,18 +468,6 @@ func (pl *Pipeline) runDiscoveryV2(payload *Payload,
 		return nil
 	}()
 
-	pl.Logger.Infof("Identifying changed files ...")
-	diffExists := true
-	diff, err := pl.DiffManager.GetChangedFiles(ctx, payload, oauth)
-	if err != nil {
-		if errors.Is(err, errs.ErrGitDiffNotFound) {
-			diffExists = false
-		} else {
-			pl.Logger.Errorf("Unable to identify changed files %s", err)
-			err = errs.New("Error occurred in fetching diff from GitHub")
-			return err
-		}
-	}
 	if payload.EventType == EventPush {
 		if discoveryErr := pl.runDiscoveryV2Helper(ctx, tasConfig.PostMerge.PreRun,
 			tasConfig.PostMerge.SubModules, payload, tasConfig,
@@ -514,7 +499,7 @@ func (pl *Pipeline) runPreRunForEachSubModule(ctx context.Context,
 	readerBuffer *bytes.Buffer) error {
 	pl.Logger.Debugf("Running discovery for sub module %s", subModule.Name)
 	blYML := pl.BlockTestService.GetBlocklistYMLV2(subModule)
-	if err := pl.BlockTestService.GetBlockTests(ctx, blYML, payload.RepoID, payload.BranchName); err != nil {
+	if err := pl.BlockTestService.GetBlockTests(ctx, blYML, payload.BranchName); err != nil {
 		pl.Logger.Errorf("Unable to fetch blocklisted tests: %v", err)
 		err = errs.New(errs.GenericErrRemark.Error())
 		return err
@@ -523,7 +508,8 @@ func (pl *Pipeline) runPreRunForEachSubModule(ctx context.Context,
 	// PRE RUN steps
 	if subModule.Prerun != nil {
 		pl.Logger.Infof("Running pre-run steps for submodule %s", subModule.Name)
-		err := pl.ExecutionManager.ExecuteUserCommandsV2(ctx, PreRun, payload, subModule.Prerun, secretMap, modulePath, subModule.Name, readerBuffer)
+		err := pl.ExecutionManager.ExecuteUserCommandsV2(ctx, PreRun, payload, subModule.Prerun,
+			secretMap, modulePath, subModule.Name, readerBuffer)
 		if err != nil {
 			pl.Logger.Errorf("Unable to run pre-run steps %v", err)
 			err = &errs.StatusFailed{Remark: "Failed in running pre-run steps"}
@@ -727,7 +713,6 @@ func (pl *Pipeline) runDiscoveryForEachSubModule(ctx context.Context, subModule 
 	diff map[string]int,
 	diffExists bool,
 	secretMap map[string]string) error {
-
 	if err := pl.TestDiscoveryService.DiscoverV2(ctx, subModule, pl.Payload, secretMap,
 		tasConfig, diff, diffExists); err != nil {
 		pl.Logger.Errorf("Unable to perform test discovery: %+v", err)

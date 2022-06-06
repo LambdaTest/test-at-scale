@@ -35,6 +35,7 @@ import (
 	"github.com/LambdaTest/test-at-scale/pkg/testdiscoveryservice"
 	"github.com/LambdaTest/test-at-scale/pkg/testexecutionservice"
 	"github.com/LambdaTest/test-at-scale/pkg/zstd"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/spf13/cobra"
 )
 
@@ -102,8 +103,9 @@ func run(cmd *cobra.Command, args []string) {
 	if err != nil {
 		logger.Fatalf("failed to initialize test stats service: %v", err)
 	}
-	requests := requestutils.New(logger)
-	azureClient, err := azure.NewAzureBlobEnv(requests, cfg, logger)
+	defaultRequests := requestutils.New(logger, global.DefaultAPITimeout, backoff.NewExponentialBackOff())
+
+	azureClient, err := azure.NewAzureBlobEnv(cfg, defaultRequests, logger)
 	if err != nil {
 		logger.Fatalf("failed to initialize azure blob: %v", err)
 	}
@@ -112,7 +114,7 @@ func run(cmd *cobra.Command, args []string) {
 	}
 
 	// attach plugins to pipeline
-	pm := payloadmanager.NewPayloadManger(azureClient, logger, cfg)
+	pm := payloadmanager.NewPayloadManger(azureClient, logger, cfg, defaultRequests)
 	secretParser := secret.New(logger)
 	tcm := tasconfigmanager.NewTASConfigManager(logger)
 	execManager := command.NewExecutionManager(secretParser, azureClient, logger)
@@ -120,15 +122,12 @@ func run(cmd *cobra.Command, args []string) {
 	dm := diffmanager.NewDiffManager(cfg, logger)
 
 	tdResChan := make(chan core.DiscoveryResult)
-	tds := testdiscoveryservice.NewTestDiscoveryService(ctx, tdResChan, execManager, requests, logger)
-	tes := testexecutionservice.NewTestExecutionService(cfg, requests, execManager, azureClient, ts, logger)
-	tbs, err := blocktestservice.NewTestBlockTestService(cfg, logger)
-	if err != nil {
-		logger.Fatalf("failed to initialize test blocklist service: %v", err)
-	}
+	tds := testdiscoveryservice.NewTestDiscoveryService(ctx, tdResChan, execManager, defaultRequests, logger)
+	tes := testexecutionservice.NewTestExecutionService(cfg, defaultRequests, execManager, azureClient, ts, logger)
+	tbs := blocktestservice.NewTestBlockTestService(cfg, defaultRequests, logger)
 	router := api.NewRouter(logger, ts, tdResChan)
 
-	t, err := task.New(requests, logger)
+	t, err := task.New(defaultRequests, logger)
 	if err != nil {
 		logger.Fatalf("failed to initialize task: %v", err)
 	}

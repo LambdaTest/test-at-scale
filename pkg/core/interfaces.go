@@ -51,7 +51,7 @@ type TestDiscoveryService interface {
 
 // BlockTestService is used for fetching blocklisted tests
 type BlockTestService interface {
-	GetBlockTests(ctx context.Context, blocklistYAML []string, repo, branch string) error
+	GetBlockTests(ctx context.Context, blocklistYAML []string, branch string) error
 	GetBlocklistYMLV1(tasConfig *TASConfig) []string
 	GetBlocklistYMLV2(submodule *SubModule) []string
 }

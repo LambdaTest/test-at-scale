@@ -2,14 +2,12 @@ package teststats
 
 import (
 	"fmt"
-	"net/http"
 	"reflect"
 	"testing"
 	"time"
 
 	"github.com/LambdaTest/test-at-scale/config"
 	"github.com/LambdaTest/test-at-scale/pkg/core"
-	"github.com/LambdaTest/test-at-scale/pkg/global"
 	"github.com/LambdaTest/test-at-scale/pkg/lumber"
 	"github.com/LambdaTest/test-at-scale/pkg/procfs"
 	"github.com/LambdaTest/test-at-scale/testutils"
@@ -48,10 +46,7 @@ func TestNew(t *testing.T) {
 		{"Test New",
 			args{cfg, logger},
 			&ProcStats{
-				logger: logger,
-				httpClient: http.Client{
-					Timeout: global.DefaultHTTPTimeout,
-				},
+				logger:                       logger,
 				ExecutionResultInputChannel:  make(chan core.ExecutionResults),
 				ExecutionResultOutputChannel: make(chan *core.ExecutionResults),
 			}, false},
@@ -63,7 +58,7 @@ func TestNew(t *testing.T) {
 				t.Errorf("New() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got.httpClient, tt.want.httpClient) || !reflect.DeepEqual(got.logger, tt.want.logger) {
+			if !reflect.DeepEqual(got.logger, tt.want.logger) {
 				t.Errorf("New() = %v, want %v", got, tt.want)
 			}
 		})

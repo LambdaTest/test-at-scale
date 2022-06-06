@@ -1,7 +1,6 @@
 package teststats
 
 import (
-	"net/http"
 	"sort"
 	"sync"
 	"time"
@@ -16,7 +15,6 @@ import (
 //ProcStats represents the process stats for a particular pid
 type ProcStats struct {
 	logger                       lumber.Logger
-	httpClient                   http.Client
 	ExecutionResultInputChannel  chan core.ExecutionResults
 	wg                           sync.WaitGroup
 	ExecutionResultOutputChannel chan *core.ExecutionResults
@@ -25,11 +23,8 @@ type ProcStats struct {
 // New returns instance of ProcStats
 func New(cfg *config.NucleusConfig, logger lumber.Logger) (*ProcStats, error) {
 	return &ProcStats{
-		logger:                      logger,
-		ExecutionResultInputChannel: make(chan core.ExecutionResults),
-		httpClient: http.Client{
-			Timeout: global.DefaultHTTPTimeout,
-		},
+		logger:                       logger,
+		ExecutionResultInputChannel:  make(chan core.ExecutionResults),
 		ExecutionResultOutputChannel: make(chan *core.ExecutionResults),
 	}, nil
 

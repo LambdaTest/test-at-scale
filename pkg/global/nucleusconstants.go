@@ -15,12 +15,13 @@ const (
 	WorkspaceCacheDir        = "/workspace-cache"
 	RepoDir                  = HomeDir + "/repo"
 	CodeCoverageDir          = RepoDir + "/coverage"
-	DefaultHTTPTimeout       = 45 * time.Second
+	RepoCacheDir             = RepoDir + "/__tas"
+	DefaultAPITimeout        = 45 * time.Second
 	DefaultGitCloneTimeout   = 30 * time.Minute
 	SamplingTime             = 5 * time.Millisecond
 	RepoSecretPath           = "/vault/secrets/reposecrets"
 	OauthSecretPath          = "/vault/secrets/oauth"
-	NeuronRemoteHost         = "http://neuron-service.phoenix"
+	NeuronRemoteHost         = "http://neuron-service.phoenix.svc.cluster.local"
 	BlockTestFileLocation    = RepoDir + "/blocktests.json"
 	SecretRegex              = `\${{\s*secrets\.(.*?)\s*}}`
 	ExecutionResultChunkSize = 50
@@ -28,6 +29,8 @@ const (
 	ExpiryDelta              = 15 * time.Minute
 	NewTASVersion            = 2
 	ModulePath               = "MODULE_PATH"
+	CacheVersion             = "v1"
+	PackageJSON              = "package.json"
 )
 
 // FrameworkRunnerMap is map of framework with there respective runner location

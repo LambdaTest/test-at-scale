@@ -83,14 +83,15 @@ func (tc *tasConfigManager) validateYMLV1(ctx context.Context,
 	}
 
 	if tasConfig.Cache == nil {
-		checksum, err := utils.ComputeChecksum(fmt.Sprintf("%s/%s", global.RepoDir, packageJSON))
+		checksum, err := utils.ComputeChecksum(fmt.Sprintf("%s/%s", global.RepoDir, global.PackageJSON))
 		if err != nil {
 			tc.logger.Errorf("Error while computing checksum, error %v", err)
 			return nil, err
 		}
 		tasConfig.Cache = &core.Cache{
-			Key:   checksum,
-			Paths: []string{},
+			Key:     checksum,
+			Paths:   []string{},
+			Version: global.CacheVersion,
 		}
 	}
 	return tasConfig, nil

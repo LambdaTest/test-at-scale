@@ -17,6 +17,7 @@ import (
 	"github.com/LambdaTest/test-at-scale/pkg/service/teststats"
 	"github.com/LambdaTest/test-at-scale/testutils"
 	"github.com/LambdaTest/test-at-scale/testutils/mocks"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -33,7 +34,7 @@ func TestNewTestExecutionService(t *testing.T) {
 	var ts *teststats.ProcStats
 	azureClient := new(mocks.AzureClient)
 	execManager := new(mocks.ExecutionManager)
-	requests := requestutils.New(logger)
+	requests := requestutils.New(logger, global.DefaultAPITimeout, &backoff.StopBackOff{})
 
 	type args struct {
 		execManager core.ExecutionManager

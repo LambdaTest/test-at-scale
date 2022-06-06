@@ -19,7 +19,7 @@ import (
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
 	en_translations "github.com/go-playground/validator/v10/translations/en"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -72,6 +72,14 @@ func CreateDirectory(path string) error {
 		if err := os.MkdirAll(path, global.DirectoryPermissions); err != nil {
 			return errs.ERR_DIR_CRT(err.Error())
 		}
+	}
+	return nil
+}
+
+// DeleteDirectory deletes directory and all its children
+func DeleteDirectory(path string) error {
+	if err := os.RemoveAll(path); err != nil {
+		return errs.ErrDirDel(err.Error())
 	}
 	return nil
 }

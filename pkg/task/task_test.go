@@ -7,9 +7,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/LambdaTest/test-at-scale/pkg/global"
 	"github.com/LambdaTest/test-at-scale/pkg/lumber"
 	"github.com/LambdaTest/test-at-scale/pkg/requestutils"
 	"github.com/LambdaTest/test-at-scale/testutils"
+	"github.com/cenkalti/backoff/v4"
 )
 
 var noContext = context.Background()
@@ -35,7 +37,7 @@ func TestTask_UpdateStatus(t *testing.T) {
 		defer server.Close()
 
 		logger, err := lumber.NewLogger(lumber.LoggingConfig{ConsoleLevel: lumber.Debug}, true, 1)
-		requests := requestutils.New(logger)
+		requests := requestutils.New(logger, global.DefaultAPITimeout, &backoff.StopBackOff{})
 		if err != nil {
 			fmt.Println("Logger can't be established")
 		}
@@ -88,7 +90,7 @@ func TestTask_UpdateStatusForError(t *testing.T) {
 		defer server.Close()
 
 		logger, err := lumber.NewLogger(lumber.LoggingConfig{ConsoleLevel: lumber.Debug}, true, 1)
-		requests := requestutils.New(logger)
+		requests := requestutils.New(logger, global.DefaultAPITimeout, &backoff.StopBackOff{})
 		if err != nil {
 			fmt.Println("Logger can't be established")
 		}
