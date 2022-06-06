@@ -96,7 +96,7 @@ func Test_testDiscoveryService_DiscoverV2(t *testing.T) {
 	if err != nil {
 		t.Errorf("Couldn't initialize logger, error: %v", err)
 	}
-	requests := requestutils.New(logger)
+	requests := requestutils.New(logger, global.DefaultAPITimeout, &backoff.StopBackOff{})
 	tdResChan := make(chan core.DiscoveryResult)
 	global.TestEnv = true
 	defer func() { global.TestEnv = false }()
