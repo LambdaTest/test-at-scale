@@ -98,8 +98,6 @@ func (m *manager) ExecuteUserCommandsV2(ctx context.Context,
 	azureReader, azureWriter := io.Pipe()
 	defer azureWriter.Close()
 
-	// blobPath := fmt.Sprintf("%s/%s/%s/%s.log", payload.OrgID, payload.BuildID, os.Getenv("TASK_ID"), commandType)
-	// errChan := m.StoreCommandLogs(ctx, blobPath, azureReader)
 	errChan := m.writeCommandLogsToBuffer(ctx, subModule, buffer, azureReader)
 	logWriter := lumber.NewWriter(m.logger)
 	defer logWriter.Close()

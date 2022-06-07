@@ -492,10 +492,7 @@ func (pl *Pipeline) runDiscoveryV2(payload *Payload,
 func (pl *Pipeline) runPreRunForEachSubModule(ctx context.Context,
 	payload *Payload,
 	subModule *SubModule,
-	tasConfig *TASConfigV2,
 	secretMap map[string]string,
-	diff map[string]int,
-	diffExists bool,
 	readerBuffer *bytes.Buffer) error {
 	pl.Logger.Debugf("Running discovery for sub module %s", subModule.Name)
 	blYML := pl.BlockTestService.GetBlocklistYMLV2(subModule)
@@ -662,8 +659,7 @@ func (pl *Pipeline) runDiscoveryV2Helper(ctx context.Context,
 		go func(subModule *SubModule) {
 			defer preRunWaitGroup.Done()
 
-			dicoveryErr := pl.runPreRunForEachSubModule(ctx, payload, subModule, tasConfig, secretMap,
-				diff, diffExists, readerBuffer)
+			dicoveryErr := pl.runPreRunForEachSubModule(ctx, payload, subModule, secretMap, readerBuffer)
 			if dicoveryErr != nil {
 				taskPayload.Status = Error
 				pl.Logger.Errorf("error while running discovery for sub module %s, error %v", subModule.Name, dicoveryErr)

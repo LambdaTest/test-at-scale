@@ -49,15 +49,7 @@ func (tds *testDiscoveryService) Discover(ctx context.Context,
 	secretData map[string]string,
 	diff map[string]int,
 	diffExists bool) error {
-	var target []string
-	var envMap map[string]string
-	if payload.EventType == core.EventPullRequest {
-		target = tasConfig.Premerge.Patterns
-		envMap = tasConfig.Premerge.EnvMap
-	} else {
-		target = tasConfig.Postmerge.Patterns
-		envMap = tasConfig.Postmerge.EnvMap
-	}
+	target, envMap := getEnvAndPatternV1(payload, tasConfig)
 	configFilePath, err := utils.GetConfigFileName(payload.TasFileName)
 	if err != nil {
 		return err
@@ -86,7 +78,7 @@ func (tds *testDiscoveryService) Discover(ctx context.Context,
 	}
 	tds.logger.Debugf("Discovering tests at paths %+v", target)
 
-	cmd := exec.CommandContext(ctx, global.FrameworkRunnerMap[tasConfig.Framework], args...)
+	cmd := exec.CommandContext(ctx, global.FrameworkRunnerMap[tasConfig.Framework], args...) //nolint:gosec
 	cmd.Dir = global.RepoDir
 	envVars, err := tds.execManager.GetEnvVariables(envMap, secretData)
 	if err != nil {
@@ -107,14 +99,30 @@ func (tds *testDiscoveryService) Discover(ctx context.Context,
 	}
 
 	testDiscoveryResult := <-tds.tdResChan
-	testDiscoveryResult.Parallelism = tasConfig.Parallelism
-	testDiscoveryResult.SplitMode = tasConfig.SplitMode
-	testDiscoveryResult.ContainerImage = tasConfig.ContainerImage
-	testDiscoveryResult.Tier = tasConfig.Tier
+	populateDiscoveryV2(&testDiscoveryResult, tasConfig)
 	if err := tds.updateResult(ctx, &testDiscoveryResult); err != nil {
 		return err
 	}
 	return nil
+}
+
+func getEnvAndPatternV1(payload *core.Payload, tasConfig *core.TASConfig) (target []string, envMap map[string]string) {
+
+	if payload.EventType == core.EventPullRequest {
+		target = tasConfig.Premerge.Patterns
+		envMap = tasConfig.Premerge.EnvMap
+	} else {
+		target = tasConfig.Postmerge.Patterns
+		envMap = tasConfig.Postmerge.EnvMap
+	}
+	return target, envMap
+}
+
+func populateDiscoveryV2(testDiscoveryResult *core.DiscoveryResult, tasConfig *core.TASConfig) {
+	testDiscoveryResult.Parallelism = tasConfig.Parallelism
+	testDiscoveryResult.SplitMode = tasConfig.SplitMode
+	testDiscoveryResult.ContainerImage = tasConfig.ContainerImage
+	testDiscoveryResult.Tier = tasConfig.Tier
 }
 
 func (tds *testDiscoveryService) updateResult(ctx context.Context, testDiscoveryResult *core.DiscoveryResult) error {
@@ -155,26 +163,8 @@ func (tds *testDiscoveryService) DiscoverV2(ctx context.Context,
 	tasConfig *core.TASConfigV2,
 	diff map[string]int,
 	diffExists bool) error {
-	var envMap map[string]string
-	if payload.EventType == core.EventPullRequest {
-		envMap = tasConfig.PreMerge.EnvMap
-	} else {
-		envMap = tasConfig.PostMerge.EnvMap
-	}
-	if envMap == nil {
-		envMap = map[string]string{}
-	}
 	// Add submodule specific env here , overwrite the top level env specified
-	if subModule.Prerun != nil {
-		for k, v := range subModule.Prerun.EnvMap {
-			envMap[k] = v
-		}
-	}
-	if path.Join(global.RepoDir, subModule.Path) == global.RepoDir {
-		envMap[global.ModulePath] = ""
-	} else {
-		envMap[global.ModulePath] = subModule.Path
-	}
+	envMap := populateEnvV2(payload, tasConfig, subModule)
 	target := subModule.Patterns
 	tasYmlModified := false
 	configFilePath, err := utils.GetConfigFileName(payload.TasFileName)
@@ -211,7 +201,7 @@ func (tds *testDiscoveryService) DiscoverV2(ctx context.Context,
 	}
 	tds.logger.Debugf("Discovering tests at paths %+v", target)
 
-	cmd := exec.CommandContext(ctx, global.FrameworkRunnerMap[subModule.Framework], args...)
+	cmd := exec.CommandContext(ctx, global.FrameworkRunnerMap[subModule.Framework], args...) //nolint:gosec
 	cmd.Dir = path.Join(global.RepoDir, subModule.Path)
 	envVars, err := tds.execManager.GetEnvVariables(envMap, secretData)
 	if err != nil {
@@ -232,14 +222,38 @@ func (tds *testDiscoveryService) DiscoverV2(ctx context.Context,
 	}
 
 	testDiscoveryResult := <-tds.tdResChan
-	populateTestDiscovery(&testDiscoveryResult, subModule, tasConfig)
+	populateTestDiscoveryV2(&testDiscoveryResult, subModule, tasConfig)
 	if err := tds.updateResult(ctx, &testDiscoveryResult); err != nil {
 		return err
 	}
 	return nil
 }
 
-func populateTestDiscovery(testDiscoveryResult *core.DiscoveryResult, subModule *core.SubModule, tasConfig *core.TASConfigV2) {
+func populateEnvV2(payload *core.Payload, tasConfig *core.TASConfigV2, subModule *core.SubModule) map[string]string {
+	var envMap map[string]string
+	if payload.EventType == core.EventPullRequest {
+		envMap = tasConfig.PreMerge.EnvMap
+	} else {
+		envMap = tasConfig.PostMerge.EnvMap
+	}
+	if envMap == nil {
+		envMap = map[string]string{}
+	}
+
+	if subModule.Prerun != nil {
+		for k, v := range subModule.Prerun.EnvMap {
+			envMap[k] = v
+		}
+	}
+	if path.Join(global.RepoDir, subModule.Path) == global.RepoDir {
+		envMap[global.ModulePath] = ""
+	} else {
+		envMap[global.ModulePath] = subModule.Path
+	}
+	return envMap
+}
+
+func populateTestDiscoveryV2(testDiscoveryResult *core.DiscoveryResult, subModule *core.SubModule, tasConfig *core.TASConfigV2) {
 	testDiscoveryResult.Parallelism = subModule.Parallelism
 	testDiscoveryResult.SplitMode = tasConfig.SplitMode
 	testDiscoveryResult.SubModule = subModule.Name

@@ -69,9 +69,7 @@ func (tes *testExecutionService) RunV1(ctx context.Context,
 	multiWriter := io.MultiWriter(logWriter, azureWriter)
 	maskWriter := logstream.NewMasker(multiWriter, secretData)
 
-	var target []string
-	var envMap map[string]string
-	target, envMap = getPatternAndEnvV1(payload, target, tasConfig, envMap)
+	target, envMap := getPatternAndEnvV1(payload, tasConfig)
 	var args []string
 	args = []string{global.FrameworkRunnerMap[tasConfig.Framework], "--command", "execute"}
 	if tasConfig.ConfigFile != "" {
@@ -153,7 +151,7 @@ func (tes *testExecutionService) RunV1(ctx context.Context,
 	return executionResults, nil
 }
 
-func getPatternAndEnvV1(payload *core.Payload, target []string, tasConfig *core.TASConfig, envMap map[string]string) ([]string, map[string]string) {
+func getPatternAndEnvV1(payload *core.Payload, tasConfig *core.TASConfig) (target []string, envMap map[string]string) {
 	if payload.EventType == core.EventPullRequest {
 		target = tasConfig.Premerge.Patterns
 		envMap = tasConfig.Premerge.EnvMap

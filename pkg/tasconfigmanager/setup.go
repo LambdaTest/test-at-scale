@@ -16,7 +16,6 @@ import (
 )
 
 const packageJSON = "package.json"
-const newYMLVersion = 2
 
 var tierEnumMapping = map[core.Tier]int{
 	core.XSmall: 1,
