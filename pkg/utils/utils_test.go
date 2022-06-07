@@ -257,7 +257,7 @@ func TestValidateStructv2(t *testing.T) {
 
 		{
 			"Valid Config",
-			"testutils/testdata/tasyml/validv2.yml",
+			"testutils/testdata/tasyml/validV2.yml",
 			nil,
 			&core.TASConfigV2{
 				SmartRun:  true,
