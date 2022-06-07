@@ -58,7 +58,6 @@ func (tes *testExecutionService) RunV1(ctx context.Context,
 	payload *core.Payload,
 	coverageDir string,
 	secretData map[string]string) (*core.ExecutionResults, error) {
-
 	azureReader, azureWriter := io.Pipe()
 	defer azureWriter.Close()
 	blobPath := fmt.Sprintf("%s/%s/%s/%s.log", payload.OrgID, payload.BuildID, payload.TaskID, core.Execution)
@@ -157,7 +156,6 @@ func (tes *testExecutionService) RunV2(ctx context.Context,
 	envMap map[string]string,
 	target []string,
 	secretData map[string]string) (*core.ExecutionResults, error) {
-
 	azureReader, azureWriter := io.Pipe()
 	defer azureWriter.Close()
 	blobPath := fmt.Sprintf("%s/%s/%s/%s.log", payload.OrgID, payload.BuildID, payload.TaskID, core.Execution)
@@ -306,7 +304,10 @@ func (tes *testExecutionService) closeAndWriteLog(azureWriter *io.PipeWriter, er
 	}
 }
 
-func (tes *testExecutionService) buildCmdArgsV1(ctx context.Context, tasConfig *core.TASConfig, payload *core.Payload, target []string) ([]string, error) {
+func (tes *testExecutionService) buildCmdArgsV1(ctx context.Context,
+	tasConfig *core.TASConfig,
+	payload *core.Payload,
+	target []string) ([]string, error) {
 	args := []string{global.FrameworkRunnerMap[tasConfig.Framework], "--command", "execute"}
 	if tasConfig.ConfigFile != "" {
 		args = append(args, "--config", tasConfig.ConfigFile)
@@ -327,7 +328,10 @@ func (tes *testExecutionService) buildCmdArgsV1(ctx context.Context, tasConfig *
 	return args, nil
 }
 
-func (tes *testExecutionService) buildCmdArgsV2(ctx context.Context, subModule *core.SubModule, payload *core.Payload, target []string) ([]string, error) {
+func (tes *testExecutionService) buildCmdArgsV2(ctx context.Context,
+	subModule *core.SubModule,
+	payload *core.Payload,
+	target []string) ([]string, error) {
 	args := []string{global.FrameworkRunnerMap[subModule.Framework], "--command", "execute"}
 	if subModule.ConfigFile != "" {
 		args = append(args, "--config", subModule.ConfigFile)

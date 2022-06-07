@@ -107,7 +107,6 @@ func (tds *testDiscoveryService) Discover(ctx context.Context,
 }
 
 func getEnvAndPatternV1(payload *core.Payload, tasConfig *core.TASConfig) (target []string, envMap map[string]string) {
-
 	if payload.EventType == core.EventPullRequest {
 		target = tasConfig.Premerge.Patterns
 		envMap = tasConfig.Premerge.EnvMap

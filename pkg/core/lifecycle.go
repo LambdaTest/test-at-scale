@@ -459,13 +459,13 @@ func (pl *Pipeline) runDiscoveryV2(payload *Payload,
 	}
 
 	readerBuffer := new(bytes.Buffer)
-	defer func() error {
+	defer func() {
 		blobPath := fmt.Sprintf("%s/%s/%s/%s.log", payload.OrgID, payload.BuildID, os.Getenv("TASK_ID"), PreRun)
 		pl.Logger.Debugf("Writing the preRUN logs to path %s", blobPath)
 		if writeErr := <-pl.ExecutionManager.StoreCommandLogs(ctx, blobPath, readerBuffer); writeErr != nil {
-			return writeErr
+			// error in writing log should not fail the build
+			pl.Logger.Errorf("error in writing pre run log, error %v", writeErr)
 		}
-		return nil
 	}()
 
 	if payload.EventType == EventPush {
