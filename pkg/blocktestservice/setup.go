@@ -102,7 +102,6 @@ func (tbs *TestBlockTestService) fetchBlockListFromNeuron(ctx context.Context, b
 
 // GetBlockTests provides list of blocked test cases
 func (tbs *TestBlockTestService) GetBlockTests(ctx context.Context, blocklistYAML []string, branch string) error {
-
 	tbs.once.Do(func() {
 
 		blocktestLocators := make([]*blocktestLocator, 0, len(blocklistYAML))

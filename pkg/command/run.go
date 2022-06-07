@@ -98,7 +98,7 @@ func (m *manager) ExecuteUserCommandsV2(ctx context.Context,
 	azureReader, azureWriter := io.Pipe()
 	defer azureWriter.Close()
 
-	errChan := m.writeCommandLogsToBuffer(ctx, subModule, buffer, azureReader)
+	errChan := m.writeCommandLogsToBuffer(subModule, buffer, azureReader)
 	logWriter := lumber.NewWriter(m.logger)
 	defer logWriter.Close()
 	multiWriter := io.MultiWriter(logWriter, azureWriter)
@@ -185,11 +185,10 @@ func (m *manager) StoreCommandLogs(ctx context.Context, blobPath string, reader 
 }
 
 // StoreCommandLogs stores the command logs to blob
-func (m *manager) writeCommandLogsToBuffer(ctx context.Context,
-	submodule string, buffer *bytes.Buffer, reader io.Reader) <-chan error {
+func (m *manager) writeCommandLogsToBuffer(submodule string, buffer *bytes.Buffer, reader io.Reader) <-chan error {
 	errChan := make(chan error, 1)
 	go func() {
-		if _, err := fmt.Fprintf(buffer, "<------ PRE RUN for submodule %s  ----------> \n", submodule); err != nil {
+		if _, err := fmt.Fprintf(buffer, "<------ PRE RUN for submodule %s  ------> \n", submodule); err != nil {
 			m.logger.Debugf("Error writing the logs separator for submodule %s, error %v", submodule, err)
 			errChan <- err
 			return

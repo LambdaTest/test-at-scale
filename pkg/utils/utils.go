@@ -159,7 +159,7 @@ func configureValidator(validate *validator.Validate, trans ut.Translator) {
 func GetVersion(ymlContent []byte) (int, error) {
 	tasVersion := &core.TasVersion{}
 	if err := yaml.Unmarshal(ymlContent, tasVersion); err != nil {
-		return 0, fmt.Errorf("Error in unmarshling tas yml file")
+		return 0, fmt.Errorf("error in unmarshling tas yml file")
 	}
 	majorVersion := strings.Split(tasVersion.Version, ".")[0]
 

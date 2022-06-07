@@ -70,23 +70,9 @@ func (tes *testExecutionService) RunV1(ctx context.Context,
 	maskWriter := logstream.NewMasker(multiWriter, secretData)
 
 	target, envMap := getPatternAndEnvV1(payload, tasConfig)
-	var args []string
-	args = []string{global.FrameworkRunnerMap[tasConfig.Framework], "--command", "execute"}
-	if tasConfig.ConfigFile != "" {
-		args = append(args, "--config", tasConfig.ConfigFile)
-	}
-	for _, pattern := range target {
-		args = append(args, "--pattern", pattern)
-	}
-
-	if payload.LocatorAddress != "" {
-		locatorFile, err := tes.getLocatorsFile(ctx, payload.LocatorAddress)
-		tes.logger.Debugf("locators : %v\n", locatorFile)
-		if err != nil {
-			tes.logger.Errorf("failed to get locator file, error: %v", err)
-			return nil, err
-		}
-		args = append(args, "--locator-file", locatorFile)
+	args, err := tes.buildCmdArgsV1(ctx, tasConfig, payload, target)
+	if err != nil {
+		return nil, err
 	}
 
 	collectCoverage := payload.CollectCoverage
@@ -183,25 +169,10 @@ func (tes *testExecutionService) RunV2(ctx context.Context,
 
 	setModulePath(subModule, envMap)
 
-	var args []string
-	args = []string{global.FrameworkRunnerMap[subModule.Framework], "--command", "execute"}
-	if subModule.ConfigFile != "" {
-		args = append(args, "--config", subModule.ConfigFile)
+	args, err := tes.buildCmdArgsV2(ctx, subModule, payload, target)
+	if err != nil {
+		return nil, err
 	}
-	for _, pattern := range target {
-		args = append(args, "--pattern", pattern)
-	}
-
-	if payload.LocatorAddress != "" {
-		locatorFile, err := tes.getLocatorsFile(ctx, payload.LocatorAddress)
-		tes.logger.Debugf("locators : %v\n", locatorFile)
-		if err != nil {
-			tes.logger.Errorf("failed to get locator file, error: %v", err)
-			return nil, err
-		}
-		args = append(args, "--locator-file", locatorFile)
-	}
-
 	collectCoverage := payload.CollectCoverage
 	commandArgs := args
 	envVars, err := tes.execManager.GetEnvVariables(envMap, secretData)
@@ -333,4 +304,46 @@ func (tes *testExecutionService) closeAndWriteLog(azureWriter *io.PipeWriter, er
 	if err := <-errChan; err != nil {
 		tes.logger.Errorf("failed to upload logs for test execution, error: %v", err)
 	}
+}
+
+func (tes *testExecutionService) buildCmdArgsV1(ctx context.Context, tasConfig *core.TASConfig, payload *core.Payload, target []string) ([]string, error) {
+	args := []string{global.FrameworkRunnerMap[tasConfig.Framework], "--command", "execute"}
+	if tasConfig.ConfigFile != "" {
+		args = append(args, "--config", tasConfig.ConfigFile)
+	}
+	for _, pattern := range target {
+		args = append(args, "--pattern", pattern)
+	}
+
+	if payload.LocatorAddress != "" {
+		locatorFile, err := tes.getLocatorsFile(ctx, payload.LocatorAddress)
+		tes.logger.Debugf("locators : %v\n", locatorFile)
+		if err != nil {
+			tes.logger.Errorf("failed to get locator file, error: %v", err)
+			return nil, err
+		}
+		args = append(args, "--locator-file", locatorFile)
+	}
+	return args, nil
+}
+
+func (tes *testExecutionService) buildCmdArgsV2(ctx context.Context, subModule *core.SubModule, payload *core.Payload, target []string) ([]string, error) {
+	args := []string{global.FrameworkRunnerMap[subModule.Framework], "--command", "execute"}
+	if subModule.ConfigFile != "" {
+		args = append(args, "--config", subModule.ConfigFile)
+	}
+	for _, pattern := range target {
+		args = append(args, "--pattern", pattern)
+	}
+
+	if payload.LocatorAddress != "" {
+		locatorFile, err := tes.getLocatorsFile(ctx, payload.LocatorAddress)
+		tes.logger.Debugf("locators : %v\n", locatorFile)
+		if err != nil {
+			tes.logger.Errorf("failed to get locator file, error: %v", err)
+			return nil, err
+		}
+		args = append(args, "--locator-file", locatorFile)
+	}
+	return args, nil
 }
