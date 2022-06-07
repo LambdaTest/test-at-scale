@@ -232,15 +232,19 @@ func (tds *testDiscoveryService) DiscoverV2(ctx context.Context,
 	}
 
 	testDiscoveryResult := <-tds.tdResChan
+	populateTestDiscovery(&testDiscoveryResult, subModule, tasConfig)
+	if err := tds.updateResult(ctx, &testDiscoveryResult); err != nil {
+		return err
+	}
+	return nil
+}
+
+func populateTestDiscovery(testDiscoveryResult *core.DiscoveryResult, subModule *core.SubModule, tasConfig *core.TASConfigV2) {
 	testDiscoveryResult.Parallelism = subModule.Parallelism
 	testDiscoveryResult.SplitMode = tasConfig.SplitMode
 	testDiscoveryResult.SubModule = subModule.Name
 	testDiscoveryResult.Tier = tasConfig.Tier
 	testDiscoveryResult.ContainerImage = tasConfig.ContainerImage
-	if err := tds.updateResult(ctx, &testDiscoveryResult); err != nil {
-		return err
-	}
-	return nil
 }
 
 func (tds *testDiscoveryService) UpdateSubmoduleList(ctx context.Context, buildID string, totalSubmodule int) error {

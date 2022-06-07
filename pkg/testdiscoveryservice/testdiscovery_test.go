@@ -214,6 +214,7 @@ func getTestCases() []*testV1 {
 	return testCases
 }
 
+// nolint
 func getTestCasesV2() []*testV2 {
 	testCases := []*testV2{
 		{"Test Discover with  env on submodule level only",

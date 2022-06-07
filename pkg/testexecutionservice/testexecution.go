@@ -71,13 +71,7 @@ func (tes *testExecutionService) RunV1(ctx context.Context,
 
 	var target []string
 	var envMap map[string]string
-	if payload.EventType == core.EventPullRequest {
-		target = tasConfig.Premerge.Patterns
-		envMap = tasConfig.Premerge.EnvMap
-	} else {
-		target = tasConfig.Postmerge.Patterns
-		envMap = tasConfig.Postmerge.EnvMap
-	}
+	target, envMap = getPatternAndEnvV1(payload, target, tasConfig, envMap)
 	var args []string
 	args = []string{global.FrameworkRunnerMap[tasConfig.Framework], "--command", "execute"}
 	if tasConfig.ConfigFile != "" {
@@ -159,6 +153,17 @@ func (tes *testExecutionService) RunV1(ctx context.Context,
 	return executionResults, nil
 }
 
+func getPatternAndEnvV1(payload *core.Payload, target []string, tasConfig *core.TASConfig, envMap map[string]string) ([]string, map[string]string) {
+	if payload.EventType == core.EventPullRequest {
+		target = tasConfig.Premerge.Patterns
+		envMap = tasConfig.Premerge.EnvMap
+	} else {
+		target = tasConfig.Postmerge.Patterns
+		envMap = tasConfig.Postmerge.EnvMap
+	}
+	return target, envMap
+}
+
 // Run executes the test files
 func (tes *testExecutionService) RunV2(ctx context.Context,
 	tasConfig *core.TASConfigV2,
@@ -178,11 +183,7 @@ func (tes *testExecutionService) RunV2(ctx context.Context,
 	multiWriter := io.MultiWriter(logWriter, azureWriter)
 	maskWriter := logstream.NewMasker(multiWriter, secretData)
 
-	if path.Join(global.RepoDir, subModule.Path) == global.RepoDir {
-		envMap[global.ModulePath] = ""
-	} else {
-		envMap[global.ModulePath] = subModule.Path
-	}
+	setModulePath(subModule, envMap)
 
 	var args []string
 	args = []string{global.FrameworkRunnerMap[subModule.Framework], "--command", "execute"}
@@ -260,6 +261,14 @@ func (tes *testExecutionService) RunV2(ctx context.Context,
 		}
 	}
 	return executionResults, nil
+}
+
+func setModulePath(subModule *core.SubModule, envMap map[string]string) {
+	if path.Join(global.RepoDir, subModule.Path) == global.RepoDir {
+		envMap[global.ModulePath] = ""
+	} else {
+		envMap[global.ModulePath] = subModule.Path
+	}
 }
 
 func (tes *testExecutionService) SendResults(ctx context.Context,
