@@ -2,7 +2,6 @@ package docker
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -63,7 +62,8 @@ func newDockerClient(secretsManager core.SecretsManager) (*docker, error) {
 // New initialize a new docker configuration
 func New(secretsManager core.SecretsManager,
 	logger lumber.Logger,
-	cfg *config.SynapseConfig) (core.DockerRunner, error) {
+	cfg *config.SynapseConfig,
+) (core.DockerRunner, error) {
 	dockerConfig, err := newDockerClient(secretsManager)
 	if err != nil {
 		return nil, err
@@ -97,7 +97,7 @@ func (d *docker) Create(ctx context.Context, r *core.RunnerOptions) core.Contain
 	hostConfig := d.getContainerHostConfiguration(r)
 	networkConfig, err := d.getContainerNetworkConfiguration()
 	if err != nil {
-		d.logger.Errorf("error retriving network: %v", err)
+		d.logger.Errorf("error retrieving network: %v", err)
 		containerStatus.Done = false
 		containerStatus.Error = errs.ERR_DOCKER_CRT(err.Error())
 		return containerStatus
@@ -124,7 +124,7 @@ func (d *docker) Destroy(ctx context.Context, r *core.RunnerOptions) error {
 	autoRemove, err := strconv.ParseBool(os.Getenv(global.AutoRemoveEnv))
 	if err != nil {
 		d.logger.Errorf("Error reading AutoRemove os env error: %v", err)
-		return errors.New("Error reading AutoRemove os env error")
+		return err
 	}
 	if autoRemove {
 		// if autoRemove is set then it docker container will be removed once it stopped or exited
@@ -196,7 +196,6 @@ func (d *docker) WaitForCompletion(ctx context.Context, r *core.RunnerOptions) e
 		if status.StatusCode != 0 {
 			msg := fmt.Sprintf("Received non zero status code %v", status.StatusCode)
 			return errs.ERR_DOCKER_RUN(msg)
-
 		}
 		return nil
 	}

@@ -115,7 +115,6 @@ func (gm *gitManager) copyAndExtractFile(ctx context.Context, resp *http.Respons
 		if err = zip.Unarchive(path, fmt.Sprintf("%s/clonedir", filepath.Dir(path))); err != nil {
 			gm.logger.Errorf("failed to unarchive file %v", err)
 			return err
-
 		}
 	}
 

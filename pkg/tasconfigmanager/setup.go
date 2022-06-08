@@ -4,7 +4,7 @@ package tasconfigmanager
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	"github.com/LambdaTest/test-at-scale/pkg/errs"
 	"github.com/LambdaTest/test-at-scale/pkg/global"
@@ -35,13 +35,14 @@ func NewTASConfigManager(logger lumber.Logger) core.TASConfigManager {
 func (tc *tasConfigManager) LoadAndValidate(ctx context.Context,
 	path string,
 	eventType core.EventType,
-	licenseTier core.Tier) (*core.TASConfig, error) {
+	licenseTier core.Tier,
+) (*core.TASConfig, error) {
 	path, err := utils.GetConfigFileName(path)
 	if err != nil {
 		return nil, err
 	}
 
-	yamlFile, err := ioutil.ReadFile(fmt.Sprintf("%s/%s", global.RepoDir, path))
+	yamlFile, err := os.ReadFile(fmt.Sprintf("%s/%s", global.RepoDir, path))
 	if err != nil {
 		tc.logger.Errorf("Error while reading file, error %v", err)
 		return nil, errs.New(fmt.Sprintf("Error while reading configuration file at path: %s", path))

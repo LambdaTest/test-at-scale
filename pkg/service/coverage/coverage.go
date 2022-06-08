@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -48,7 +47,8 @@ func New(execManager core.ExecutionManager,
 	azureClient core.AzureClient,
 	zstd core.ZstdCompressor,
 	cfg *config.NucleusConfig,
-	logger lumber.Logger) (core.CoverageService, error) {
+	logger lumber.Logger,
+) (core.CoverageService, error) {
 	// if coverage mode not enabled do not initialize the service
 	if !cfg.CoverageMode {
 		return nil, nil
@@ -65,11 +65,11 @@ func New(execManager core.ExecutionManager,
 		endpoint:             global.NeuronHost + "/coverage",
 		httpClient: http.Client{
 			Timeout: global.DefaultAPITimeout,
-		}}, nil
-
+		},
+	}, nil
 }
 
-//mergeCodeCoverageFiles merge all the coverage.json into single entity
+// mergeCodeCoverageFiles merge all the coverage.json into single entity
 func (c *codeCoverageService) mergeCodeCoverageFiles(ctx context.Context, commitDir, coverageManifestPath string, threshold bool) error {
 	if _, err := os.Lstat(commitDir); os.IsNotExist(err) {
 		c.logger.Errorf("coverage files not found, skipping merge")
@@ -78,7 +78,7 @@ func (c *codeCoverageService) mergeCodeCoverageFiles(ctx context.Context, commit
 
 	coverageFiles := make([]string, 0)
 	if err := filepath.WalkDir(commitDir, func(path string, d fs.DirEntry, err error) error {
-		//add all individual coverage json files
+		// add all individual coverage json files
 		if d.Name() == coverageJSONFileName {
 			coverageFiles = append(coverageFiles, path)
 		}
@@ -136,7 +136,7 @@ func (c *codeCoverageService) MergeAndUpload(ctx context.Context, payload *core.
 			c.logger.Errorf("failed to parse manifest file: %s, error :%v", commitDir, err)
 			return err
 		}
-		//skip copy of parent directory if all test files executed
+		// skip copy of parent directory if all test files executed
 		if !manifestPayload.AllFilesExecuted {
 			if err := c.copyFromParentCommitDir(parentCommitDir, commitDir, manifestPayload.Removedfiles...); err != nil {
 				c.logger.Errorf("failed to copy coverage files from %s to %s, error :%v", parentCommitDir, commitDir, err)
@@ -179,7 +179,7 @@ func (c *codeCoverageService) MergeAndUpload(ctx context.Context, payload *core.
 		}
 		blobURL = strings.TrimSuffix(blobURL, fmt.Sprintf("/%s", mergedcoverageJSON))
 		coveragePayload = append(coveragePayload, coverageData{BuildID: payload.BuildID, RepoID: payload.RepoID, CommitID: commit.Sha, BlobLink: blobURL, TotalCoverage: totalCoverage})
-		//current commit dir becomes parent for next commit
+		// current commit dir becomes parent for next commit
 		parentCommitDir = commitDir
 	}
 	return c.sendCoverageData(coveragePayload)
@@ -206,7 +206,7 @@ func (c *codeCoverageService) parseManifestFile(filepath string) (core.CoverageM
 		c.logger.Errorf("manifest file not found in path %s", filepath)
 		return manifestPayload, err
 	}
-	body, err := ioutil.ReadFile(filepath)
+	body, err := os.ReadFile(filepath)
 	if err != nil {
 		return manifestPayload, err
 	}
@@ -276,9 +276,9 @@ func (c *codeCoverageService) copyFromParentCommitDir(parentCommitDir, commitDir
 		if info.IsDir() && info.Name() != filepath.Base(parentCommitDir) {
 			if len(removedFiles) > 0 {
 				for index, removedfile := range removedFiles {
-					//if testfile is now removed don't copy to current commit directory
+					// if testfile is now removed don't copy to current commit directory
 					if info.Name() == removedfile {
-						//remove file from slice
+						// remove file from slice
 						removedFiles = append(removedFiles[:index], removedFiles[index+1:]...)
 						return filepath.SkipDir
 					}
@@ -294,7 +294,7 @@ func (c *codeCoverageService) copyFromParentCommitDir(parentCommitDir, commitDir
 					return err
 				}
 			}
-			//all files copied now we can move next sub directory
+			// all files copied now we can move next sub directory
 			return filepath.SkipDir
 		}
 		return nil
@@ -322,7 +322,6 @@ func (c *codeCoverageService) getParentCommitCoverageDir(repoID, commitID string
 	}
 
 	resp, err := c.httpClient.Do(req)
-
 	if err != nil {
 		c.logger.Errorf("error while getting coverage details for parent commitID %s, %v", commitID, err)
 		return coverage, err
@@ -360,7 +359,6 @@ func (c *codeCoverageService) sendCoverageData(payload []coverageData) error {
 	}
 
 	resp, err := c.httpClient.Do(req)
-
 	if err != nil {
 		c.logger.Errorf("error while sending coverage data %v", err)
 		return err
@@ -380,7 +378,7 @@ func (c *codeCoverageService) getTotalCoverage(filepath string) (json.RawMessage
 		c.logger.Errorf("coverage summary file not found in path %s", filepath)
 		return nil, err
 	}
-	body, err := ioutil.ReadFile(filepath)
+	body, err := os.ReadFile(filepath)
 	if err != nil {
 		c.logger.Errorf("failed to read coverage summary json, error: %v", err)
 		return nil, err

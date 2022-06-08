@@ -19,7 +19,7 @@ type SecretsManager interface {
 	WriteGitSecrets(path string) error
 
 	// WriteRepoSecrets writes repo secrets to file
-	WriteRepoSecrets(repo string, path string) error
+	WriteRepoSecrets(repo, path string) error
 
 	// GetDockerSecrets returns Mode , RegistryAuth, and URL for pulling remote docker image
 	GetDockerSecrets(r *RunnerOptions) (ContainerImageConfig, error)

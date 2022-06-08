@@ -25,7 +25,6 @@ func getDummyTimeMap() map[string]time.Time {
 	tfuture2, _ := time.Parse("Mon, 02 Jan 2006 15:04:05 MST", "Tue, 22 Feb 2023 16:25:01 UTC")
 
 	return map[string]time.Time{"tpresent": tpresent, "t2025": t2025, "tpast1": tpast1, "tpast2": tpast2, "tfuture1": tfuture1, "tfuture2": tfuture2}
-
 }
 
 // NOTE: Tests in this package are meant to be run in a Linux environment
@@ -43,13 +42,15 @@ func TestNew(t *testing.T) {
 		want    *ProcStats
 		wantErr bool
 	}{
-		{"Test New",
+		{
+			"Test New",
 			args{cfg, logger},
 			&ProcStats{
 				logger:                       logger,
 				ExecutionResultInputChannel:  make(chan core.ExecutionResults),
 				ExecutionResultOutputChannel: make(chan *core.ExecutionResults),
-			}, false},
+			}, false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -82,49 +83,50 @@ func TestProcStats_getProcsForInterval(t *testing.T) {
 	}{
 		{"Test getProcsForInterval", args{timeMap["tpresent"], timeMap["tpresent"], []*procfs.Stats{}}, []*procfs.Stats{}},
 
-		{"Test getProcsForInterval", args{timeMap["tpresent"], timeMap["t2025"], []*procfs.Stats{
-			{
-				CPUPercentage: 1.2,
-				MemPercentage: 14.1,
-				MemShared:     105.0,
-				MemSwapped:    25,
-				MemConsumed:   131,
-				RecordTime:    timeMap["tpast1"],
+		{
+			"Test getProcsForInterval", args{timeMap["tpresent"], timeMap["t2025"], []*procfs.Stats{
+				{
+					CPUPercentage: 1.2,
+					MemPercentage: 14.1,
+					MemShared:     105.0,
+					MemSwapped:    25,
+					MemConsumed:   131,
+					RecordTime:    timeMap["tpast1"],
+				},
+				{
+					CPUPercentage: 1.25,
+					MemPercentage: 14.15,
+					MemShared:     107.0,
+					MemSwapped:    25,
+					MemConsumed:   131,
+					RecordTime:    timeMap["tfuture1"],
+				},
+				{
+					CPUPercentage: 1.25,
+					MemPercentage: 14.15,
+					MemShared:     107.0,
+					MemSwapped:    25,
+					MemConsumed:   131,
+					RecordTime:    timeMap["tfuture2"],
+				},
+			}}, []*procfs.Stats{
+				{
+					CPUPercentage: 1.25,
+					MemPercentage: 14.15,
+					MemShared:     107.0,
+					MemSwapped:    25,
+					MemConsumed:   131,
+					RecordTime:    timeMap["tfuture1"],
+				},
+				{
+					CPUPercentage: 1.25,
+					MemPercentage: 14.15,
+					MemShared:     107.0,
+					MemSwapped:    25,
+					MemConsumed:   131,
+					RecordTime:    timeMap["tfuture2"],
+				},
 			},
-			{
-				CPUPercentage: 1.25,
-				MemPercentage: 14.15,
-				MemShared:     107.0,
-				MemSwapped:    25,
-				MemConsumed:   131,
-				RecordTime:    timeMap["tfuture1"],
-			},
-			{
-				CPUPercentage: 1.25,
-				MemPercentage: 14.15,
-				MemShared:     107.0,
-				MemSwapped:    25,
-				MemConsumed:   131,
-				RecordTime:    timeMap["tfuture2"],
-			},
-		}}, []*procfs.Stats{
-			{
-				CPUPercentage: 1.25,
-				MemPercentage: 14.15,
-				MemShared:     107.0,
-				MemSwapped:    25,
-				MemConsumed:   131,
-				RecordTime:    timeMap["tfuture1"],
-			},
-			{
-				CPUPercentage: 1.25,
-				MemPercentage: 14.15,
-				MemShared:     107.0,
-				MemSwapped:    25,
-				MemConsumed:   131,
-				RecordTime:    timeMap["tfuture2"],
-			},
-		},
 		},
 	}
 	for _, tt := range tests {
@@ -155,32 +157,37 @@ func TestProcStats_appendStatsToTests(t *testing.T) {
 		args args
 		want string
 	}{
-		{"Test appendStatsToTests",
-			args{[]core.TestPayload{
-				{Name: "test 1", StartTime: timeMap["tpast1"], EndTime: timeMap["tfuture1"]},
+		{
+			"Test appendStatsToTests",
+			args{
+				[]core.TestPayload{
+					{Name: "test 1", StartTime: timeMap["tpast1"], EndTime: timeMap["tfuture1"]},
+				},
+				[]*procfs.Stats{},
 			},
-				[]*procfs.Stats{}},
 			// nolint:lll
 			"[{TestID: Detail: SuiteID: Suites:[] Title: FullTitle: Name:test 1 Duration:0 FilePath: Line: Col: CurrentRetry:0 Status: DAG:[] Filelocator: BlocklistSource: Blocklisted:false StartTime:2021-02-22 16:23:01 +0000 UTC EndTime:2021-02-22 16:23:01 +0000 UTC Stats:[] FailureMessage:}]",
 		},
 
-		{"Test appendStatsToTests",
-			args{[]core.TestPayload{
-				{
-					Name:      "test 1",
-					StartTime: timeMap["tpast1"],
-					Duration:  100,
-					EndTime:   timeMap["tfuture1"],
-					Stats:     []core.TestProcessStats{},
+		{
+			"Test appendStatsToTests",
+			args{
+				[]core.TestPayload{
+					{
+						Name:      "test 1",
+						StartTime: timeMap["tpast1"],
+						Duration:  100,
+						EndTime:   timeMap["tfuture1"],
+						Stats:     []core.TestProcessStats{},
+					},
+					{
+						Name:      "test 2",
+						StartTime: timeMap["tpast2"],
+						Duration:  200,
+						EndTime:   timeMap["tfuture2"],
+						Stats:     []core.TestProcessStats{{Memory: 100, CPU: 25.4, Storage: 250, RecordTime: timeMap["tpast2"]}},
+					},
 				},
-				{
-					Name:      "test 2",
-					StartTime: timeMap["tpast2"],
-					Duration:  200,
-					EndTime:   timeMap["tfuture2"],
-					Stats:     []core.TestProcessStats{{Memory: 100, CPU: 25.4, Storage: 250, RecordTime: timeMap["tpast2"]}},
-				},
-			},
 				[]*procfs.Stats{
 					{
 						CPUPercentage: 1.2,
@@ -241,33 +248,38 @@ func TestProcStats_appendStatsToTestSuites(t *testing.T) {
 		args args
 		want string
 	}{
-		{"Test appendStatsToTests",
-			args{[]core.TestSuitePayload{
-				{SuiteID: "testSuite1", StartTime: timeMap["tpast1"], EndTime: timeMap["tfuture1"], TotalTests: 2},
+		{
+			"Test appendStatsToTests",
+			args{
+				[]core.TestSuitePayload{
+					{SuiteID: "testSuite1", StartTime: timeMap["tpast1"], EndTime: timeMap["tfuture1"], TotalTests: 2},
+				},
+				[]*procfs.Stats{},
 			},
-				[]*procfs.Stats{}},
 			"[{SuiteID:testSuite1 SuiteName: ParentSuiteID: BlocklistSource: Blocklisted:false StartTime:2021-02-22 16:23:01 +0000 UTC EndTime:2021-02-22 16:23:01 +0000 UTC Duration:0 Status: Stats:[] TotalTests:2}]", // nolint
 		},
 
-		{"Test appendStatsToTests",
-			args{[]core.TestSuitePayload{
-				{
-					SuiteID:    "testSuite2",
-					StartTime:  timeMap["tpast1"],
-					Duration:   100,
-					EndTime:    timeMap["tfuture1"],
-					Stats:      []core.TestProcessStats{},
-					TotalTests: 3,
+		{
+			"Test appendStatsToTests",
+			args{
+				[]core.TestSuitePayload{
+					{
+						SuiteID:    "testSuite2",
+						StartTime:  timeMap["tpast1"],
+						Duration:   100,
+						EndTime:    timeMap["tfuture1"],
+						Stats:      []core.TestProcessStats{},
+						TotalTests: 3,
+					},
+					{
+						SuiteID:    "testSuite3",
+						StartTime:  timeMap["tpast2"],
+						Duration:   200,
+						EndTime:    timeMap["tfuture2"],
+						Stats:      []core.TestProcessStats{{Memory: 100, CPU: 25.4, Storage: 250, RecordTime: timeMap["tpast2"]}},
+						TotalTests: 5,
+					},
 				},
-				{
-					SuiteID:    "testSuite3",
-					StartTime:  timeMap["tpast2"],
-					Duration:   200,
-					EndTime:    timeMap["tfuture2"],
-					Stats:      []core.TestProcessStats{{Memory: 100, CPU: 25.4, Storage: 250, RecordTime: timeMap["tpast2"]}},
-					TotalTests: 5,
-				},
-			},
 				[]*procfs.Stats{
 					{
 						CPUPercentage: 1.2,

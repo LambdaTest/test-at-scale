@@ -169,7 +169,8 @@ func TestValidateStruct(t *testing.T) {
 				// nolint:lll
 				Message: "Invalid values provided for the following fields in the `testutils/testdata/tasyml/invalid_fields.yml` configuration file: \n",
 				Fields:  []string{"framework", "nodeVersion"},
-				Values:  []interface{}{"hello", "test"}},
+				Values:  []interface{}{"hello", "test"},
+			},
 			nil,
 		},
 		{

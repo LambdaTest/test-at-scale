@@ -26,9 +26,8 @@ func NewRouter(logger lumber.Logger, ts *teststats.ProcStats, tdResChan chan cor
 	}
 }
 
-//Handler function will perform all route operations
+// Handler function will perform all route operations
 func (r Router) Handler() *gin.Engine {
-
 	r.logger.Infof("Setting up routes")
 	router := gin.Default()
 	// corsConfig := cors.DefaultConfig()
@@ -40,5 +39,4 @@ func (r Router) Handler() *gin.Engine {
 	router.POST("/test-list", testlist.Handler(r.logger, r.tdResChan))
 
 	return router
-
 }

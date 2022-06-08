@@ -65,28 +65,51 @@ func Test_diffManager_GetChangedFiles_PRDiff(t *testing.T) {
 		wantErr bool
 	}{
 		// expects to hit Server.URL/testdata/pulls/2
-		{"Test GetChangedFile for PRdiff for github gitprovider",
-			args{ctx: context.TODO(),
-				payload: &core.Payload{RepoSlug: "/testdata", RepoLink: server.URL + "/testdata",
-					GitProvider: "github", PrivateRepo: false, EventType: "pull-request", Diff: "xyz", PullRequestNumber: 2},
-				oauth: &core.Oauth{}}, map[string]int{}, false},
+		{
+			"Test GetChangedFile for PRdiff for github gitprovider",
+			args{
+				ctx: context.TODO(),
+				payload: &core.Payload{
+					RepoSlug: "/testdata", RepoLink: server.URL + "/testdata",
+					GitProvider: "github", PrivateRepo: false, EventType: "pull-request", Diff: "xyz", PullRequestNumber: 2,
+				},
+				oauth: &core.Oauth{},
+			},
+			map[string]int{},
+			false,
+		},
 
 		// expects to hit Server.URL/testdata/merge_requests/2/changes
-		{"Test GetChangedFile for PRdiff for gitlab gitprovider",
-			args{ctx: context.TODO(),
-				payload: &core.Payload{RepoSlug: "/testdata", RepoLink: server.URL + "/testdata",
-					GitProvider: "gitlab", PrivateRepo: false, EventType: "pull-request", Diff: "xyz", PullRequestNumber: 2},
-				oauth: &core.Oauth{}},
-			map[string]int{}, false},
+		{
+			"Test GetChangedFile for PRdiff for gitlab gitprovider",
+			args{
+				ctx: context.TODO(),
+				payload: &core.Payload{
+					RepoSlug: "/testdata", RepoLink: server.URL + "/testdata",
+					GitProvider: "gitlab", PrivateRepo: false, EventType: "pull-request", Diff: "xyz", PullRequestNumber: 2,
+				},
+				oauth: &core.Oauth{},
+			},
+			map[string]int{},
+			false,
+		},
 
-		{"Test GetChangedFile for Commitdiff for unsupported gitprovider", args{ctx: context.TODO(),
-			payload: &core.Payload{GitProvider: "unsupported"},
-			oauth:   &core.Oauth{}},
-			map[string]int{}, true},
+		{
+			"Test GetChangedFile for Commitdiff for unsupported gitprovider",
+			args{
+				ctx:     context.TODO(),
+				payload: &core.Payload{GitProvider: "unsupported"},
+				oauth:   &core.Oauth{},
+			},
+			map[string]int{},
+			true,
+		},
 
-		{"Test GetChangedFile for PRdiff for unsupported gitprovider", args{ctx: context.TODO(),
+		{"Test GetChangedFile for PRdiff for unsupported gitprovider", args{
+			ctx:     context.TODO(),
 			payload: &core.Payload{GitProvider: "unsupported", EventType: "pull-request"},
-			oauth:   &core.Oauth{}}, map[string]int{}, true},
+			oauth:   &core.Oauth{},
+		}, map[string]int{}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -140,26 +163,55 @@ func Test_diffManager_GetChangedFiles_CommitDiff_Github(t *testing.T) {
 		wantErr bool
 	}{
 		// expects to hit serverURL/testdata/compare/abc...xyz
-		{"Test GetChangedFile for CommitDiff for github gitprovider",
-			args{ctx: context.TODO(),
-				payload: &core.Payload{RepoSlug: "/testdata", RepoLink: server.URL + "/testdata", BuildTargetCommit: "xyz", BuildBaseCommit: "abc",
-					GitProvider: "github", EventType: "push", Diff: "xyz", PullRequestNumber: 2},
-				oauth: &core.Oauth{}},
-			map[string]int{}, false},
+		{
+			"Test GetChangedFile for CommitDiff for github gitprovider",
+			args{
+				ctx: context.TODO(),
+				payload: &core.Payload{
+					RepoSlug: "/testdata", RepoLink: server.URL + "/testdata", BuildTargetCommit: "xyz", BuildBaseCommit: "abc",
+					GitProvider: "github", EventType: "push", Diff: "xyz", PullRequestNumber: 2,
+				},
+				oauth: &core.Oauth{},
+			},
+			map[string]int{},
+			false,
+		},
 
-		{"Test GetChangedFile for CommitDiff for github provider and empty base commit",
-			args{ctx: context.TODO(),
-				payload: &core.Payload{RepoSlug: "/testdata", RepoLink: server.URL + "/testdata", BuildBaseCommit: "",
-					GitProvider: "gitlab", EventType: "push"}, oauth: &core.Oauth{}}, map[string]int{}, true},
+		{
+			"Test GetChangedFile for CommitDiff for github provider and empty base commit",
+			args{
+				ctx: context.TODO(),
+				payload: &core.Payload{
+					RepoSlug: "/testdata", RepoLink: server.URL + "/testdata", BuildBaseCommit: "",
+					GitProvider: "gitlab", EventType: "push",
+				}, oauth: &core.Oauth{},
+			},
+			map[string]int{},
+			true,
+		},
 
-		{"Test GetChangedFile for CommitDiff for github provider for non 200 response",
-			args{ctx: context.TODO(), payload: &core.Payload{RepoLink: server.URL + "/notfound/", BuildTargetCommit: "xyz", BuildBaseCommit: "abc",
-				GitProvider: "gitlab", EventType: "push"}, oauth: &core.Oauth{}}, map[string]int{}, true},
+		{
+			"Test GetChangedFile for CommitDiff for github provider for non 200 response",
+			args{ctx: context.TODO(), payload: &core.Payload{
+				RepoLink: server.URL + "/notfound/", BuildTargetCommit: "xyz", BuildBaseCommit: "abc",
+				GitProvider: "gitlab", EventType: "push",
+			}, oauth: &core.Oauth{}},
+			map[string]int{},
+			true,
+		},
 
-		{"Test GetChangedFile for CommitDiff for non supported git provider",
-			args{ctx: context.TODO(),
-				payload: &core.Payload{RepoSlug: "/notfound/", RepoLink: server.URL + "/notfound/", BuildTargetCommit: "xyz", BuildBaseCommit: "abc",
-					GitProvider: "gittest", EventType: "push"}, oauth: &core.Oauth{}}, map[string]int{}, false},
+		{
+			"Test GetChangedFile for CommitDiff for non supported git provider",
+			args{
+				ctx: context.TODO(),
+				payload: &core.Payload{
+					RepoSlug: "/notfound/", RepoLink: server.URL + "/notfound/", BuildTargetCommit: "xyz", BuildBaseCommit: "abc",
+					GitProvider: "gittest", EventType: "push",
+				}, oauth: &core.Oauth{},
+			},
+			map[string]int{},
+			false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -227,12 +279,19 @@ func Test_diffManager_GetChangedFiles_CommitDiff_Gitlab(t *testing.T) {
 		want map[string]int
 	}{
 		// expects to hit serverURL/testdata/repository/compare?from=abc&to=abcd
-		{"Test GetChangedFile for CommitDiff for gitlab gitprovider",
-			args{ctx: context.TODO(),
-				payload: &core.Payload{RepoSlug: "/testdata", RepoLink: server.URL + "/testdata",
+		{
+			"Test GetChangedFile for CommitDiff for gitlab gitprovider",
+			args{
+				ctx: context.TODO(),
+				payload: &core.Payload{
+					RepoSlug: "/testdata", RepoLink: server.URL + "/testdata",
 					BuildTargetCommit: "abcd", BuildBaseCommit: "abc", TaskID: "taskid", BranchName: "branchname", BuildID: "buildid", RepoID: "repoid",
-					OrgID: "orgid", GitProvider: "gitlab", PrivateRepo: false, EventType: "push", Diff: "xyz", PullRequestNumber: 2},
-				oauth: &core.Oauth{}}, map[string]int{}},
+					OrgID: "orgid", GitProvider: "gitlab", PrivateRepo: false, EventType: "push", Diff: "xyz", PullRequestNumber: 2,
+				},
+				oauth: &core.Oauth{},
+			},
+			map[string]int{},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

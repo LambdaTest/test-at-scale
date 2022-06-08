@@ -108,7 +108,8 @@ func Test_zstdCompressor_Compress(t *testing.T) {
 		mock.AnythingOfType("map[string]string"),
 	).Return(
 		func(ctx context.Context, commandType core.CommandType, commands []string,
-			cwd string, envMap, secretData map[string]string) error {
+			cwd string, envMap, secretData map[string]string,
+		) error {
 			ReceivedArgs = commands
 			return errs.New("error from mocked interface")
 		},
@@ -196,7 +197,8 @@ func Test_zstdCompressor_Decompress(t *testing.T) {
 		mock.AnythingOfType("map[string]string"),
 		mock.AnythingOfType("map[string]string")).Return(
 		func(ctx context.Context, commandType core.CommandType, commands []string,
-			cwd string, envMap, secretData map[string]string) error {
+			cwd string, envMap, secretData map[string]string,
+		) error {
 			ReceivedArgs = commands
 			return nil
 		})
@@ -211,7 +213,8 @@ func Test_zstdCompressor_Decompress(t *testing.T) {
 		mock.AnythingOfType("map[string]string"),
 	).Return(
 		func(ctx context.Context, commandType core.CommandType, commands []string,
-			cwd string, envMap, secretData map[string]string) error {
+			cwd string, envMap, secretData map[string]string,
+		) error {
 			ReceivedArgs = commands
 			return errs.New("error from mocked interface")
 		})

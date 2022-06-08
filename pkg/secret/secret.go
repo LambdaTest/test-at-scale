@@ -2,7 +2,6 @@ package secret
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"regexp"
 	"strings"
@@ -34,7 +33,7 @@ func (s *secretParser) GetRepoSecret(path string) (map[string]string, error) {
 		s.logger.Debugf("failed to find user env secrets in path %s, as path does not exists", path)
 		return nil, nil
 	}
-	body, err := ioutil.ReadFile(path)
+	body, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +56,7 @@ func (s *secretParser) GetOauthSecret(path string) (*core.Oauth, error) {
 		s.logger.Errorf("failed to find oauth secret in path %s", path)
 		return nil, err
 	}
-	body, err := ioutil.ReadFile(path)
+	body, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}

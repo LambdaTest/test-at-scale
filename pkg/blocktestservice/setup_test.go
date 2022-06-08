@@ -59,7 +59,8 @@ func TestTestBlockListService_fetchBlockListFromNeuron(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		{"Test fetchBlocklistFromNeuron",
+		{
+			"Test fetchBlocklistFromNeuron",
 			args{
 				ctx:      context.TODO(),
 				endpoint: server.URL + "/testBlocklist.json",
@@ -69,7 +70,8 @@ func TestTestBlockListService_fetchBlockListFromNeuron(t *testing.T) {
 			false,
 		},
 
-		{"Test fetchBlocklistFromNeuron for wrong request endpoint",
+		{
+			"Test fetchBlocklistFromNeuron for wrong request endpoint",
 			args{
 				ctx:      context.TODO(),
 				endpoint: "/dne.json",
@@ -79,7 +81,8 @@ func TestTestBlockListService_fetchBlockListFromNeuron(t *testing.T) {
 			true,
 		},
 
-		{"Test fetchBlocklistFromNeuron for non 200 response",
+		{
+			"Test fetchBlocklistFromNeuron for non 200 response",
 			args{
 				ctx:      context.TODO(),
 				endpoint: server2.URL + "/non200",
@@ -135,7 +138,8 @@ func TestTestBlockListService_GetBlockListedTests(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		{"Test GetBlockListedTests",
+		{
+			"Test GetBlockListedTests",
 			args{
 				ctx: context.TODO(),
 				tasConfig: &core.TASConfig{
@@ -143,9 +147,12 @@ func TestTestBlockListService_GetBlockListedTests(t *testing.T) {
 					Framework: "jest",
 					Blocklist: []string{"src/test/f1.spec.js", "src/test/f2.spec.js"},
 					SplitMode: core.TestSplit,
-					Tier:      "small"},
-				repoID: "/testBlocklist.json"},
-			true}, // Will not get error if the test is run in docker container, so test will fail in docker container
+					Tier:      "small",
+				},
+				repoID: "/testBlocklist.json",
+			},
+			true,
+		}, // Will not get error if the test is run in docker container, so test will fail in docker container
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -190,7 +197,8 @@ func TestTestBlockListService_populateBlockList(t *testing.T) {
 		fields fields
 		args   args
 	}{
-		{"Test populateBlockList",
+		{
+			"Test populateBlockList",
 			fields{
 				cfg:      cfg,
 				logger:   logger,
@@ -204,7 +212,8 @@ func TestTestBlockListService_populateBlockList(t *testing.T) {
 						},
 					},
 				},
-				errChan: make(chan error, 1)},
+				errChan: make(chan error, 1),
+			},
 			args{
 				blocklistSource:   "./",
 				blocktestLocators: blocklistLocators,
@@ -222,8 +231,10 @@ func TestTestBlockListService_populateBlockList(t *testing.T) {
 				errChan:           tt.fields.errChan,
 			}
 			tbs.populateBlockList(tt.args.blocklistSource, tt.args.blocktestLocators)
-			expected := map[string][]blocktest{"src/test/api1.js": {{"src", "loc", "blocklisted"}, {"./", "src/test/api1.js##", "quarantined"}},
-				"src/test/api2.js": {{"./", "src/test/api2.js##", "blocklisted"}}}
+			expected := map[string][]blocktest{
+				"src/test/api1.js": {{"src", "loc", "blocklisted"}, {"./", "src/test/api1.js##", "quarantined"}},
+				"src/test/api2.js": {{"./", "src/test/api2.js##", "blocklisted"}},
+			}
 			got := tbs.blockTestEntities
 			if !reflect.DeepEqual(expected, got) {
 				t.Errorf("\nexpected: %v\ngot: %v", expected, got)

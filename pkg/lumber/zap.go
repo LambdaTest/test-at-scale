@@ -105,7 +105,7 @@ func (l *zapLogger) Panicf(format string, args ...interface{}) {
 }
 
 func (l *zapLogger) WithFields(fields Fields) Logger {
-	var f = make([]interface{}, 0, len(fields))
+	f := make([]interface{}, 0, len(fields))
 	for k, v := range fields {
 		f = append(f, k, v)
 	}

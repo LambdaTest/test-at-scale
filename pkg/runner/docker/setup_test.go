@@ -16,9 +16,11 @@ import (
 	"github.com/docker/docker/client"
 )
 
-var cfg *config.SynapseConfig
-var secretsManager core.SecretsManager
-var runner core.DockerRunner
+var (
+	cfg            *config.SynapseConfig
+	secretsManager core.SecretsManager
+	runner         core.DockerRunner
+)
 
 func createNetworkIfNotExists(dockerClient *client.Client, networkName string) error {
 	opts := types.NetworkListOptions{

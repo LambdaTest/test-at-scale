@@ -30,7 +30,6 @@ func TestHandler(t *testing.T) {
 		wantResponseCode int
 		wantStatusText   string
 	}{
-
 		{
 			"Test handler result route",
 			httptest.NewRequest(http.MethodPost, "/results", bytes.NewBuffer([]byte(`{"TaskID" : "123"}`))),
@@ -69,5 +68,4 @@ func TestHandler(t *testing.T) {
 			}
 		})
 	}
-
 }

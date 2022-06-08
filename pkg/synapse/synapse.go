@@ -47,7 +47,6 @@ func New(
 	logger lumber.Logger,
 	secretsManager core.SecretsManager,
 ) core.SynapseManager {
-
 	return &synapse{
 		runner:                   runner,
 		logger:                   logger,
@@ -63,7 +62,8 @@ func New(
 func (s *synapse) InitiateConnection(
 	ctx context.Context,
 	wg *sync.WaitGroup,
-	connectionFailed chan struct{}) {
+	connectionFailed chan struct{},
+) {
 	defer wg.Done()
 	go s.openAndMaintainConnection(ctx, connectionFailed)
 	<-ctx.Done()
@@ -262,7 +262,6 @@ func (s *synapse) processTask(message core.Message) {
 		s.logger.Errorf("error creating repo secrets %v", err)
 	}
 	s.runAndUpdateJobStatus(runnerOpts)
-
 }
 
 // runAndUpdateJobStatus intiate and sends jobs status
@@ -314,14 +313,12 @@ func (s *synapse) logout() {
 	s.logger.Infof("Logging out from lambdatest server")
 	logoutMessage := CreateLogoutMessage()
 	messageJson, err := json.Marshal(logoutMessage)
-
 	if err != nil {
 		s.logger.Errorf("error marshaling message")
 		return
 	}
 	if err := s.conn.WriteMessage(websocket.TextMessage, messageJson); err != nil {
 		s.logger.Errorf("error sending message to the server, error %v", err)
-
 	}
 }
 

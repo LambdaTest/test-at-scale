@@ -75,7 +75,8 @@ func Test_testDiscoveryService_Discover(t *testing.T) {
 
 func getTestCases() []*test {
 	testCases := []*test{
-		{"Test Discover with Premerge pattern",
+		{
+			"Test Discover with Premerge pattern",
 			args{
 				ctx: context.TODO(),
 				tasConfig: &core.TASConfig{
@@ -99,7 +100,8 @@ func getTestCases() []*test {
 			map[string]string{"env": "repo"},
 			map[string]string{"secret": "data"},
 		},
-		{"Test Discover with Postmerge pattern",
+		{
+			"Test Discover with Postmerge pattern",
 			args{
 				ctx: context.TODO(),
 				tasConfig: &core.TASConfig{
@@ -123,7 +125,8 @@ func getTestCases() []*test {
 			map[string]string{"env": "RepoName"},
 			map[string]string{"this is": "a secret"},
 		},
-		{"Test Discover not to execute discoverAll",
+		{
+			"Test Discover not to execute discoverAll",
 			args{
 				ctx: context.TODO(),
 				tasConfig: &core.TASConfig{

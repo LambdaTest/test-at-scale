@@ -43,14 +43,13 @@ func CreateJobInfo(status core.StatusType, runnerOpts *core.RunnerOptions, messa
 
 // CreateJobUpdateMessage creates message of type job updates
 func CreateJobUpdateMessage(jobInfo core.JobInfo) core.Message {
-
 	jobInfoJson, err := json.Marshal(jobInfo)
 	if err != nil {
 		return core.Message{}
 	}
 	return core.Message{
 		Type:    core.MsgJobInfo,
-		Content: []byte(jobInfoJson),
+		Content: jobInfoJson,
 		Success: true,
 	}
 }

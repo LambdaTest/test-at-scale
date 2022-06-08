@@ -41,14 +41,17 @@ func NewTestExecutionService(cfg *config.NucleusConfig,
 	execManager core.ExecutionManager,
 	azureClient core.AzureClient,
 	ts *teststats.ProcStats,
-	logger lumber.Logger) core.TestExecutionService {
-	return &testExecutionService{cfg: cfg,
+	logger lumber.Logger,
+) core.TestExecutionService {
+	return &testExecutionService{
+		cfg:            cfg,
 		requests:       requests,
 		serverEndpoint: global.NeuronHost + "/report",
 		execManager:    execManager,
 		azureClient:    azureClient,
 		ts:             ts,
-		logger:         logger}
+		logger:         logger,
+	}
 }
 
 // Run executes the test files
@@ -56,8 +59,8 @@ func (tes *testExecutionService) Run(ctx context.Context,
 	tasConfig *core.TASConfig,
 	payload *core.Payload,
 	coverageDir string,
-	secretData map[string]string) (*core.ExecutionResults, error) {
-
+	secretData map[string]string,
+) (*core.ExecutionResults, error) {
 	azureReader, azureWriter := io.Pipe()
 	defer azureWriter.Close()
 	blobPath := fmt.Sprintf("%s/%s/%s/%s.log", payload.OrgID, payload.BuildID, payload.TaskID, core.Execution)
@@ -159,7 +162,8 @@ func (tes *testExecutionService) Run(ctx context.Context,
 }
 
 func (tes *testExecutionService) SendResults(ctx context.Context,
-	payload *core.ExecutionResults) (resp *core.TestReportResponsePayload, err error) {
+	payload *core.ExecutionResults,
+) (resp *core.TestReportResponsePayload, err error) {
 	reqBody, err := json.Marshal(payload)
 	if err != nil {
 		tes.logger.Errorf("failed to marshal request body %v", err)

@@ -36,9 +36,7 @@ func RootCommand() *cobra.Command {
 	}
 
 	// define flags used for this command
-	if err := AttachCLIFlags(&rootCmd); err != nil {
-		fmt.Println("Error in attaching cli flags")
-	}
+	AttachCLIFlags(&rootCmd)
 
 	return &rootCmd
 }
@@ -161,12 +159,10 @@ func run(cmd *cobra.Command, args []string) {
 				logger.Errorf("Graceful timeout exceeded. Brutally killing the application")
 			}
 			os.Exit(0)
-
 		}
 	case <-done:
 		os.Exit(0)
 	}
-
 }
 
 func setEnv() {

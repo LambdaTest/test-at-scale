@@ -124,7 +124,8 @@ func TestGetPullRequestDiffURL(t *testing.T) {
 			"For non-github and gitlab as git provider",
 			args{"gittest", "tests/nexe", 2},
 			"",
-			true},
+			true,
+		},
 		{
 			"For gitlab as git provider",
 			args{"gitlab", "/tests/nexe", 2},

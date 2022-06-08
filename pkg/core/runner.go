@@ -45,7 +45,7 @@ type DockerRunner interface {
 	// Run runs the execution engine
 	Run(context.Context, *RunnerOptions) ContainerStatus
 
-	//WaitForRunning waits for runner to get completed
+	// WaitForRunning waits for runner to get completed
 	WaitForCompletion(ctx context.Context, r *RunnerOptions) error
 
 	// Destroy the execution engine

@@ -44,6 +44,7 @@ func TestNewRouter(t *testing.T) {
 		})
 	}
 }
+
 func TestRouter_Handler(t *testing.T) {
 	logger, _ := testutils.GetLogger()
 	cfg, _ := testutils.GetConfig()

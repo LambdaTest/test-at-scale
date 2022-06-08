@@ -157,8 +157,8 @@ func TestClone(t *testing.T) {
 			return
 		}
 
-		_, err2 := os.OpenFile(commitID+".zip", 0440, 0440)
-		_, err3 := os.OpenFile("zipFile", 0440, 0440)
+		_, err2 := os.OpenFile(commitID+".zip", 0o440, 0o440)
+		_, err3 := os.OpenFile("zipFile", 0o440, 0o440)
 
 		// check if downloaded file exist now
 		if errors.Is(err2, os.ErrNotExist) {
@@ -181,7 +181,7 @@ func TestClone(t *testing.T) {
 		}
 
 		if err == nil {
-			if _, err4 := os.OpenFile(global.RepoDir, 0440, 0440); errors.Is(err4, os.ErrNotExist) {
+			if _, err4 := os.OpenFile(global.RepoDir, 0o440, 0o440); errors.Is(err4, os.ErrNotExist) {
 				t.Errorf("Failed to find file in global repodir, got error: %v", err4)
 				return
 			}

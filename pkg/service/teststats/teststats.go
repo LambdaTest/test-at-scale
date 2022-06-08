@@ -12,7 +12,7 @@ import (
 	"github.com/LambdaTest/test-at-scale/pkg/procfs"
 )
 
-//ProcStats represents the process stats for a particular pid
+// ProcStats represents the process stats for a particular pid
 type ProcStats struct {
 	logger                       lumber.Logger
 	ExecutionResultInputChannel  chan core.ExecutionResults
@@ -27,7 +27,6 @@ func New(cfg *config.NucleusConfig, logger lumber.Logger) (*ProcStats, error) {
 		ExecutionResultInputChannel:  make(chan core.ExecutionResults),
 		ExecutionResultOutputChannel: make(chan *core.ExecutionResults),
 	}, nil
-
 }
 
 // CaptureTestStats combines the ps stats for each test

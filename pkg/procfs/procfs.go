@@ -49,7 +49,6 @@ func New(pid int32, samplingInterval time.Duration, usePss bool) (*Proc, error) 
 
 // GetStats returns process stats
 func (ps *Proc) GetStats() (stat *Stats, err error) {
-
 	s := Stats{}
 	s.RecordTime = time.Now()
 	cpuPerc, err := ps.process.Percent(0)
@@ -85,7 +84,6 @@ func (ps *Proc) GetStats() (stat *Stats, err error) {
 	s.MemConsumed = pss * 1024 // PSS is in kB
 	s.MemPercentage = (100 * float64(s.MemConsumed) / float64(ps.totalMem))
 	return &s, nil
-
 }
 
 // GetStatsInInterval returns process stats after every interval
@@ -95,13 +93,12 @@ func (ps *Proc) GetStatsInInterval() []*Stats {
 
 // GetStatsInIntervalWithContext returns process stats after every interval
 func (ps *Proc) GetStatsInIntervalWithContext(ctx context.Context) []*Stats {
-
 	var stats []*Stats
 	s, err := ps.GetStats()
 	if err != nil {
 		return stats
 	}
-	//append initial values to slice, then check after an interval
+	// append initial values to slice, then check after an interval
 	stats = append(stats, s)
 	ticker := time.NewTicker(ps.samplingTime)
 	for {

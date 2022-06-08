@@ -17,7 +17,6 @@ func TestHandler(t *testing.T) {
 		wantResponseCode int
 		wantStatusText   string
 	}{
-
 		{"Test handler health route for success", httptest.NewRequest(http.MethodGet, "/health", nil), 200, http.StatusText(http.StatusOK)},
 	}
 

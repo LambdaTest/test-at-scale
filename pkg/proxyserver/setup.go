@@ -45,5 +45,4 @@ func ListenAndServe(ctx context.Context, proxyHandler *ProxyHandler, config *con
 	case <-done:
 		return nil
 	}
-
 }

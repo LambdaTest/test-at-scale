@@ -35,8 +35,10 @@ type cache struct {
 	homeDir     string
 }
 
-var cacheBlobURL string
-var apiErr error
+var (
+	cacheBlobURL string
+	apiErr       error
+)
 
 // New returns a new CacheStore
 func New(z core.ZstdCompressor, azureClient core.AzureClient, logger lumber.Logger) (core.CacheStore, error) {

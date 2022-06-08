@@ -33,7 +33,8 @@ func Test_codeCoverageService_mergeCodeCoverageFiles(t *testing.T) {
 		mock.AnythingOfType("map[string]string"),
 		mock.AnythingOfType("map[string]string")).Return(
 		func(ctx context.Context, commType core.CommandType, comm []string,
-			cwd string, envMap, secretData map[string]string) error {
+			cwd string, envMap, secretData map[string]string,
+		) error {
 			commandType = commType
 			commands = comm
 			return nil
@@ -62,7 +63,8 @@ func Test_codeCoverageService_mergeCodeCoverageFiles(t *testing.T) {
 		wantErr  bool
 		expected expected
 	}{
-		{"Test",
+		{
+			"Test",
 			args{
 				ctx:                  context.TODO(),
 				commitDir:            commitDir,
@@ -132,7 +134,8 @@ func Test_codeCoverageService_uploadFile(t *testing.T) {
 		wantArgs    string
 		wantErr     bool
 	}{
-		{"Test uploadFile",
+		{
+			"Test uploadFile",
 			args{
 				ctx:      context.TODO(),
 				blobPath: "blobpath",
@@ -177,12 +180,14 @@ func Test_codeCoverageService_parseManifestFile(t *testing.T) {
 		want    core.CoverageManifest
 		wantErr bool
 	}{
-		{"Test parseManifestFile for success",
+		{
+			"Test parseManifestFile for success",
 			args{filepath: "../../../testutils/testdata/coverage/coverage-final.json"},
 			core.CoverageManifest{},
 			false,
 		},
-		{"Test parseManifestFile",
+		{
+			"Test parseManifestFile",
 			args{filepath: "../../../testutils/testdata/coverage/dne.json"},
 			core.CoverageManifest{},
 			true,
@@ -235,11 +240,13 @@ func Test_codeCoverageService_downloadAndDecompressParentCommitDir(t *testing.T)
 		wantErr bool
 	}{
 		// TODO: Add success case, currently on local tempdir can't be created
-		{"Test downloadAndDecompressParentCommitDir",
+		{
+			"Test downloadAndDecompressParentCommitDir",
 			args{
 				ctx:      context.TODO(),
 				coverage: parentCommitCoverage{Bloblink: server.URL, ParentCommit: "parentCommit"},
-				repoDir:  "../../../testutils/testdata"},
+				repoDir:  "../../../testutils/testdata",
+			},
 			true,
 		},
 	}
@@ -440,7 +447,8 @@ func newCodeCoverageService(logger lumber.Logger,
 	codeCoveragParentDir string,
 	azureClient *mocks.AzureClient,
 	zstd *mocks.ZstdCompressor,
-	endpoint string) *codeCoverageService {
+	endpoint string,
+) *codeCoverageService {
 	return &codeCoverageService{
 		logger:               logger,
 		execManager:          execManager,
@@ -457,7 +465,8 @@ func newCodeCoverageService(logger lumber.Logger,
 func initialiseArgs() (logger lumber.Logger,
 	execManager *mocks.ExecutionManager,
 	azureClient *mocks.AzureClient,
-	zstd *mocks.ZstdCompressor) {
+	zstd *mocks.ZstdCompressor,
+) {
 	azureClient = new(mocks.AzureClient)
 	execManager = new(mocks.ExecutionManager)
 	zstdCompressor := new(mocks.ZstdCompressor)

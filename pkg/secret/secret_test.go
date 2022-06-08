@@ -97,7 +97,7 @@ func TestSubstituteSecret(t *testing.T) {
 	}
 
 	secretParser := New(logger)
-	var expressions = []struct {
+	expressions := []struct {
 		params    map[string]string
 		input     string
 		output    string
@@ -182,7 +182,8 @@ func TestExpired(t *testing.T) {
 				token: &core.Oauth{
 					AccessToken:  "54321",
 					RefreshToken: "",
-					Expiry:       time.Now().Add(-time.Hour)},
+					Expiry:       time.Now().Add(-time.Hour),
+				},
 			},
 			want: false,
 		},
@@ -195,7 +196,8 @@ func TestExpired(t *testing.T) {
 			args: args{
 				token: &core.Oauth{
 					AccessToken:  "",
-					RefreshToken: "54321"},
+					RefreshToken: "54321",
+				},
 			},
 			want: true,
 		},
@@ -208,7 +210,8 @@ func TestExpired(t *testing.T) {
 			args: args{
 				token: &core.Oauth{
 					AccessToken:  "12345",
-					RefreshToken: "54321"},
+					RefreshToken: "54321",
+				},
 			},
 			want: false,
 		},
@@ -222,7 +225,8 @@ func TestExpired(t *testing.T) {
 				token: &core.Oauth{
 					AccessToken:  "12345",
 					RefreshToken: "54321",
-					Expiry:       time.Now().Add(time.Hour)},
+					Expiry:       time.Now().Add(time.Hour),
+				},
 			},
 			want: false,
 		},
@@ -236,7 +240,8 @@ func TestExpired(t *testing.T) {
 				token: &core.Oauth{
 					AccessToken:  "12345",
 					RefreshToken: "54321",
-					Expiry:       time.Now().Add(-time.Second)},
+					Expiry:       time.Now().Add(-time.Second),
+				},
 			},
 			want: true,
 		},
@@ -250,7 +255,8 @@ func TestExpired(t *testing.T) {
 				token: &core.Oauth{
 					AccessToken:  "12345",
 					RefreshToken: "54321",
-					Expiry:       time.Now().Add(time.Second * 600)},
+					Expiry:       time.Now().Add(time.Second * 600),
+				},
 			},
 			want: true,
 		},

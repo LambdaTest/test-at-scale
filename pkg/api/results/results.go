@@ -10,7 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-//Handler captures the test execution results from nucleus
+// Handler captures the test execution results from nucleus
 func Handler(logger lumber.Logger, ts *teststats.ProcStats) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		request := core.ExecutionResults{}
