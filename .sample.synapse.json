@@ -1,23 +1,24 @@
 {
-    "name": "synapse-1",
-    "logConfig": {
-      "enableConsole": true,
-      "consolelevel": "debug"
-    },
-    "Lambdatest": {
-      "SecretKey": "SecretKeyForLambdaTest"
-    },
-    "Git": {
-      "Token": "",
-      "TokenType": "Bearer"
-    },
-    "ContainerRegistry": {
-      "PullPolicy": "always",
-      "Mode": "public"
-    },
-    "RepoSecrets": {
-      "repository1":{
-        "AWS_REGION": "us-east-1"
-      }
+  "Name": "my-synapse-1",
+  "LogConfig": {
+    "EnableConsole": true,
+    "ConsoleJSONFormat": true,
+    "Consolelevel": "debug"
+  },
+  "Lambdatest": {
+    "SecretKey": "add-your-secret-key-here"
+  },
+  "Git": {
+    "Token": "add-your-git-token-here",
+    "TokenType": "Bearer"
+  },
+  "ContainerRegistry": {
+    "PullPolicy": "always",
+    "Mode": "public"
+  },
+  "RepoSecrets": {
+    "synapse": {
+      "SAMPLE_SECRET_KEY": "sample_secret_value"
     }
+  }
 }
