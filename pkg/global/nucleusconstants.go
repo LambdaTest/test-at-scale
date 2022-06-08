@@ -36,6 +36,7 @@ var FrameworkRunnerMap = map[string]string{
 	"jasmine": "./node_modules/.bin/jasmine-runner",
 	"mocha":   "./node_modules/.bin/mocha-runner",
 	"jest":    "./node_modules/.bin/jest-runner",
+	"golang":  "/home/nucleus/server", // TODO: replace with the go bin path.
 }
 
 // APIHostURLMap is map of git provider with there api url
@@ -54,4 +55,21 @@ var NeuronHost string
 // SetNeuronHost is setter for NeuronHost
 func SetNeuronHost(host string) {
 	NeuronHost = host
+}
+
+var LangArgKeyMap = map[string]map[string]string{
+	"javascript": {
+		"pattern":      "--pattern",
+		"config":       "--config",
+		"diff":         "--diff",
+		"command":      "--command",
+		"locator-file": "--locator-file",
+	},
+	"golang": {
+		"pattern":      "-pattern",
+		"config":       "-config",
+		"diff":         "-diff",
+		"command":      "-command",
+		"locator-file": "-locator-file",
+	},
 }

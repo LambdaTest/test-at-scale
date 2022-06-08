@@ -52,7 +52,7 @@ func (tc *tasConfigManager) LoadAndValidate(ctx context.Context,
 		return nil, err
 	}
 
-	if tasConfig.Cache == nil {
+	if tasConfig.Cache == nil && tasConfig.Framework != "golang" {
 		checksum, err := utils.ComputeChecksum(fmt.Sprintf("%s/%s", global.RepoDir, global.PackageJSON))
 		if err != nil {
 			tc.logger.Errorf("Error while computing checksum, error %v", err)

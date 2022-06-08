@@ -70,6 +70,14 @@ func (tes *testExecutionService) Run(ctx context.Context,
 
 	var target []string
 	var envMap map[string]string
+	language := tasConfig.Language
+
+	if tasConfig.Framework == "golang" {
+		language = "golang"
+	} else {
+		language = "javascript"
+	}
+
 	if payload.EventType == core.EventPullRequest {
 		target = tasConfig.Premerge.Patterns
 		envMap = tasConfig.Premerge.EnvMap
@@ -78,12 +86,12 @@ func (tes *testExecutionService) Run(ctx context.Context,
 		envMap = tasConfig.Postmerge.EnvMap
 	}
 	var args []string
-	args = []string{global.FrameworkRunnerMap[tasConfig.Framework], "--command", "execute"}
+	args = []string{global.FrameworkRunnerMap[tasConfig.Framework], global.LangArgKeyMap[language]["command"], "execute"}
 	if tasConfig.ConfigFile != "" {
-		args = append(args, "--config", tasConfig.ConfigFile)
+		args = append(args, global.LangArgKeyMap[language]["config"], tasConfig.ConfigFile)
 	}
 	for _, pattern := range target {
-		args = append(args, "--pattern", pattern)
+		args = append(args, global.LangArgKeyMap[language]["pattern"], pattern)
 	}
 
 	if payload.LocatorAddress != "" {
@@ -93,7 +101,7 @@ func (tes *testExecutionService) Run(ctx context.Context,
 			tes.logger.Errorf("failed to get locator file, error: %v", err)
 			return nil, err
 		}
-		args = append(args, "--locator-file", locatorFile)
+		args = append(args, global.LangArgKeyMap[language]["locator-file"], locatorFile)
 	}
 
 	collectCoverage := payload.CollectCoverage

@@ -301,7 +301,7 @@ type Oauth struct {
 // TASConfig represents the .tas.yml file
 type TASConfig struct {
 	SmartRun          bool               `yaml:"smartRun"`
-	Framework         string             `yaml:"framework" validate:"required,oneof=jest mocha jasmine"`
+	Framework         string             `yaml:"framework" validate:"required,oneof=jest mocha jasmine golang"`
 	Blocklist         []string           `yaml:"blocklist"`
 	Postmerge         *Merge             `yaml:"postMerge" validate:"omitempty"`
 	Premerge          *Merge             `yaml:"preMerge" validate:"omitempty"`
@@ -316,6 +316,7 @@ type TASConfig struct {
 	Tier              Tier               `yaml:"tier" validate:"oneof=xsmall small medium large xlarge"`
 	NodeVersion       string             `yaml:"nodeVersion" validate:"omitempty,semver"`
 	ContainerImage    string             `yaml:"containerImage"`
+	Language          string             `yaml:"language"`
 }
 
 // CoverageThreshold reprents the code coverage threshold

@@ -148,7 +148,12 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	}
 
 	coverageDir := filepath.Join(global.CodeCoverageDir, payload.OrgID, payload.RepoID, payload.BuildTargetCommit)
-	cacheKey := fmt.Sprintf("%s/%s/%s/%s", tasConfig.Cache.Version, payload.OrgID, payload.RepoID, tasConfig.Cache.Key)
+
+	cacheKey := ""
+
+	if tasConfig.Framework != "golang" {
+		cacheKey = fmt.Sprintf("%s/%s/%s/%s", tasConfig.Cache.Version, payload.OrgID, payload.RepoID, tasConfig.Cache.Key)
+	}
 
 	pl.Logger.Infof("Tas yaml: %+v", tasConfig)
 
@@ -170,7 +175,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	os.Setenv("BLOCK_TESTS_FILE", global.BlockTestFileLocation)
 	os.Setenv("REPO_CACHE_DIR", global.RepoCacheDir)
 
-	if tasConfig.NodeVersion != "" {
+	if tasConfig.NodeVersion != "" && tasConfig.Framework != "golang" {
 		nodeVersion := tasConfig.NodeVersion
 		// Running the `source` commands in a directory where .nvmrc is present, exits with exitCode 3
 		// https://github.com/nvm-sh/nvm/issues/1985
@@ -217,14 +222,16 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 			return nil
 		})
 
-		g.Go(func() error {
-			if errG := pl.CacheStore.Download(errCtx, cacheKey); errG != nil {
-				pl.Logger.Errorf("Unable to download cache: %v", errG)
-				errG = errs.New(errs.GenericErrRemark.Error())
-				return errG
-			}
-			return nil
-		})
+		if tasConfig.Framework != "golang" {
+			g.Go(func() error {
+				if errG := pl.CacheStore.Download(errCtx, cacheKey); errG != nil {
+					pl.Logger.Errorf("Unable to download cache: %v", errG)
+					errG = errs.New(errs.GenericErrRemark.Error())
+					return errG
+				}
+				return nil
+			})
+		}
 
 		diffExists := true
 		diff := map[string]int{}
@@ -257,11 +264,14 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 				return err
 			}
 		}
-		err = pl.ExecutionManager.ExecuteInternalCommands(ctx, InstallRunners, global.InstallRunnerCmds, global.RepoDir, nil, nil)
-		if err != nil {
-			pl.Logger.Errorf("Unable to install custom runners %v", err)
-			err = errs.New(errs.GenericErrRemark.Error())
-			return err
+
+		if tasConfig.Framework != "golang" {
+			err = pl.ExecutionManager.ExecuteInternalCommands(ctx, InstallRunners, global.InstallRunnerCmds, global.RepoDir, nil, nil)
+			if err != nil {
+				pl.Logger.Errorf("Unable to install custom runners %v", err)
+				err = errs.New(errs.GenericErrRemark.Error())
+				return err
+			}
 		}
 
 		pl.Logger.Debugf("Caching workspace")
@@ -283,8 +293,10 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 		taskPayload.Status = Passed
 
 		// Upload cache once for other builds
-		if errU := pl.CacheStore.Upload(ctx, cacheKey, tasConfig.Cache.Paths...); errU != nil {
-			pl.Logger.Errorf("Unable to upload cache: %v", errU)
+		if tasConfig.Framework != "golang" {
+			if errU := pl.CacheStore.Upload(ctx, cacheKey, tasConfig.Cache.Paths...); errU != nil {
+				pl.Logger.Errorf("Unable to upload cache: %v", errU)
+			}
 		}
 		pl.Logger.Debugf("Cache uploaded successfully")
 	}

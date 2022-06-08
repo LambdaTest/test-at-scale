@@ -55,31 +55,41 @@ func (tds *testDiscoveryService) Discover(ctx context.Context,
 		target = tasConfig.Postmerge.Patterns
 		envMap = tasConfig.Postmerge.EnvMap
 	}
+
+	language := tasConfig.Language
+	if tasConfig.Framework == "golang" {
+		language = "golang"
+	} else {
+		language = "javascript"
+	}
+
 	configFilePath, err := utils.GetConfigFileName(payload.TasFileName)
 	if err != nil {
 		return err
 	}
 	impactAll := tds.shouldImpactAll(tasConfig, configFilePath, diff)
-	args := []string{"--command", "discover"}
+
+	args := []string{global.LangArgKeyMap[language]["command"], "discover"}
+
 	if !impactAll {
 		if len(diff) == 0 && diffExists {
 			// empty diff; in PR, a commit added and then reverted to cause an overall empty PR diff
-			args = append(args, "--diff")
+			args = append(args, global.LangArgKeyMap[language]["diff"])
 		} else {
 			for k, v := range diff {
 				// in changed files we only have added or modified files.
 				if v != core.FileRemoved {
-					args = append(args, "--diff", k)
+					args = append(args, global.LangArgKeyMap[language]["diff"], k)
 				}
 			}
 		}
 	}
 	if tasConfig.ConfigFile != "" {
-		args = append(args, "--config", tasConfig.ConfigFile)
+		args = append(args, global.LangArgKeyMap[language]["config"], tasConfig.ConfigFile)
 	}
 
 	for _, pattern := range target {
-		args = append(args, "--pattern", pattern)
+		args = append(args, global.LangArgKeyMap[language]["pattern"], pattern)
 	}
 	tds.logger.Debugf("Discovering tests at paths %+v", target)
 

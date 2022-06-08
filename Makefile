@@ -1,5 +1,7 @@
 NUCLEUS_DOCKER_FILE ?= ./build/nucleus/Dockerfile
-NUCLEUS_IMAGE_NAME ?= lambdatest/nucleus:latest
+NUCLEUS_IMAGE_NAME ?= nucleus:latest
+
+GO_NUCLEUS_DOCKER_FILE = ./build/nucleus/golang/Dockerfile
 
 SYNAPSE_DOCKER_FILE ?= ./build/synapse/Dockerfile
 SYNAPSE_IMAGE_NAME ?= lambdatest/synapse:latest
@@ -11,7 +13,7 @@ lint:						## Runs linting
 	golangci-lint run
 
 build-nucleus-image:		## Builds nucleus docker image
-	docker build -t ${NUCLEUS_IMAGE_NAME} --file $(NUCLEUS_DOCKER_FILE) .
+	docker build -t ${NUCLEUS_IMAGE_NAME} --file $(GO_NUCLEUS_DOCKER_FILE) .
 
 build-nucleus-bin:			## Builds nucleus binary
 	bash build/nucleus/build.sh
