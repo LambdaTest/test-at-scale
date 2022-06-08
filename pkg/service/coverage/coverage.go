@@ -53,7 +53,7 @@ func New(execManager core.ExecutionManager,
 	if !cfg.CoverageMode {
 		return nil, nil
 	}
-	if _, err := os.Stat(global.CodeCoverageDir); os.IsNotExist(err) {
+	if _, err := os.Lstat(global.CodeCoverageDir); os.IsNotExist(err) {
 		return nil, errors.New("coverage directory not mounted")
 	}
 	return &codeCoverageService{
@@ -71,7 +71,7 @@ func New(execManager core.ExecutionManager,
 
 // mergeCodeCoverageFiles merge all the coverage.json into single entity
 func (c *codeCoverageService) mergeCodeCoverageFiles(ctx context.Context, commitDir, coverageManifestPath string, threshold bool) error {
-	if _, err := os.Stat(commitDir); os.IsNotExist(err) {
+	if _, err := os.Lstat(commitDir); os.IsNotExist(err) {
 		c.logger.Errorf("coverage files not found, skipping merge")
 		return nil
 	}
@@ -125,7 +125,7 @@ func (c *codeCoverageService) MergeAndUpload(ctx context.Context, payload *core.
 		commitDir := filepath.Join(repoDir, commit.Sha)
 		c.logger.Debugf("commit directory %s", commitDir)
 
-		if _, err := os.Stat(commitDir); os.IsNotExist(err) {
+		if _, err := os.Lstat(commitDir); os.IsNotExist(err) {
 			c.logger.Errorf("code coverage directory not found commit id %s", commit.Sha)
 			return err
 		}
@@ -202,7 +202,7 @@ func (c *codeCoverageService) uploadFile(ctx context.Context, blobPath, filename
 
 func (c *codeCoverageService) parseManifestFile(filepath string) (core.CoverageManifest, error) {
 	manifestPayload := core.CoverageManifest{}
-	if _, err := os.Stat(filepath); os.IsNotExist(err) {
+	if _, err := os.Lstat(filepath); os.IsNotExist(err) {
 		c.logger.Errorf("manifest file not found in path %s", filepath)
 		return manifestPayload, err
 	}
@@ -268,7 +268,7 @@ func (c *codeCoverageService) downloadAndDecompressParentCommitDir(ctx context.C
 }
 
 func (c *codeCoverageService) copyFromParentCommitDir(parentCommitDir, commitDir string, removedFiles ...string) error {
-	if _, err := os.Stat(parentCommitDir); os.IsNotExist(err) {
+	if _, err := os.Lstat(parentCommitDir); os.IsNotExist(err) {
 		c.logger.Errorf("Parent Commit Directory %s not found", parentCommitDir)
 		return err
 	}
@@ -286,9 +286,9 @@ func (c *codeCoverageService) copyFromParentCommitDir(parentCommitDir, commitDir
 			}
 			testfileDir := filepath.Join(commitDir, info.Name())
 
-			// TODO: check if copied dir size is not 0
-			// if file already exists then don't copy from parent directory
-			if _, err := os.Stat(testfileDir); os.IsNotExist(err) {
+			//TODO: check if copied dir size is not 0
+			//if file already exists then don't copy from parent directory
+			if _, err := os.Lstat(testfileDir); os.IsNotExist(err) {
 				if err := fileutils.CopyDir(path, testfileDir, false); err != nil {
 					c.logger.Errorf("failed to copy directory from src %s to dest %s, error %v", path, testfileDir, err)
 					return err
@@ -374,7 +374,7 @@ func (c *codeCoverageService) sendCoverageData(payload []coverageData) error {
 }
 
 func (c *codeCoverageService) getTotalCoverage(filepath string) (json.RawMessage, error) {
-	if _, err := os.Stat(filepath); os.IsNotExist(err) {
+	if _, err := os.Lstat(filepath); os.IsNotExist(err) {
 		c.logger.Errorf("coverage summary file not found in path %s", filepath)
 		return nil, err
 	}

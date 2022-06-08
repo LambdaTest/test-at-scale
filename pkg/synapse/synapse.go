@@ -243,7 +243,7 @@ func (s *synapse) processTask(message core.Message) {
 
 	// sending job started updates
 	if runnerOpts.PodType == core.NucleusPod {
-		jobInfo := CreateJobInfo(core.JobStarted, &runnerOpts)
+		jobInfo := CreateJobInfo(core.JobStarted, &runnerOpts, "")
 		s.logger.Infof("Sending update to neuron %+v", jobInfo)
 		resourceStatsMessage := CreateJobUpdateMessage(jobInfo)
 		s.writeMessageToBuffer(&resourceStatsMessage)
@@ -281,7 +281,7 @@ func (s *synapse) runAndUpdateJobStatus(runnerOpts core.RunnerOptions) {
 	if status.Done {
 		jobStatus = core.JobCompleted
 	}
-	jobInfo := CreateJobInfo(jobStatus, &runnerOpts)
+	jobInfo := CreateJobInfo(jobStatus, &runnerOpts, status.Error.Message)
 	s.logger.Infof("Sending update to neuron %+v", jobInfo)
 	resourceStatsMessage := CreateJobUpdateMessage(jobInfo)
 	s.writeMessageToBuffer(&resourceStatsMessage)

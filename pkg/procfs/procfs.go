@@ -5,11 +5,15 @@ package procfs
 
 import (
 	"context"
+	"math"
+	"runtime"
 	"time"
 
 	"github.com/shirou/gopsutil/v3/mem"
 	"github.com/shirou/gopsutil/v3/process"
 )
+
+const hundred = 100
 
 // Proc represents the process for which we want to find stats
 type Proc struct {
@@ -47,10 +51,13 @@ func New(pid int32, samplingInterval time.Duration, usePss bool) (*Proc, error) 
 func (ps *Proc) GetStats() (stat *Stats, err error) {
 	s := Stats{}
 	s.RecordTime = time.Now()
-	s.CPUPercentage, err = ps.process.CPUPercent()
+	cpuPerc, err := ps.process.Percent(0)
 	if err != nil {
 		return nil, err
 	}
+	// https://github.com/alibaba/sentinel-golang/pull/448.
+	// The underlying library returns abnormally large number in some cases
+	s.CPUPercentage = math.Min(hundred, cpuPerc/float64(runtime.NumCPU()))
 
 	memInfo, err := ps.process.MemoryInfo()
 	if err != nil {
@@ -59,7 +66,7 @@ func (ps *Proc) GetStats() (stat *Stats, err error) {
 	if !ps.usePss {
 		s.MemConsumed = memInfo.RSS
 		s.MemSwapped = memInfo.Swap
-		s.MemPercentage = (100 * float64(s.MemConsumed) / float64(ps.totalMem))
+		s.MemPercentage = (hundred * float64(s.MemConsumed) / float64(ps.totalMem))
 		return &s, nil
 	}
 

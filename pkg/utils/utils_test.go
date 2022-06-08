@@ -94,7 +94,7 @@ func TestCreateDirectory(t *testing.T) {
 				return
 			}
 			if tt.args.path == newDir {
-				if _, err := os.Stat(newDir); err != nil {
+				if _, err := os.Lstat(newDir); err != nil {
 					t.Errorf("Directory did not exist, error: %v", err)
 					return
 				}
