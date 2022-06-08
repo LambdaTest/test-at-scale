@@ -63,4 +63,5 @@ type JobInfo struct {
 	ID      string     `json:"id"`
 	Mode    string     `json:"mode"`
 	BuildID string     `json:"build_id"`
+	Message string     `json:"message"`
 }
