@@ -3,7 +3,6 @@ package zstd
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -36,7 +35,7 @@ func New(execManager core.ExecutionManager, logger lumber.Logger) (core.ZstdComp
 }
 
 func (z *zstdCompressor) createManifestFile(workingDir string, fileNames ...string) error {
-	return ioutil.WriteFile(filepath.Join(os.TempDir(), manifestFileName), []byte(strings.Join(fileNames, "\n")), 0o660)
+	return os.WriteFile(filepath.Join(os.TempDir(), manifestFileName), []byte(strings.Join(fileNames, "\n")), 0o660)
 }
 
 // Compress compress the list of files

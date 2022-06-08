@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
@@ -128,7 +127,7 @@ func (tbs *TestBlockTestService) GetBlockTests(ctx context.Context, tasConfig *c
 			return
 		}
 
-		if err = ioutil.WriteFile(global.BlockTestFileLocation, marshalledBlocklist, 0o644); err != nil {
+		if err = os.WriteFile(global.BlockTestFileLocation, marshalledBlocklist, 0o644); err != nil {
 			tbs.logger.Errorf("Unable to write blocklist file: %+v", err)
 			tbs.errChan <- err
 			return

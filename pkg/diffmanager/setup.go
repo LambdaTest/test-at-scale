@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -81,7 +81,7 @@ func (dm *diffManager) getCommitDiff(gitprovider, repoURL string, oauth *core.Oa
 	if err != nil {
 		return nil, err
 	}
-	req, err := http.NewRequest(http.MethodGet, apiURL.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, apiURL.String(), http.NewRequest(http.MethodGet, apiURL.String(), http.NoBody))
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +99,7 @@ func (dm *diffManager) getCommitDiff(gitprovider, repoURL string, oauth *core.Oa
 	if resp.StatusCode != http.StatusOK {
 		return nil, errs.ErrGitDiffNotFound
 	}
-	return ioutil.ReadAll(resp.Body)
+	return io.ReadAll(resp.Body)
 }
 
 func (dm *diffManager) getPRDiff(gitprovider, repoURL string, prNumber int, oauth *core.Oauth) ([]byte, error) {
@@ -118,7 +118,7 @@ func (dm *diffManager) getPRDiff(gitprovider, repoURL string, prNumber int, oaut
 		return nil, err
 	}
 
-	req, err := http.NewRequest(http.MethodGet, changeListURL.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, changeListURL.String(), http.NewRequest(http.MethodGet, changeListURL.String(), http.NoBody))
 	if err != nil {
 		dm.logger.Errorf("failed to create http request for changelist url error: %v", err)
 		return nil, err
@@ -137,7 +137,7 @@ func (dm *diffManager) getPRDiff(gitprovider, repoURL string, prNumber int, oaut
 		return nil, errors.New("non 200 response")
 	}
 
-	return ioutil.ReadAll(resp.Body)
+	return io.ReadAll(resp.Body)
 }
 
 func (dm *diffManager) parseDiff(diff string) map[string]int {

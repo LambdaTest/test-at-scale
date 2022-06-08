@@ -4,7 +4,7 @@ package testexecutionservice
 import (
 	"context"
 	"io"
-	"io/ioutil"
+	"os"
 	"reflect"
 	"strings"
 	"testing"
@@ -130,7 +130,7 @@ func Test_testExecutionService_GetLocatorsFile(t *testing.T) {
 			if got != tt.want {
 				t.Errorf("testExecutionService.GetLocatorsFile() = %v, want %v", got, tt.want)
 			}
-			file, err := ioutil.ReadFile(got)
+			file, err := os.ReadFile(got)
 			if err != nil {
 				t.Errorf("testExecutionService.GetLocatorsFile() error in opening file = %v", err)
 				return

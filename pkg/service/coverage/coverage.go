@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -207,7 +206,7 @@ func (c *codeCoverageService) parseManifestFile(filepath string) (core.CoverageM
 		c.logger.Errorf("manifest file not found in path %s", filepath)
 		return manifestPayload, err
 	}
-	body, err := ioutil.ReadFile(filepath)
+	body, err := os.ReadFile(filepath)
 	if err != nil {
 		return manifestPayload, err
 	}
@@ -379,7 +378,7 @@ func (c *codeCoverageService) getTotalCoverage(filepath string) (json.RawMessage
 		c.logger.Errorf("coverage summary file not found in path %s", filepath)
 		return nil, err
 	}
-	body, err := ioutil.ReadFile(filepath)
+	body, err := os.ReadFile(filepath)
 	if err != nil {
 		c.logger.Errorf("failed to read coverage summary json, error: %v", err)
 		return nil, err

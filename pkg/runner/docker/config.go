@@ -72,7 +72,6 @@ func (d *docker) getContainerHostConfiguration(r *core.RunnerOptions) *container
 	if err != nil {
 		d.logger.Errorf("Error reading os env AutoRemove with error: %v \n returning default host config", err)
 		return &hostConfig
-
 	}
 	hostConfig.AutoRemove = autoRemove
 	return &hostConfig

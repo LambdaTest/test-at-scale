@@ -48,7 +48,7 @@ func CreateJobUpdateMessage(jobInfo core.JobInfo) core.Message {
 	}
 	return core.Message{
 		Type:    core.MsgJobInfo,
-		Content: []byte(jobInfoJson),
+		Content: jobInfoJson,
 		Success: true,
 	}
 }

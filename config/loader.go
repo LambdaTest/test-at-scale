@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strings"
 
 	"github.com/LambdaTest/test-at-scale/pkg/lumber"
@@ -94,7 +94,7 @@ func LoadRepoSecrets(cmd *cobra.Command, synapseConfig *SynapseConfig) error {
 		fmt.Println("Warning: No configuration file found. Proceeding with defaults")
 	}
 
-	secretFile, err := ioutil.ReadFile(viper.GetViper().ConfigFileUsed())
+	secretFile, err := os.ReadFile(viper.GetViper().ConfigFileUsed())
 	if err != nil {
 		fmt.Printf("error in reading config file: %v\n", err)
 	}

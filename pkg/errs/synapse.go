@@ -6,7 +6,7 @@ import (
 )
 
 // ERR_DUMMY dummy error
-var ERR_DUMMY = Err{
+var ERR_DUMMY = Err{ //nolint:gomnd
 	Code:    "ERR::DUMMY",
 	Message: "Dummy error ",
 }
