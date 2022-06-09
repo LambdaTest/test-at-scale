@@ -297,11 +297,12 @@ func (s *synapse) login() {
 	}
 	lambdatestConfig := s.secretsManager.GetLambdatestSecrets()
 	loginDetails := core.LoginDetails{
-		Name:      s.secretsManager.GetSynapseName(),
-		SecretKey: lambdatestConfig.SecretKey,
-		CPU:       cpu,
-		RAM:       ram,
-		SynapseID: id,
+		Name:           s.secretsManager.GetSynapseName(),
+		SecretKey:      lambdatestConfig.SecretKey,
+		CPU:            cpu,
+		RAM:            ram,
+		SynapseID:      id,
+		SynapseVersion: global.SynapseBinaryVersion,
 	}
 	s.logger.Infof("Login synapse with id %s", loginDetails.SynapseID)
 
