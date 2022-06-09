@@ -37,6 +37,7 @@ var FrameworkRunnerMap = map[string]string{
 	"mocha":   "./node_modules/.bin/mocha-runner",
 	"jest":    "./node_modules/.bin/jest-runner",
 	"golang":  "/home/nucleus/server", // TODO: replace with the go bin path.
+	"junit":   "java",
 }
 
 // APIHostURLMap is map of git provider with there api url
@@ -72,4 +73,19 @@ var LangArgKeyMap = map[string]map[string]string{
 		"command":      "-command",
 		"locator-file": "-locator-file",
 	},
+	"java": {
+		"pattern":      "--pattern",
+		"config":       "--config",
+		"diff":         "--diff",
+		"command":      "--command",
+		"locator-file": "--locator-file",
+	},
+}
+
+var FrameworkLanguageMap = map[string]string{
+	"jasmine": "javascript",
+	"mocha":   "javascript",
+	"jest":    "javascript",
+	"golang":  "golang", // TODO: replace with the go bin path.
+	"junit":   "java",
 }

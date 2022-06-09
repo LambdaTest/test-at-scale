@@ -36,6 +36,7 @@ func (tc *tasConfigManager) LoadAndValidate(ctx context.Context,
 	path string,
 	eventType core.EventType,
 	licenseTier core.Tier) (*core.TASConfig, error) {
+
 	path, err := utils.GetConfigFileName(path)
 	if err != nil {
 		return nil, err
@@ -52,7 +53,10 @@ func (tc *tasConfigManager) LoadAndValidate(ctx context.Context,
 		return nil, err
 	}
 
-	if tasConfig.Cache == nil && tasConfig.Framework != "golang" {
+	language := tasConfig.Language
+	language = global.FrameworkLanguageMap[tasConfig.Framework]
+
+	if tasConfig.Cache == nil && language == "javascript" {
 		checksum, err := utils.ComputeChecksum(fmt.Sprintf("%s/%s", global.RepoDir, global.PackageJSON))
 		if err != nil {
 			tc.logger.Errorf("Error while computing checksum, error %v", err)

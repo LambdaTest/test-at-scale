@@ -57,11 +57,7 @@ func (tds *testDiscoveryService) Discover(ctx context.Context,
 	}
 
 	language := tasConfig.Language
-	if tasConfig.Framework == "golang" {
-		language = "golang"
-	} else {
-		language = "javascript"
-	}
+	language = global.FrameworkLanguageMap[tasConfig.Framework]
 
 	configFilePath, err := utils.GetConfigFileName(payload.TasFileName)
 	if err != nil {
@@ -69,7 +65,14 @@ func (tds *testDiscoveryService) Discover(ctx context.Context,
 	}
 	impactAll := tds.shouldImpactAll(tasConfig, configFilePath, diff)
 
-	args := []string{global.LangArgKeyMap[language]["command"], "discover"}
+	args := []string{}
+	if language == "java" {
+		args = append(args, "-jar", "/test-at-scale-java-1.0-jar-with-dependencies.jar")
+		args = append(args, global.LangArgKeyMap[language]["command"], "discover")
+	} else {
+		args = append(args, global.LangArgKeyMap[language]["command"], "discover")
+		//args := []string{global.LangArgKeyMap[language]["command"], "discover"}
+	}
 
 	if !impactAll {
 		if len(diff) == 0 && diffExists {
