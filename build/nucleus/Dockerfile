@@ -13,9 +13,10 @@ RUN GOARCH=amd64 GOOS=linux go build -ldflags="-w -s" -o nucleus cmd/nucleus/*.g
 
 # use a minimal alpine image
 FROM node:16.15-slim
-# Installing chromium so that all linux libs get automatically installed for running puppeteer tests
+
 RUN apt update && apt install -y git zstd chromium curl
 
+# Installing chromium so that all linux libs get automatically installed for running puppeteer tests
 COPY bundle /usr/local/bin/bundle
 RUN chmod +x /usr/local/bin/bundle
 ENV SMART_BINARY=/usr/local/bin/bundle
@@ -37,6 +38,21 @@ RUN tar -zcf /custom-runners/custom-runners.tgz node_modules
 RUN rm -rf /tmp/custom-runners
 
 RUN useradd -u 8877 -ms /bin/bash nucleus
+
+RUN curl -LJO https://go.dev/dl/go1.18.3.linux-amd64.tar.gz
+RUN tar -C /usr/local -xzf go1.18.3.linux-amd64.tar.gz
+RUN apt update && apt install -y build-essential
+ENV PATH /usr/local/go/bin:$PATH
+RUN go version
+
+ENV GOROOT /usr/local/go
+ENV GOPATH /home/nucleus
+ENV PATH /home/nucleus/bin:$PATH
+
+COPY ./build/nucleus/golang/server /home/nucleus
+
+RUN chown nucleus:nucleus /home/nucleus && \
+    chmod 744 /home/nucleus
 
 # install nvm for nucleus user
 RUN su - nucleus -c "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | /bin/bash"
