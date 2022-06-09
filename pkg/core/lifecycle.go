@@ -151,7 +151,10 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 
 	cacheKey := ""
 
-	if tasConfig.Framework != "golang" {
+	language := tasConfig.Language
+	language = global.FrameworkLanguageMap[tasConfig.Framework]
+
+	if language == "javascript" {
 		cacheKey = fmt.Sprintf("%s/%s/%s/%s", tasConfig.Cache.Version, payload.OrgID, payload.RepoID, tasConfig.Cache.Key)
 	}
 
@@ -175,7 +178,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	os.Setenv("BLOCK_TESTS_FILE", global.BlockTestFileLocation)
 	os.Setenv("REPO_CACHE_DIR", global.RepoCacheDir)
 
-	if tasConfig.NodeVersion != "" && tasConfig.Framework != "golang" {
+	if tasConfig.NodeVersion != "" && language == "javascript" {
 		nodeVersion := tasConfig.NodeVersion
 		// Running the `source` commands in a directory where .nvmrc is present, exits with exitCode 3
 		// https://github.com/nvm-sh/nvm/issues/1985
@@ -222,7 +225,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 			return nil
 		})
 
-		if tasConfig.Framework != "golang" {
+		if language == "javascript" {
 			g.Go(func() error {
 				if errG := pl.CacheStore.Download(errCtx, cacheKey); errG != nil {
 					pl.Logger.Errorf("Unable to download cache: %v", errG)
@@ -265,7 +268,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 			}
 		}
 
-		if tasConfig.Framework != "golang" {
+		if language == "javascript" {
 			err = pl.ExecutionManager.ExecuteInternalCommands(ctx, InstallRunners, global.InstallRunnerCmds, global.RepoDir, nil, nil)
 			if err != nil {
 				pl.Logger.Errorf("Unable to install custom runners %v", err)
@@ -293,7 +296,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 		taskPayload.Status = Passed
 
 		// Upload cache once for other builds
-		if tasConfig.Framework != "golang" {
+		if language == "javascript" {
 			if errU := pl.CacheStore.Upload(ctx, cacheKey, tasConfig.Cache.Paths...); errU != nil {
 				pl.Logger.Errorf("Unable to upload cache: %v", errU)
 			}

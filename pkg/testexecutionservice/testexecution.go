@@ -70,13 +70,9 @@ func (tes *testExecutionService) Run(ctx context.Context,
 
 	var target []string
 	var envMap map[string]string
-	language := tasConfig.Language
 
-	if tasConfig.Framework == "golang" {
-		language = "golang"
-	} else {
-		language = "javascript"
-	}
+	language := tasConfig.Language
+	language = global.FrameworkLanguageMap[tasConfig.Framework]
 
 	if payload.EventType == core.EventPullRequest {
 		target = tasConfig.Premerge.Patterns
@@ -85,8 +81,16 @@ func (tes *testExecutionService) Run(ctx context.Context,
 		target = tasConfig.Postmerge.Patterns
 		envMap = tasConfig.Postmerge.EnvMap
 	}
-	var args []string
-	args = []string{global.FrameworkRunnerMap[tasConfig.Framework], global.LangArgKeyMap[language]["command"], "execute"}
+	args := []string{global.FrameworkRunnerMap[tasConfig.Framework]}
+
+	if language == "java" {
+		args = append(args, "-jar", "/test-at-scale-java-1.0-jar-with-dependencies.jar")
+		args = append(args, global.LangArgKeyMap[language]["command"], "execute")
+	} else {
+		args = append(args, global.LangArgKeyMap[language]["command"], "execute")
+	}
+
+	//args = []string{global.FrameworkRunnerMap[tasConfig.Framework], global.LangArgKeyMap[language]["command"], "execute"}
 	if tasConfig.ConfigFile != "" {
 		args = append(args, global.LangArgKeyMap[language]["config"], tasConfig.ConfigFile)
 	}

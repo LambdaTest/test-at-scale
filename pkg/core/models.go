@@ -301,7 +301,7 @@ type Oauth struct {
 // TASConfig represents the .tas.yml file
 type TASConfig struct {
 	SmartRun          bool               `yaml:"smartRun"`
-	Framework         string             `yaml:"framework" validate:"required,oneof=jest mocha jasmine golang"`
+	Framework         string             `yaml:"framework" validate:"required,oneof=jest mocha jasmine golang junit"`
 	Blocklist         []string           `yaml:"blocklist"`
 	Postmerge         *Merge             `yaml:"postMerge" validate:"omitempty"`
 	Premerge          *Merge             `yaml:"preMerge" validate:"omitempty"`
