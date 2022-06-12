@@ -144,12 +144,12 @@ func TestBlockListService_GetBlockListedTests(t *testing.T) {
 					SplitMode: core.TestSplit,
 					Tier:      "small"},
 			},
-			true}, // Will not get error if the test is run in docker container, so test will fail in docker container
+			false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tbs.GetBlockTests(tt.args.ctx, tt.args.tasConfig, tt.args.branch); (err != nil) != tt.wantErr {
-				t.Errorf("TestBlockListService.GetBlockListedTests() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("TestBlockListService.GetBlockListedTests() error = %+v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
