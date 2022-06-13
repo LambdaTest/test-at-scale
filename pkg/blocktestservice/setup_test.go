@@ -21,7 +21,7 @@ import (
 
 const buildID = "buildID"
 
-func TestTestBlockListService_fetchBlockListFromNeuron(t *testing.T) {
+func TestBlockListService_fetchBlockListFromNeuron(t *testing.T) {
 	server := httptest.NewServer( // mock server
 		http.FileServer(http.Dir("../../testutils/testdata/testblocklistdata/")), // mock data stored at testutils/testdata
 	)
@@ -107,7 +107,7 @@ func TestTestBlockListService_fetchBlockListFromNeuron(t *testing.T) {
 	}
 }
 
-func TestTestBlockListService_GetBlockListedTests(t *testing.T) {
+func TestBlockListService_GetBlockListedTests(t *testing.T) {
 	server := httptest.NewServer( // mock server
 		http.FileServer(http.Dir("../../testutils/testdata/testblocklistdata/")), // mock data stored at testutils/testdata
 	)
@@ -127,7 +127,6 @@ func TestTestBlockListService_GetBlockListedTests(t *testing.T) {
 	type args struct {
 		ctx       context.Context
 		tasConfig *core.TASConfig
-		repoID    string
 		branch    string
 	}
 	tests := []struct {
@@ -144,19 +143,19 @@ func TestTestBlockListService_GetBlockListedTests(t *testing.T) {
 					Blocklist: []string{"src/test/f1.spec.js", "src/test/f2.spec.js"},
 					SplitMode: core.TestSplit,
 					Tier:      "small"},
-				repoID: "/testBlocklist.json"},
-			true}, // Will not get error if the test is run in docker container, so test will fail in docker container
+			},
+			false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tbs.GetBlockTests(tt.args.ctx, tt.args.tasConfig, tt.args.branch); (err != nil) != tt.wantErr {
-				t.Errorf("TestBlockListService.GetBlockListedTests() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("TestBlockListService.GetBlockListedTests() error = %+v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
 }
 
-func TestTestBlockListService_populateBlockList(t *testing.T) {
+func TestBlockListService_populateBlockList(t *testing.T) {
 	cfg := config.GlobalNucleusConfig
 	logger, err := testutils.GetLogger()
 	if err != nil {

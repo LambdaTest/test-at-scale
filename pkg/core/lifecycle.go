@@ -206,17 +206,13 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 		return err
 	}
 
+	if err = pl.BlockTestService.GetBlockTests(ctx, tasConfig, payload.BranchName); err != nil {
+		pl.Logger.Errorf("Unable to fetch blocklisted tests: %v", err)
+		return errs.New(errs.GenericErrRemark.Error())
+	}
+
 	if pl.Cfg.DiscoverMode {
 		g, errCtx := errgroup.WithContext(ctx)
-		g.Go(func() error {
-			if errG := pl.BlockTestService.GetBlockTests(errCtx, tasConfig, payload.BranchName); errG != nil {
-				pl.Logger.Errorf("Unable to fetch blocklisted tests: %v", errG)
-				errG = errs.New(errs.GenericErrRemark.Error())
-				return errG
-			}
-			return nil
-		})
-
 		g.Go(func() error {
 			if errG := pl.CacheStore.Download(errCtx, cacheKey); errG != nil {
 				pl.Logger.Errorf("Unable to download cache: %v", errG)
