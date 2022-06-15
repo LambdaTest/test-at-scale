@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -61,6 +62,9 @@ func (r *requests) MakeAPIRequest(
 		}
 		defer resp.Body.Close()
 		statusCode = resp.StatusCode
+		if retryableStatusCode(statusCode) {
+			return fmt.Errorf("status code %d received", statusCode)
+		}
 		respBody, err = io.ReadAll(resp.Body)
 		if err != nil {
 			r.logger.Errorf("error while reading http response body %v", err)
@@ -77,4 +81,14 @@ func (r *requests) MakeAPIRequest(
 		return respBody, statusCode, errors.New("non 200 status code")
 	}
 	return respBody, statusCode, err
+}
+
+func retryableStatusCode(statusCode int) bool {
+	if statusCode == http.StatusInternalServerError || statusCode == http.StatusBadGateway {
+		return true
+	}
+	if statusCode == http.StatusServiceUnavailable || statusCode == http.StatusGatewayTimeout {
+		return true
+	}
+	return false
 }
