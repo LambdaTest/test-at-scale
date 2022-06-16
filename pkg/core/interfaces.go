@@ -125,8 +125,6 @@ type CacheStore interface {
 	CacheWorkspace(ctx context.Context, subModule string) error
 	// ExtractWorkspace extracts the workspace cache from mounted volume
 	ExtractWorkspace(ctx context.Context, subModule string) error
-	// CacheWorkspaceV2 caches the workspace onto a mounted volume
-	// CacheWorkspaceV2(ctx context.Context, subModule string) error
 }
 
 // SecretParser defines operation for parsing the vault secrets in given path

@@ -64,7 +64,6 @@ func (z *zstdCompressor) Decompress(ctx context.Context, filePath string, preser
 		command = fmt.Sprintf("%s -P", command)
 	}
 	commands := []string{command}
-	z.logger.Debugf("Executing cmd %s", command)
 	if err := z.execManager.ExecuteInternalCommands(ctx, core.Zstd, commands, workingDirectory, nil, nil); err != nil {
 		z.logger.Errorf("error while zstd decompression %v", err)
 		return err

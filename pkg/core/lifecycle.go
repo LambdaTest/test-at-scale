@@ -665,14 +665,14 @@ func (pl *Pipeline) runDiscoveryV2Helper(ctx context.Context,
 		}(&subModuleList[i])
 	}
 	preRunWaitGroup.Wait()
-	pl.Logger.Errorf("checking the pre runs errors ")
+	pl.Logger.Debugf("checking the pre runs errors ")
 	for i := 0; i < totalSubmoduleCount; i++ {
 		e := <-errChannelPreRun
 		if e != nil {
 			return e
 		}
 	}
-	pl.Logger.Errorf("checked the pre run errors")
+	pl.Logger.Debugf("checked the pre run errors")
 	pl.Logger.Debugf("Caching workspace")
 	// TODO: this will be change after we move to parallel pod executuon
 	if err := pl.CacheStore.CacheWorkspace(ctx, ""); err != nil {
