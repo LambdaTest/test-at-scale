@@ -74,13 +74,7 @@ func NewAzureBlobEnv(cfg *config.NucleusConfig, requests core.Requests, logger l
 	if err != nil {
 		return nil, err
 	}
-
-	serviceClient, err := azblob.NewServiceClientWithSharedKey(u.String(), credential, &azblob.ClientOptions{
-		Retry: policy.RetryOptions{
-			MaxRetries: int32(maxRetry),
-			TryTimeout: global.DefaultAPITimeout,
-		},
-	})
+	serviceClient, err := azblob.NewServiceClientWithSharedKey(u.String(), credential, getClientOptions())
 	if err != nil {
 		logger.Errorf("Failed to create azure service client, error: %v", err)
 		return nil, err
@@ -120,10 +114,7 @@ func (s *store) CreateUsingSASURL(ctx context.Context, sasURL string, reader io.
 	if err != nil {
 		return "", err
 	}
-	blobClient, err := azblob.NewBlockBlobClientWithNoCredential(u.String(), &azblob.ClientOptions{Retry: policy.RetryOptions{
-		MaxRetries: int32(maxRetry),
-		TryTimeout: global.DefaultAPITimeout,
-	}})
+	blobClient, err := azblob.NewBlockBlobClientWithNoCredential(u.String(), getClientOptions())
 	if err != nil {
 		s.logger.Errorf("failed to create blob client, error: %v", err)
 		return "", err
@@ -214,4 +205,13 @@ func handleError(err error) error {
 		}
 	}
 	return err
+}
+
+func getClientOptions() *azblob.ClientOptions {
+	return &azblob.ClientOptions{
+		Retry: policy.RetryOptions{
+			MaxRetries: int32(maxRetry),
+			TryTimeout: global.DefaultAPITimeout,
+		},
+	}
 }
