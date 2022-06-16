@@ -44,7 +44,7 @@ func RootCommand() *cobra.Command {
 	rootCmd := cobra.Command{
 		Use:     "nucleus",
 		Long:    `nucleus is a coordinator binary used as entrypoint in tas containers`,
-		Version: global.NUCLEUS_BINARY_VERSION,
+		Version: global.NucleusBinaryVersion,
 		Run:     run,
 	}
 
@@ -161,7 +161,7 @@ func run(cmd *cobra.Command, args []string) {
 	pl.CacheStore = cache
 	pl.SecretParser = secretParser
 
-	logger.Infof("LambdaTest Nucleus version: %s", global.NUCLEUS_BINARY_VERSION)
+	logger.Infof("LambdaTest Nucleus version: %s", global.NucleusBinaryVersion)
 
 	wg.Add(1)
 	go func() {

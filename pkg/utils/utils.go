@@ -68,7 +68,7 @@ func InterfaceToMap(in interface{}) map[string]string {
 
 // CreateDirectory creates directory recursively if does not exists
 func CreateDirectory(path string) error {
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+	if _, err := os.Lstat(path); os.IsNotExist(err) {
 		if err := os.MkdirAll(path, global.DirectoryPermissions); err != nil {
 			return errs.ERR_DIR_CRT(err.Error())
 		}

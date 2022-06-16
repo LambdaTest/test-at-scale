@@ -12,7 +12,11 @@ RUN GOARCH=amd64 GOOS=linux go build -ldflags="-w -s" -o nucleus cmd/nucleus/*.g
 # RUN upx ts
 
 # use a minimal alpine image
-FROM node:16.15-slim
+FROM nikolaik/python-nodejs:python3.10-nodejs16-slim
+
+ARG VERSION
+ENV VERSION=$VERSION
+
 # Installing chromium so that all linux libs get automatically installed for running puppeteer tests
 RUN apt update && apt install -y git zstd chromium curl
 

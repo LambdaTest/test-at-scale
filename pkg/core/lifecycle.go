@@ -283,16 +283,13 @@ func (pl *Pipeline) runDiscoveryV1(ctx context.Context,
 	if postErr := pl.TestDiscoveryService.UpdateSubmoduleList(ctx, payload.BuildID, 1); postErr != nil {
 		return postErr
 	}
+	blYml := pl.BlockTestService.GetBlocklistYMLV1(tasConfig)
+	if errG := pl.BlockTestService.GetBlockTests(ctx, blYml, payload.BranchName); errG != nil {
+		pl.Logger.Errorf("Unable to fetch blocklisted tests: %v", errG)
+		errG = errs.New(errs.GenericErrRemark.Error())
+		return errG
+	}
 	g, errCtx := errgroup.WithContext(ctx)
-	g.Go(func() error {
-		blYml := pl.BlockTestService.GetBlocklistYMLV1(tasConfig)
-		if errG := pl.BlockTestService.GetBlockTests(errCtx, blYml, payload.BranchName); errG != nil {
-			pl.Logger.Errorf("Unable to fetch blocklisted tests: %v", errG)
-			errG = errs.New(errs.GenericErrRemark.Error())
-			return errG
-		}
-		return nil
-	})
 
 	g.Go(func() error {
 		if errG := pl.CacheStore.Download(errCtx, cacheKey); errG != nil {

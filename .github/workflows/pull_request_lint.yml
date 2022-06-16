@@ -5,21 +5,6 @@ on:
     types: ['opened', 'edited', 'reopened', 'synchronize', 'labeled', 'unlabeled']
 
 jobs:
-  title:
-    name: ticket check
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Check for ticket
-        uses: neofinancial/ticket-check-action@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          ticketLink: 'https://github.com/LambdaTest/test-at-scale/issues/%ticketNumber%'
-          ticketPrefix: '#'
-          titleRegex: '^#(?<ticketNumber>\d+)'
-          bodyRegex: '#(?<ticketNumber>\d+)'
-          bodyURLRegex: 'http(s?):\/\/(github.com)(\/LambdaTest)(\/test-at-scale)(\/issues)\/(?<ticketNumber>\d+)'
-
   label-checker:
     name: pr label check
     runs-on: ubuntu-latest

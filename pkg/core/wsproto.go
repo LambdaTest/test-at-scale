@@ -42,11 +42,12 @@ type Message struct {
 
 // LoginDetails struct
 type LoginDetails struct {
-	Name      string  `json:"name"`
-	SynapseID string  `json:"synapse_id"`
-	SecretKey string  `json:"secret_key"`
-	CPU       float32 `json:"cpu"`
-	RAM       int64   `json:"ram"`
+	Name           string  `json:"name"`
+	SynapseID      string  `json:"synapse_id"`
+	SecretKey      string  `json:"secret_key"`
+	CPU            float32 `json:"cpu"`
+	RAM            int64   `json:"ram"`
+	SynapseVersion string  `json:"synapse_version"`
 }
 
 // ResourceStats struct for CPU, RAM details
@@ -63,4 +64,5 @@ type JobInfo struct {
 	ID      string     `json:"id"`
 	Mode    string     `json:"mode"`
 	BuildID string     `json:"build_id"`
+	Message string     `json:"message"`
 }

@@ -59,6 +59,8 @@ jobs:
           tags: ${{ env.NUCLEUS_TAGS }}
           file: build/nucleus/Dockerfile
           push: true
+          build-args: |
+            VERSION=${{ steps.tag_version.outputs.new_tag }}
 
       - name: Build and push Synapse images
         uses: docker/build-push-action@v2.9.0
@@ -67,3 +69,5 @@ jobs:
           tags: ${{ env.SYNAPSE_TAGS }}
           file: build/synapse/Dockerfile
           push: true
+          build-args: |
+            VERSION=${{ steps.tag_version.outputs.new_tag }}

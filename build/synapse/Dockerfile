@@ -10,6 +10,9 @@ RUN go build -o synapse cmd/synapse/*.go
 # use a minimal alpine image
 FROM docker:latest
 
+ARG VERSION
+ENV VERSION=$VERSION
+
 # add ca-certificates in case you need them
 RUN apk update && apk add ca-certificates && rm -rf /var/cache/apk/*
 

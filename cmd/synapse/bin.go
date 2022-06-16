@@ -31,7 +31,7 @@ func RootCommand() *cobra.Command {
 	rootCmd := cobra.Command{
 		Use:     "synapse",
 		Long:    `Synapse is an opensource runner for TAS`,
-		Version: global.SYNAPSE_BINARY_VERSION,
+		Version: global.SynapseBinaryVersion,
 		Run:     run,
 	}
 
