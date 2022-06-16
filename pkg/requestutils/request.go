@@ -62,7 +62,7 @@ func (r *requests) MakeAPIRequest(
 		}
 		defer resp.Body.Close()
 		statusCode = resp.StatusCode
-		if retryableStatusCode(statusCode) {
+		if 500 <= statusCode && statusCode < 600 {
 			return fmt.Errorf("status code %d received", statusCode)
 		}
 		respBody, err = io.ReadAll(resp.Body)
@@ -81,14 +81,4 @@ func (r *requests) MakeAPIRequest(
 		return respBody, statusCode, errors.New("non 200 status code")
 	}
 	return respBody, statusCode, err
-}
-
-func retryableStatusCode(statusCode int) bool {
-	if statusCode == http.StatusInternalServerError || statusCode == http.StatusBadGateway {
-		return true
-	}
-	if statusCode == http.StatusServiceUnavailable || statusCode == http.StatusGatewayTimeout {
-		return true
-	}
-	return false
 }
