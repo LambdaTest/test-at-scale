@@ -20,6 +20,7 @@ const (
 	yarnLock                    = "yarn.lock"
 	packageLock                 = "package-lock.json"
 	npmShrinkwrap               = "npm-shrinkwrap.json"
+	pnpmLock                    = "pnpm-lock.yaml"
 	nodeModules                 = "node_modules"
 	defaultCompressedFileName   = "cache.tzst"
 	workspaceCompressedFilename = "workspace.tzst"
@@ -191,14 +192,19 @@ func (c *cache) getDefaultDirs() ([]string, error) {
 
 	defaultDirs = append(defaultDirs, global.RepoCacheDir)
 	for _, d := range dirs {
-		// if yarn.lock present cache yarn folder
+		// if yarn.lock present, cache yarn folder
 		if d.Name() == yarnLock {
 			defaultDirs = append(defaultDirs, filepath.Join(c.homeDir, ".cache", "yarn"))
 			return defaultDirs, nil
 		}
-		// if package-lock.json or npm-shrinkwrap.json cache .npm cache
+		// if package-lock.json or npm-shrinkwrap.json is present, cache .npm cache
 		if d.Name() == packageLock || d.Name() == npmShrinkwrap {
 			defaultDirs = append(defaultDirs, filepath.Join(c.homeDir, ".npm"))
+			return defaultDirs, nil
+		}
+		// if pnmpm-lock.yaml is present, cache .pnpm-store cache
+		if d.Name() == pnpmLock {
+			defaultDirs = append(defaultDirs, filepath.Join(c.homeDir, ".pnpm-store"))
 			return defaultDirs, nil
 		}
 	}
