@@ -401,6 +401,7 @@ type Mergev2 struct {
 	EnvMap     map[string]string `yaml:"env" validate:"omitempty,gt=0"`
 }
 
+// SubModule represent the structure of subModule yaml v2
 type SubModule struct {
 	Name               string   `yaml:"name" validate:"required"`
 	Path               string   `yaml:"path" validate:"required"`
@@ -415,10 +416,12 @@ type SubModule struct {
 	ConfigFile         string   `yaml:"configFile" validate:"omitempty"`
 }
 
+// TasVersion used to identify yaml version
 type TasVersion struct {
 	Version string `yaml:"version" validate:"required"`
 }
 
+// SubModuleList repersent submodule list API payload
 type SubModuleList struct {
 	BuildID        string `json:"buildID"`
 	TotalSubModule int    `json:"totalSubModule"`
