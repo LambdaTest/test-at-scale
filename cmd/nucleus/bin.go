@@ -58,6 +58,7 @@ func run(cmd *cobra.Command, args []string) {
 	// create a context that we can cancel
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
 	// timeout in seconds
 	const gracefulTimeout = 5000 * time.Millisecond
 
