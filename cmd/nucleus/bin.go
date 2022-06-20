@@ -135,7 +135,6 @@ func run(cmd *cobra.Command, args []string) {
 	if err != nil {
 		logger.Fatalf("failed to initialize zstd compressor: %v", err)
 	}
-
 	cache, err := cachemanager.New(zstd, azureClient, logger)
 	if err != nil {
 		logger.Fatalf("failed to initialize cache manager: %v", err)
