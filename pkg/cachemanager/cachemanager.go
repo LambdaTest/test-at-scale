@@ -17,6 +17,7 @@ import (
 )
 
 const (
+	pnpmLock                      = "pnpm-lock.yaml"
 	yarnLock                      = "yarn.lock"
 	packageLock                   = "package-lock.json"
 	npmShrinkwrap                 = "npm-shrinkwrap.json"
@@ -34,14 +35,13 @@ type cache struct {
 	zstd        core.ZstdCompressor
 	skipUpload  bool
 	homeDir     string
-	Lock        *sync.Mutex
 }
 
 var cacheBlobURL string
 var apiErr error
 
 // New returns a new CacheStore
-func New(z core.ZstdCompressor, azureClient core.AzureClient, logger lumber.Logger, lock *sync.Mutex) (core.CacheStore, error) {
+func New(z core.ZstdCompressor, azureClient core.AzureClient, logger lumber.Logger) (core.CacheStore, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return nil, err
@@ -51,7 +51,6 @@ func New(z core.ZstdCompressor, azureClient core.AzureClient, logger lumber.Logg
 		zstd:        z,
 		logger:      logger,
 		homeDir:     homeDir,
-		Lock:        lock,
 	}, nil
 }
 
@@ -210,6 +209,11 @@ func (c *cache) getDefaultDirs() ([]string, error) {
 		// if package-lock.json or npm-shrinkwrap.json cache .npm cache
 		if d.Name() == packageLock || d.Name() == npmShrinkwrap {
 			defaultDirs = append(defaultDirs, filepath.Join(c.homeDir, ".npm"))
+			return defaultDirs, nil
+		}
+		// if pnmpm-lock.yaml is present, cache .pnpm-store cache
+		if d.Name() == pnpmLock {
+			defaultDirs = append(defaultDirs, filepath.Join(c.homeDir, ".pnpm-store"))
 			return defaultDirs, nil
 		}
 	}

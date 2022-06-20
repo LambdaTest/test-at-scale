@@ -548,7 +548,7 @@ func (pl *Pipeline) runTestExecutionV2(ctx context.Context,
 
 	// overwrite the existing env with more specific one
 
-	if subModule.Prerun.EnvMap != nil {
+	if subModule.Prerun != nil && subModule.Prerun.EnvMap != nil {
 		for k, v := range subModule.Prerun.EnvMap {
 			envMap[k] = v
 		}

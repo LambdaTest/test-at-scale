@@ -58,7 +58,6 @@ func run(cmd *cobra.Command, args []string) {
 	// create a context that we can cancel
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	lock := sync.Mutex{}
 	// timeout in seconds
 	const gracefulTimeout = 5000 * time.Millisecond
 
@@ -137,7 +136,7 @@ func run(cmd *cobra.Command, args []string) {
 		logger.Fatalf("failed to initialize zstd compressor: %v", err)
 	}
 
-	cache, err := cachemanager.New(zstd, azureClient, logger, &lock)
+	cache, err := cachemanager.New(zstd, azureClient, logger)
 	if err != nil {
 		logger.Fatalf("failed to initialize cache manager: %v", err)
 	}
