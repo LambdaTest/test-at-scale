@@ -59,11 +59,12 @@ func SetNeuronHost(host string) {
 }
 
 var LangArgKeyMap = map[string]string{
-	"pattern":      "--pattern",
-	"config":       "--config",
-	"diff":         "--diff",
-	"command":      "--command",
-	"locator-file": "--locator-file",
+	"pattern":          "--pattern",
+	"config":           "--config",
+	"diff":             "--diff",
+	"command":          "--command",
+	"locator-file":     "--locator-file",
+	"frameworkVersion": "--frameworkVersion",
 }
 
 var FrameworkLanguageMap = map[string]string{
