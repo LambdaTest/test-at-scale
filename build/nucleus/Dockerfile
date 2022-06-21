@@ -36,8 +36,6 @@ RUN npm i -g nyc@^15.1.0
 
 RUN tar -zcf /custom-runners/custom-runners.tgz node_modules
 RUN rm -rf /tmp/custom-runners
-
-
 RUN useradd -u 8877 -ms /bin/bash nucleus
 
 RUN curl -LJO https://go.dev/dl/go1.18.3.linux-amd64.tar.gz
@@ -81,9 +79,6 @@ RUN /bin/bash -c "source $HOME/.sdkman/bin/sdkman-init.sh;sdk install java 11.0.
 ENV JAVA_HOME="/home/nucleus/.sdkman/candidates/java/current"
 ENV PATH=$JAVA_HOME:$PATH
 ENV PATH=$JAVA_HOME/bin:$PATH
-
-RUN 
-
 USER root
 RUN apt-get install -y wget
 
