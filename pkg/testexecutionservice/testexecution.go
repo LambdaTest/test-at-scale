@@ -86,19 +86,19 @@ func (tes *testExecutionService) Run(ctx context.Context,
 
 	if language == "java" {
 		args = append(args, "-jar", "/test-at-scale-java-1.0-jar-with-dependencies.jar")
-		args = append(args, global.LangArgKeyMap[language]["command"], "execute")
+		args = append(args, global.LangArgKeyMap["command"], "execute")
 		//tes.logger.Debugf("Executing test execution command: %s", strconv.Itoa(tasConfig.FrameworkVersion))
-		args = append(args, global.LangArgKeyMap[language]["frameworkVersion"], strconv.Itoa(tasConfig.FrameworkVersion))
+		args = append(args, global.LangArgKeyMap["frameworkVersion"], strconv.Itoa(tasConfig.FrameworkVersion))
 	} else {
-		args = append(args, global.LangArgKeyMap[language]["command"], "execute")
+		args = append(args, global.LangArgKeyMap["command"], "execute")
 	}
 
 	//args = []string{global.FrameworkRunnerMap[tasConfig.Framework], global.LangArgKeyMap[language]["command"], "execute"}
 	if tasConfig.ConfigFile != "" {
-		args = append(args, global.LangArgKeyMap[language]["config"], tasConfig.ConfigFile)
+		args = append(args, global.LangArgKeyMap["config"], tasConfig.ConfigFile)
 	}
 	for _, pattern := range target {
-		args = append(args, global.LangArgKeyMap[language]["pattern"], pattern)
+		args = append(args, global.LangArgKeyMap["pattern"], pattern)
 	}
 
 	if payload.LocatorAddress != "" {
@@ -108,7 +108,7 @@ func (tes *testExecutionService) Run(ctx context.Context,
 			tes.logger.Errorf("failed to get locator file, error: %v", err)
 			return nil, err
 		}
-		args = append(args, global.LangArgKeyMap[language]["locator-file"], locatorFile)
+		args = append(args, global.LangArgKeyMap["locator-file"], locatorFile)
 	}
 
 	collectCoverage := payload.CollectCoverage

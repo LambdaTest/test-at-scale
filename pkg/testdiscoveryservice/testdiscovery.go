@@ -68,31 +68,31 @@ func (tds *testDiscoveryService) Discover(ctx context.Context,
 	args := []string{}
 	if language == "java" {
 		args = append(args, "-jar", "/test-at-scale-java-1.0-jar-with-dependencies.jar")
-		args = append(args, global.LangArgKeyMap[language]["command"], "discover")
+		args = append(args, global.LangArgKeyMap["command"], "discover")
 	} else {
-		args = append(args, global.LangArgKeyMap[language]["command"], "discover")
+		args = append(args, global.LangArgKeyMap["command"], "discover")
 		//args := []string{global.LangArgKeyMap[language]["command"], "discover"}
 	}
 
 	if !impactAll {
 		if len(diff) == 0 && diffExists {
 			// empty diff; in PR, a commit added and then reverted to cause an overall empty PR diff
-			args = append(args, global.LangArgKeyMap[language]["diff"])
+			args = append(args, global.LangArgKeyMap["diff"])
 		} else {
 			for k, v := range diff {
 				// in changed files we only have added or modified files.
 				if v != core.FileRemoved {
-					args = append(args, global.LangArgKeyMap[language]["diff"], k)
+					args = append(args, global.LangArgKeyMap["diff"], k)
 				}
 			}
 		}
 	}
 	if tasConfig.ConfigFile != "" {
-		args = append(args, global.LangArgKeyMap[language]["config"], tasConfig.ConfigFile)
+		args = append(args, global.LangArgKeyMap["config"], tasConfig.ConfigFile)
 	}
 
 	for _, pattern := range target {
-		args = append(args, global.LangArgKeyMap[language]["pattern"], pattern)
+		args = append(args, global.LangArgKeyMap["pattern"], pattern)
 	}
 	tds.logger.Debugf("Discovering tests at paths %+v", target)
 

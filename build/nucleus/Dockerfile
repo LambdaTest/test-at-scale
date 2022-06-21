@@ -121,6 +121,6 @@ ENV MAVEN_CONFIG "/home/nucleus/.m2"
 
 # run the binary
 COPY ./build/nucleus/test-at-scale-java-1.0-jar-with-dependencies.jar /
-RUN curl -o /home/nucleus/junit-platform-console-standalone-1.8.2.jar https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/1.8.2/junit-platform-console-standalone-1.8.2.jar
+RUN su - nucleus -c "wget https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/1.8.2/junit-platform-console-standalone-1.8.2.jar -P /"
 COPY ./build/nucleus/entrypoint.sh /
 ENTRYPOINT  ["/bin/sh", "/entrypoint.sh"]
