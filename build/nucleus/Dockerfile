@@ -14,7 +14,7 @@ RUN GOARCH=amd64 GOOS=linux go build -ldflags="-w -s" -o nucleus cmd/nucleus/*.g
 # use a minimal alpine image
 FROM nikolaik/python-nodejs:python3.10-nodejs16-slim
 # Installing chromium so that all linux libs get automatically installed for running puppeteer tests
-RUN apt update && apt install -y git zstd chromium curl
+RUN apt update && apt install -y git zstd chromium curl unzip zip
 
 # Installing chromium so that all linux libs get automatically installed for running puppeteer tests
 COPY bundle /usr/local/bin/bundle
@@ -36,6 +36,7 @@ RUN npm i -g nyc@^15.1.0
 
 RUN tar -zcf /custom-runners/custom-runners.tgz node_modules
 RUN rm -rf /tmp/custom-runners
+
 
 RUN useradd -u 8877 -ms /bin/bash nucleus
 
@@ -65,12 +66,32 @@ COPY ./build/nucleus/entrypoint.sh /
 
 #########################################
 # FROM openjdk:11-jdk
-RUN apt-get update -y
+RUN apt update -y && apt upgrade -y
 
-RUN apt-get install openjdk-11-jdk -y
-RUN export PATH=$PATH:/usr/local/openjdk-11/bin
-RUN apt-get install curl -y
+
+# RUN apt-get install openjdk-18-jdk -y
+
+
+#RUN export PATH=$PATH:/usr/local/openjdk-11/bin
+
+USER nucleus
+RUN  curl -s https://get.sdkman.io | bash
+RUN /bin/bash -c "source $HOME/.sdkman/bin/sdkman-init.sh;sdk install java 11.0.12-open"
+
+ENV JAVA_HOME="/home/nucleus/.sdkman/candidates/java/current"
+ENV PATH=$JAVA_HOME:$PATH
+ENV PATH=$JAVA_HOME/bin:$PATH
+
+RUN 
+
+USER root
 RUN apt-get install -y wget
+
+# RUN wget https://download.oracle.com/java/18/latest/jdk-18_linux-x64_bin.deb
+# RUN apt install ./jdk-18_linux-x64_bin.deb -y
+# ENV JAVA_HOME="/usr/lib/jvm/jdk-18"
+# ENV PATH $JAVA_HOME:$PATH
+# ENV PATH $JAVA_HOME/bin:$PATH
 
 ARG MAVEN_VERSION=3.6.3
 
@@ -105,7 +126,6 @@ ENV MAVEN_CONFIG "/home/nucleus/.m2"
 
 # run the binary
 COPY ./build/nucleus/test-at-scale-java-1.0-jar-with-dependencies.jar /
-COPY ./build/nucleus/junit-platform-console-standalone-1.8.2.jar /
-RUN su - nucleus -c "wget https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/1.8.2/junit-platform-console-standalone-1.8.2.jar -P /"
+RUN curl -o /home/nucleus/junit-platform-console-standalone-1.8.2.jar https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/1.8.2/junit-platform-console-standalone-1.8.2.jar
 COPY ./build/nucleus/entrypoint.sh /
 ENTRYPOINT  ["/bin/sh", "/entrypoint.sh"]

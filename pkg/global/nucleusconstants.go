@@ -58,12 +58,29 @@ func SetNeuronHost(host string) {
 	NeuronHost = host
 }
 
-var LangArgKeyMap = map[string]string{
-	"pattern":      "--pattern",
-	"config":       "--config",
-	"diff":         "--diff",
-	"command":      "--command",
-	"locator-file": "--locator-file",
+var LangArgKeyMap = map[string]map[string]string{
+	"javascript": {
+		"pattern":      "--pattern",
+		"config":       "--config",
+		"diff":         "--diff",
+		"command":      "--command",
+		"locator-file": "--locator-file",
+	},
+	"golang": {
+		"pattern":      "-pattern",
+		"config":       "-config",
+		"diff":         "-diff",
+		"command":      "-command",
+		"locator-file": "-locator-file",
+	},
+	"java": {
+		"pattern":          "--pattern",
+		"config":           "--config",
+		"diff":             "--diff",
+		"command":          "--command",
+		"locator-file":     "--locator-file",
+		"frameworkVersion": "--frameworkVersion",
+	},
 }
 
 var FrameworkLanguageMap = map[string]string{

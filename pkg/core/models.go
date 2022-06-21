@@ -317,6 +317,7 @@ type TASConfig struct {
 	NodeVersion       string             `yaml:"nodeVersion" validate:"omitempty,semver"`
 	ContainerImage    string             `yaml:"containerImage"`
 	Language          string             `yaml:"language"`
+	FrameworkVersion  int                `yaml:"frameworkVersion" validate:"omitempty"`
 }
 
 // CoverageThreshold reprents the code coverage threshold
