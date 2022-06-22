@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
 
 	"github.com/LambdaTest/test-at-scale/config"
@@ -24,6 +25,7 @@ var (
 	defaultBufferSize     = 3 * 1024 * 1024
 	defaultMaxBuffers     = 4
 	coverageContainerName = "coverage"
+	maxRetry              = 10
 )
 
 // store represents the azure storage
@@ -72,8 +74,7 @@ func NewAzureBlobEnv(cfg *config.NucleusConfig, requests core.Requests, logger l
 	if err != nil {
 		return nil, err
 	}
-
-	serviceClient, err := azblob.NewServiceClientWithSharedKey(u.String(), credential, nil)
+	serviceClient, err := azblob.NewServiceClientWithSharedKey(u.String(), credential, getClientOptions())
 	if err != nil {
 		logger.Errorf("Failed to create azure service client, error: %v", err)
 		return nil, err
@@ -113,7 +114,7 @@ func (s *store) CreateUsingSASURL(ctx context.Context, sasURL string, reader io.
 	if err != nil {
 		return "", err
 	}
-	blobClient, err := azblob.NewBlockBlobClientWithNoCredential(u.String(), &azblob.ClientOptions{})
+	blobClient, err := azblob.NewBlockBlobClientWithNoCredential(u.String(), getClientOptions())
 	if err != nil {
 		s.logger.Errorf("failed to create blob client, error: %v", err)
 		return "", err
@@ -204,4 +205,13 @@ func handleError(err error) error {
 		}
 	}
 	return err
+}
+
+func getClientOptions() *azblob.ClientOptions {
+	return &azblob.ClientOptions{
+		Retry: policy.RetryOptions{
+			MaxRetries: int32(maxRetry),
+			TryTimeout: global.DefaultAPITimeout,
+		},
+	}
 }
