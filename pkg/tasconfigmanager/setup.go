@@ -122,6 +122,9 @@ func (tc *tasConfigManager) validateYMLV2(ctx context.Context,
 
 	switch eventType {
 	case core.EventPullRequest:
+		if tasConfig.PreMerge == nil {
+			return nil, fmt.Errorf("`preMerge` is missing in tas configuration file %s", yamlFilePath)
+		}
 		for i := 0; i < len(tasConfig.PreMerge.SubModules); i++ {
 			if err := utils.ValidateSubModule(&tasConfig.PreMerge.SubModules[i]); err != nil {
 				return nil, err
@@ -129,6 +132,9 @@ func (tc *tasConfigManager) validateYMLV2(ctx context.Context,
 		}
 
 	case core.EventPush:
+		if tasConfig.PostMerge == nil {
+			return nil, fmt.Errorf("`postMerge` is missing in tas configuration file %s", yamlFilePath)
+		}
 		for i := 0; i < len(tasConfig.PostMerge.SubModules); i++ {
 			if err := utils.ValidateSubModule(&tasConfig.PostMerge.SubModules[i]); err != nil {
 				return nil, err

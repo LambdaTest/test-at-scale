@@ -263,7 +263,7 @@ func TestValidateStructv2(t *testing.T) {
 				SmartRun:  true,
 				Tier:      "small",
 				SplitMode: core.TestSplit,
-				PostMerge: core.Mergev2{
+				PostMerge: &core.MergeV2{
 					SubModules: []core.SubModule{
 						{
 							Name: "some-module-1",
@@ -277,7 +277,7 @@ func TestValidateStructv2(t *testing.T) {
 						},
 					},
 				},
-				PreMerge: core.Mergev2{
+				PreMerge: &core.MergeV2{
 					SubModules: []core.SubModule{
 						{
 							Name: "some-module-1",

@@ -224,7 +224,7 @@ func getTestCasesV2() []*testV2 {
 					SmartRun:  true,
 					Tier:      "small",
 					SplitMode: core.TestSplit,
-					PostMerge: core.Mergev2{
+					PostMerge: &core.MergeV2{
 						SubModules: []core.SubModule{
 							{
 								Name: "some-module-1",
@@ -244,7 +244,7 @@ func getTestCasesV2() []*testV2 {
 							},
 						},
 					},
-					PreMerge: core.Mergev2{
+					PreMerge: &core.MergeV2{
 						SubModules: []core.SubModule{
 							{
 								Name: "some-module-1",
@@ -302,7 +302,7 @@ func getTestCasesV2() []*testV2 {
 					SmartRun:  true,
 					Tier:      "small",
 					SplitMode: core.TestSplit,
-					PostMerge: core.Mergev2{
+					PostMerge: &core.MergeV2{
 						SubModules: []core.SubModule{
 							{
 								Name: "some-module-1",
@@ -316,7 +316,7 @@ func getTestCasesV2() []*testV2 {
 							},
 						},
 					},
-					PreMerge: core.Mergev2{
+					PreMerge: &core.MergeV2{
 						EnvMap: map[string]string{
 							"RUN": "TOP-LEVEL",
 						},
@@ -371,7 +371,7 @@ func getTestCasesV2() []*testV2 {
 					SmartRun:  true,
 					Tier:      "small",
 					SplitMode: core.TestSplit,
-					PostMerge: core.Mergev2{
+					PostMerge: &core.MergeV2{
 						EnvMap: map[string]string{
 							"RUN": "Post-Merge",
 						},
@@ -388,7 +388,7 @@ func getTestCasesV2() []*testV2 {
 							},
 						},
 					},
-					PreMerge: core.Mergev2{
+					PreMerge: &core.MergeV2{
 
 						SubModules: []core.SubModule{
 							{

@@ -149,7 +149,7 @@ type ExecutionManager interface {
 		secretData map[string]string,
 		cwd string) error
 
-	// ExecuteUserCommands executes the preRun or postRun commands given by user in his yaml. for tas version 2
+	// ExecuteUserCommands executes the commands like installing runners and test discovery for tas version 2
 	ExecuteUserCommandsV2(ctx context.Context, commandType CommandType, payload *Payload, runConfig *Run,
 		secretData map[string]string, cwd, subModule string, buffer *bytes.Buffer) error
 

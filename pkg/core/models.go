@@ -383,8 +383,8 @@ type TASConfigV2 struct {
 	SmartRun          bool               `yaml:"smartRun"`
 	Cache             *Cache             `yaml:"cache" validate:"omitempty"`
 	Tier              Tier               `yaml:"tier" validate:"oneof=xsmall small medium large xlarge"`
-	PostMerge         Mergev2            `yaml:"postMerge" validate:"required"`
-	PreMerge          Mergev2            `yaml:"preMerge" validate:"required"`
+	PostMerge         *MergeV2           `yaml:"postMerge" validate:"omitempty"`
+	PreMerge          *MergeV2           `yaml:"preMerge" validate:"omitempty"`
 	SkipCache         bool               `yaml:"skipCache"`
 	CoverageThreshold *CoverageThreshold `yaml:"coverageThreshold" validate:"omitempty"`
 	Parallelism       int                `yaml:"parallelism"` // TODO: will be supported later
@@ -394,8 +394,8 @@ type TASConfigV2 struct {
 	NodeVersion       string             `yaml:"nodeVersion" validate:"omitempty,semver"`
 }
 
-// Mergev2 repersent MergeConfig for version 2 and above
-type Mergev2 struct {
+// MergeV2 repersent MergeConfig for version 2 and above
+type MergeV2 struct {
 	PreRun     *Run              `yaml:"preRun" validate:"omitempty"`
 	SubModules []SubModule       `yaml:"subModules" validate:"required,gt=0"`
 	EnvMap     map[string]string `yaml:"env" validate:"omitempty,gt=0"`

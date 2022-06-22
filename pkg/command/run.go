@@ -95,13 +95,19 @@ func (m *manager) ExecuteUserCommandsV2(ctx context.Context,
 		return err
 	}
 
-	azureReader, azureWriter := io.Pipe()
-	defer azureWriter.Close()
+	reader, writer := io.Pipe()
 
-	errChan := m.writeCommandLogsToBuffer(subModule, buffer, azureReader)
+	errChan := m.writeCommandLogsToBuffer(subModule, buffer, reader)
+	defer func() {
+		writer.Close()
+		if uploadErr := <-errChan; uploadErr != nil {
+			// not returning error here as upload logs should not fail the task
+			m.logger.Errorf("failed to upload logs for command %s, error: %v", commandType, uploadErr)
+		}
+	}()
 	logWriter := lumber.NewWriter(m.logger)
 	defer logWriter.Close()
-	multiWriter := io.MultiWriter(logWriter, azureWriter)
+	multiWriter := io.MultiWriter(logWriter, writer)
 	maskWriter := logstream.NewMasker(multiWriter, secretData)
 
 	cmd := exec.CommandContext(ctx, "/bin/bash", "-c", script)
@@ -118,11 +124,7 @@ func (m *manager) ExecuteUserCommandsV2(ctx context.Context,
 		m.logger.Errorf("command %s, exited with error: %v", commandType, execErr)
 		return execErr
 	}
-	azureWriter.Close()
-	if uploadErr := <-errChan; uploadErr != nil {
-		m.logger.Errorf("failed to upload logs for command %s, error: %v", commandType, uploadErr)
-		return uploadErr
-	}
+
 	return nil
 }
 
@@ -184,7 +186,6 @@ func (m *manager) StoreCommandLogs(ctx context.Context, blobPath string, reader 
 	return errChan
 }
 
-// StoreCommandLogs stores the command logs to blob
 func (m *manager) writeCommandLogsToBuffer(submodule string, buffer *bytes.Buffer, reader io.Reader) <-chan error {
 	errChan := make(chan error, 1)
 	go func() {

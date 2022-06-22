@@ -70,7 +70,7 @@ func assertTasConfigV2(got, want *core.TASConfigV2) error {
 	return assertMergeV2(got.PostMerge, want.PostMerge, "postMerge")
 }
 
-func assertMergeV2(got, want core.Mergev2, mode string) error {
+func assertMergeV2(got, want *core.MergeV2, mode string) error {
 	if !assert.ObjectsAreEqualValues(got.PreRun, want.PreRun) {
 		return fmt.Errorf("Mismatch in %s preRun , got %+v, want %+v", mode, got.PreRun, want.PreRun)
 	}
@@ -203,6 +203,24 @@ func TestLoadAndValidateV2(t *testing.T) {
 				"../../testutils/testdata/tasyml/junk.yml"),
 		},
 		{
+			"PreMerge is missing in tas yml file for pull_request event",
+			path.Join("../../", "testutils/testdata/tasyml/premerge_emptyv2.yaml"),
+			core.EventPullRequest,
+			core.Small,
+			nil,
+			fmt.Errorf("`preMerge` is missing in tas configuration file %s",
+				"../../testutils/testdata/tasyml/premerge_emptyv2.yaml"),
+		},
+		{
+			"PostMerge is missing in tas yml file for push event",
+			path.Join("../../", "testutils/testdata/tasyml/postmerge_emptyv2.yaml"),
+			core.EventPush,
+			core.Small,
+			nil,
+			fmt.Errorf("`postMerge` is missing in tas configuration file %s",
+				"../../testutils/testdata/tasyml/postmerge_emptyv2.yaml"),
+		},
+		{
 			"Valid Config",
 			"../../testutils/testdata/tasyml/valid_with_cachekeyV2.yml",
 			core.EventPush,
@@ -211,7 +229,7 @@ func TestLoadAndValidateV2(t *testing.T) {
 				SmartRun:  true,
 				Tier:      "small",
 				SplitMode: core.TestSplit,
-				PostMerge: core.Mergev2{
+				PostMerge: &core.MergeV2{
 					SubModules: []core.SubModule{
 						{
 							Name: "some-module-1",
@@ -225,7 +243,7 @@ func TestLoadAndValidateV2(t *testing.T) {
 						},
 					},
 				},
-				PreMerge: core.Mergev2{
+				PreMerge: &core.MergeV2{
 					SubModules: []core.SubModule{
 						{
 							Name: "some-module-1",

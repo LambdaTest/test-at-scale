@@ -186,7 +186,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 		err = pl.runNewVersion(ctx, payload, taskPayload, oauth, coverageDir, secretMap)
 		return err
 	}
-	// set testing taskID, orgID and buildID as environment variable
+	// set MODULE_PATH to empty as env variable
 	os.Setenv(global.ModulePath, "")
 
 	err = pl.runOldVersion(ctx, payload, taskPayload, oauth, coverageDir, secretMap)
