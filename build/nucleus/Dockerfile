@@ -30,7 +30,7 @@ RUN mkdir /tmp/custom-runners
 
 WORKDIR /tmp/custom-runners
 RUN npm init -y
-
+RUN npm install -g pnpm
 RUN npm i --global-style --legacy-peer-deps \
     @lambdatest/test-at-scale-jasmine-runner@~0.2.0 \
     @lambdatest/test-at-scale-mocha-runner@~0.2.0 \

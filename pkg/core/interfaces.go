@@ -42,7 +42,7 @@ type TestDiscoveryService interface {
 	// Discover executes the test discovery scripts.
 	Discover(ctx context.Context, tasConfig *TASConfig, payload *Payload, secretData map[string]string,
 		diff map[string]int, diffExists bool) error
-	// Discoverv executes the test discovery scripts for TAS V2.
+	// DiscoverV2 executes the test discovery scripts for TAS V2.
 	DiscoverV2(ctx context.Context, subModule *SubModule, payload *Payload, secretData map[string]string,
 		tasConfig *TASConfigV2, diff map[string]int, diffExists bool) error
 	// UpdateSubmoduleList sends count of submodules to TAS server
