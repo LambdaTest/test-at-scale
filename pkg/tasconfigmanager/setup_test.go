@@ -173,6 +173,7 @@ func TestLoadAndValidateV1(t *testing.T) {
 	}
 }
 
+// nolint
 func TestLoadAndValidateV2(t *testing.T) {
 	logger, err := testutils.GetLogger()
 	if err != nil {
