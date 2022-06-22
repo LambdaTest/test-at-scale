@@ -27,6 +27,8 @@ const (
 	ExecutionResultChunkSize = 50
 	TestLocatorsDelimiter    = "#TAS#"
 	ExpiryDelta              = 15 * time.Minute
+	NewTASVersion            = 2
+	ModulePath               = "MODULE_PATH"
 	CacheVersion             = "v1"
 	PackageJSON              = "package.json"
 )

@@ -1,6 +1,7 @@
 package command
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -9,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/LambdaTest/test-at-scale/pkg/core"
-	"github.com/LambdaTest/test-at-scale/pkg/global"
 	"github.com/LambdaTest/test-at-scale/pkg/logstream"
 	"github.com/LambdaTest/test-at-scale/pkg/lumber"
 )
@@ -34,7 +34,8 @@ func (m *manager) ExecuteUserCommands(ctx context.Context,
 	commandType core.CommandType,
 	payload *core.Payload,
 	runConfig *core.Run,
-	secretData map[string]string) error {
+	secretData map[string]string,
+	cwd string) error {
 	script, err := m.createScript(runConfig.Commands, secretData)
 	if err != nil {
 		return err
@@ -56,7 +57,7 @@ func (m *manager) ExecuteUserCommands(ctx context.Context,
 	maskWriter := logstream.NewMasker(multiWriter, secretData)
 
 	cmd := exec.CommandContext(ctx, "/bin/bash", "-c", script)
-	cmd.Dir = global.RepoDir
+	cmd.Dir = cwd
 	cmd.Env = envVars
 	cmd.Stdout = maskWriter
 	cmd.Stderr = maskWriter
@@ -65,11 +66,65 @@ func (m *manager) ExecuteUserCommands(ctx context.Context,
 		m.logger.Errorf("failed to start command: %s, error: %v", commandType, startErr)
 		return startErr
 	}
-	m.logger.Debugf("command of type %s started with id %d", commandType, cmd.Process.Pid)
 	if execErr := cmd.Wait(); execErr != nil {
 		m.logger.Errorf("command %s, exited with error: %v", commandType, execErr)
 		return execErr
 	}
+	azureWriter.Close()
+	if uploadErr := <-errChan; uploadErr != nil {
+		m.logger.Errorf("failed to upload logs for command %s, error: %v", commandType, uploadErr)
+		return uploadErr
+	}
+	return nil
+}
+
+// ExecuteUserCommandsV2 executes user commands for version 2
+func (m *manager) ExecuteUserCommandsV2(ctx context.Context,
+	commandType core.CommandType,
+	payload *core.Payload,
+	runConfig *core.Run,
+	secretData map[string]string,
+	cwd, subModule string,
+	buffer *bytes.Buffer) error {
+	script, err := m.createScript(runConfig.Commands, secretData)
+	if err != nil {
+		return err
+	}
+	envVars, err := m.GetEnvVariables(runConfig.EnvMap, secretData)
+	if err != nil {
+		return err
+	}
+
+	reader, writer := io.Pipe()
+
+	errChan := m.writeCommandLogsToBuffer(subModule, buffer, reader)
+	defer func() {
+		writer.Close()
+		if uploadErr := <-errChan; uploadErr != nil {
+			// not returning error here as upload logs should not fail the task
+			m.logger.Errorf("failed to upload logs for command %s, error: %v", commandType, uploadErr)
+		}
+	}()
+	logWriter := lumber.NewWriter(m.logger)
+	defer logWriter.Close()
+	multiWriter := io.MultiWriter(logWriter, writer)
+	maskWriter := logstream.NewMasker(multiWriter, secretData)
+
+	cmd := exec.CommandContext(ctx, "/bin/bash", "-c", script)
+	cmd.Dir = cwd
+	cmd.Env = envVars
+	cmd.Stdout = maskWriter
+	cmd.Stderr = maskWriter
+
+	if startErr := cmd.Start(); startErr != nil {
+		m.logger.Errorf("failed to start command: %s, error: %v", commandType, startErr)
+		return startErr
+	}
+	if execErr := cmd.Wait(); execErr != nil {
+		m.logger.Errorf("command %s, exited with error: %v", commandType, execErr)
+		return execErr
+	}
+
 	return nil
 }
 
@@ -131,6 +186,24 @@ func (m *manager) StoreCommandLogs(ctx context.Context, blobPath string, reader 
 	return errChan
 }
 
+func (m *manager) writeCommandLogsToBuffer(submodule string, buffer *bytes.Buffer, reader io.Reader) <-chan error {
+	errChan := make(chan error, 1)
+	go func() {
+		if _, err := fmt.Fprintf(buffer, "<------ PRE RUN for submodule %s  ------> \n", submodule); err != nil {
+			m.logger.Debugf("Error writing the logs separator for submodule %s, error %v", submodule, err)
+			errChan <- err
+			return
+		}
+		if _, err := buffer.ReadFrom(reader); err != nil {
+			m.logger.Debugf("Error writing the logs to buffer for submodule %s, error %v", submodule, err)
+			errChan <- err
+			return
+		}
+		close(errChan)
+		m.logger.Debugf("written logs for sub module %s to buffer", submodule)
+	}()
+	return errChan
+}
 func (m *manager) closeAndWriteLog(azureWriter *io.PipeWriter, errChan <-chan error, commandType core.CommandType) {
 	azureWriter.Close()
 	if uploadErr := <-errChan; uploadErr != nil {

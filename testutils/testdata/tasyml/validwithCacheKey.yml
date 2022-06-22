@@ -21,3 +21,7 @@ postRun:
 configFile: scripts/jest/config.source-www.js
 nodeVersion: 14.17.6
 version: 1.0
+cache:
+  key: "xyz"
+  paths: 
+    - "abcd"

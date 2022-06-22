@@ -1,0 +1,21 @@
+postMerge:
+  - name: some-module-1
+    path: "./somepath"
+    patterns:
+      - "./x/y/z"
+    framework: some-module
+    runPrerunEveryTime: 1
+    nodeVersion: "some"
+    configFile: 1
+
+preMerge:
+  - name: some-module-1
+    path: "./somepath"
+    framework: some-module
+    patterns:
+      - "./x/y/z"
+    runPrerunEveryTime: 1
+    nodeVersion: "some"
+    configFile: 1
+
+parallelism : mocha
