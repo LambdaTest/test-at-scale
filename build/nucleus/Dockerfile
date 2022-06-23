@@ -74,7 +74,7 @@ RUN apt update -y && apt upgrade -y
 
 USER nucleus
 RUN  curl -s https://get.sdkman.io | bash
-RUN /bin/bash -c "source $HOME/.sdkman/bin/sdkman-init.sh;sdk install java 11.0.12-open"
+RUN /bin/bash -c "source $HOME/.sdkman/bin/sdkman-init.sh;sdk install java 18.0.1-oracle"
 
 ENV JAVA_HOME="/home/nucleus/.sdkman/candidates/java/current"
 ENV PATH=$JAVA_HOME:$PATH
