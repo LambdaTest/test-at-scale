@@ -18,7 +18,7 @@ ARG VERSION
 ENV VERSION=$VERSION
 
 # Installing chromium so that all linux libs get automatically installed for running puppeteer tests
-RUN apt update && apt install -y git zstd chromium curl
+RUN apt update && apt install -y git zstd curl
 
 COPY bundle /usr/local/bin/bundle
 RUN chmod +x /usr/local/bin/bundle
@@ -40,14 +40,16 @@ RUN npm i -g nyc@^15.1.0
 RUN tar -zcf /custom-runners/custom-runners.tgz node_modules
 RUN rm -rf /tmp/custom-runners
 
-RUN useradd -u 8877 -ms /bin/bash nucleus
+# RUN useradd -u 8877 -ms /bin/bash nucleus
+RUN mkdir /home/nucleus
 
 # install nvm for nucleus user
-RUN su - nucleus -c "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | /bin/bash"
+# RUN su - nucleus -c "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | /bin/bash"
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | /bin/bash
 
 WORKDIR /home/nucleus
 # copy the binary from builder
-COPY --chown=nucleus:nucleus --from=builder /nucleus/nucleus /usr/local/bin/
+COPY --from=builder /nucleus/nucleus /usr/local/bin/
 # run the binary
 COPY ./build/nucleus/entrypoint.sh /
 ENTRYPOINT  ["/bin/sh", "/entrypoint.sh"]
