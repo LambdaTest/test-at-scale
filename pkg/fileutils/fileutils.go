@@ -3,7 +3,7 @@ package fileutils
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
+	"io/fs"
 	"os"
 	"path/filepath"
 )
@@ -44,7 +44,7 @@ func CopyFile(src, dst string, changeMode bool) (err error) {
 		return
 	}
 
-	si, err := os.Stat(src)
+	si, err := os.Lstat(src)
 	if err != nil {
 		return
 	}
@@ -63,7 +63,7 @@ func CopyDir(src, dst string, changeMode bool) (err error) {
 	src = filepath.Clean(src)
 	dst = filepath.Clean(dst)
 
-	si, err := os.Stat(src)
+	si, err := os.Lstat(src)
 	if err != nil {
 		return err
 	}
@@ -71,7 +71,7 @@ func CopyDir(src, dst string, changeMode bool) (err error) {
 		return fmt.Errorf("source is not a directory")
 	}
 
-	_, err = os.Stat(dst)
+	_, err = os.Lstat(dst)
 	if err != nil && !os.IsNotExist(err) {
 		return
 	}
@@ -84,11 +84,19 @@ func CopyDir(src, dst string, changeMode bool) (err error) {
 		return
 	}
 
-	entries, err := ioutil.ReadDir(src)
+	// NOTE: ioutil.ReadDir -> os.ReadDir as the latter is better:
+	// """
+	// As of Go 1.16, os.ReadDir is a more efficient and correct choice:
+	// it returns a list of fs.DirEntry instead of fs.FileInfo,
+	// and it returns partial results in the case of an error
+	// midway through reading a directory.
+	// """
+	entries, err := os.ReadDir(src)
 	if err != nil {
 		return
 	}
 
+	var fileInfo fs.FileInfo
 	for _, entry := range entries {
 		srcPath := filepath.Join(src, entry.Name())
 		dstPath := filepath.Join(dst, entry.Name())
@@ -100,7 +108,8 @@ func CopyDir(src, dst string, changeMode bool) (err error) {
 			}
 		} else {
 			// Skip symlinks.
-			if entry.Mode()&os.ModeSymlink != 0 {
+			fileInfo, err = entry.Info()
+			if err != nil || fileInfo.Mode()&os.ModeSymlink != 0 {
 				continue
 			}
 
@@ -116,7 +125,7 @@ func CopyDir(src, dst string, changeMode bool) (err error) {
 
 // CheckIfExists checks if file or directory exists in the given path.
 func CheckIfExists(path string) (bool, error) {
-	if _, err := os.Stat(path); err != nil {
+	if _, err := os.Lstat(path); err != nil {
 		if os.IsNotExist(err) {
 			return false, nil
 		}

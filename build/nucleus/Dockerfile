@@ -13,6 +13,10 @@ RUN GOARCH=amd64 GOOS=linux go build -ldflags="-w -s" -o nucleus cmd/nucleus/*.g
 
 # use a minimal alpine image
 FROM nikolaik/python-nodejs:python3.10-nodejs16-slim
+
+ARG VERSION
+ENV VERSION=$VERSION
+
 # Installing chromium so that all linux libs get automatically installed for running puppeteer tests
 RUN apt update && apt install -y git zstd chromium curl unzip zip
 
@@ -27,11 +31,11 @@ RUN mkdir /tmp/custom-runners
 
 WORKDIR /tmp/custom-runners
 RUN npm init -y
-
+RUN npm install -g pnpm
 RUN npm i --global-style --legacy-peer-deps \
-    @lambdatest/test-at-scale-jasmine-runner@~0.2.0 \
-    @lambdatest/test-at-scale-mocha-runner@~0.2.0 \
-    @lambdatest/test-at-scale-jest-runner@~0.2.0
+    @lambdatest/test-at-scale-jasmine-runner@~0.3.0 \
+    @lambdatest/test-at-scale-mocha-runner@~0.3.0 \
+    @lambdatest/test-at-scale-jest-runner@~0.3.0
 RUN npm i -g nyc@^15.1.0
 
 RUN tar -zcf /custom-runners/custom-runners.tgz node_modules

@@ -30,7 +30,7 @@ func New(logger lumber.Logger) core.SecretParser {
 // GetRepoSecret read repo secrets from given path
 func (s *secretParser) GetRepoSecret(path string) (map[string]string, error) {
 	var secretData map[string]string
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+	if _, err := os.Lstat(path); os.IsNotExist(err) {
 		s.logger.Debugf("failed to find user env secrets in path %s, as path does not exists", path)
 		return nil, nil
 	}
@@ -53,7 +53,7 @@ func (s *secretParser) GetOauthSecret(path string) (*core.Oauth, error) {
 	o := &core.Oauth{
 		Type: core.Bearer,
 	}
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+	if _, err := os.Lstat(path); os.IsNotExist(err) {
 		s.logger.Errorf("failed to find oauth secret in path %s", path)
 		return nil, err
 	}

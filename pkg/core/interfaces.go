@@ -1,6 +1,7 @@
 package core
 
 import (
+	"bytes"
 	"context"
 	"io"
 )
@@ -15,8 +16,14 @@ type PayloadManager interface {
 
 // TASConfigManager defines operations for tas config
 type TASConfigManager interface {
-	// LoadAndValidate loads and validates the TASConfig from the given path
-	LoadAndValidate(ctx context.Context, path string, eventType EventType, licenseTier Tier) (*TASConfig, error)
+	// LoadAndValidateV1 loads and validates the TASConfig from the given path for V1 Tas YML
+	LoadAndValidateV1(ctx context.Context, path string, eventType EventType, licenseTier Tier) (*TASConfig, error)
+
+	// LoadAndValidateV2 loads and validates the TASConfig from the given path for V2 Tas YML
+	LoadAndValidateV2(ctx context.Context, path string, eventType EventType, licenseTier Tier) (*TASConfigV2, error)
+
+	// GetVersion returns TAS yml version
+	GetVersion(path string) (int, error)
 }
 
 // GitManager manages the cloning of git repositories
@@ -33,22 +40,38 @@ type DiffManager interface {
 // TestDiscoveryService services discovery of tests
 type TestDiscoveryService interface {
 	// Discover executes the test discovery scripts.
-	Discover(ctx context.Context, tasConfig *TASConfig,
-		payload *Payload, secretData map[string]string, diff map[string]int, diffExists bool) error
+	Discover(ctx context.Context, tasConfig *TASConfig, payload *Payload, secretData map[string]string,
+		diff map[string]int, diffExists bool) error
+	// DiscoverV2 executes the test discovery scripts for TAS V2.
+	DiscoverV2(ctx context.Context, subModule *SubModule, payload *Payload, secretData map[string]string,
+		tasConfig *TASConfigV2, diff map[string]int, diffExists bool) error
+	// UpdateSubmoduleList sends count of submodules to TAS server
+	UpdateSubmoduleList(ctx context.Context, buildID string, totalSubmodule int) error
 }
 
 // BlockTestService is used for fetching blocklisted tests
 type BlockTestService interface {
-	GetBlockTests(ctx context.Context, tasConfig *TASConfig, branch string) error
+	GetBlockTests(ctx context.Context, blocklistYAML []string, branch string) error
+	GetBlocklistYMLV1(tasConfig *TASConfig) []string
+	GetBlocklistYMLV2(submodule *SubModule) []string
 }
 
 // TestExecutionService services execution of tests
 type TestExecutionService interface {
-	// Run executes the test execution scripts.
-	Run(ctx context.Context, tasConfig *TASConfig,
+	// RunV1 executes the test execution scripts for TAS version 1
+	RunV1(ctx context.Context, tasConfig *TASConfig,
 		payload *Payload, coverageDirectory string, secretMap map[string]string) (results *ExecutionResults, err error)
 	// SendResults sends the test execution results to the TAS server.
 	SendResults(ctx context.Context, payload *ExecutionResults) (resp *TestReportResponsePayload, err error)
+	// RunV2 executes the test execution scripts for TAS version 2
+	RunV2(ctx context.Context,
+		tasConfig *TASConfigV2,
+		subModule *SubModule,
+		payload *Payload,
+		coverageDir string,
+		envMap map[string]string,
+		target []string,
+		secretData map[string]string) (*ExecutionResults, error)
 }
 
 // CoverageService services coverage of tests
@@ -92,15 +115,16 @@ type ZstdCompressor interface {
 }
 
 // CacheStore defines operation for working with the cache
+//go:generate mockery  --name  CacheStore  --keeptree  --output  ../mocks/CacheStore.go
 type CacheStore interface {
 	// Download downloads cache present at cacheKey
 	Download(ctx context.Context, cacheKey string) error
 	// Upload creates, compresses and uploads cache at cacheKey
 	Upload(ctx context.Context, cacheKey string, itemsToCompress ...string) error
 	// CacheWorkspace caches the workspace onto a mounted volume
-	CacheWorkspace(ctx context.Context) error
+	CacheWorkspace(ctx context.Context, subModule string) error
 	// ExtractWorkspace extracts the workspace cache from mounted volume
-	ExtractWorkspace(ctx context.Context) error
+	ExtractWorkspace(ctx context.Context, subModule string) error
 }
 
 // SecretParser defines operation for parsing the vault secrets in given path
@@ -118,9 +142,23 @@ type SecretParser interface {
 // ExecutionManager has responsibility for executing the preRun, postRun and internal commands
 type ExecutionManager interface {
 	// ExecuteUserCommands executes the preRun or postRun commands given by user in his yaml.
-	ExecuteUserCommands(ctx context.Context, commandType CommandType, payload *Payload, runConfig *Run, secretData map[string]string) error
+	ExecuteUserCommands(ctx context.Context,
+		commandType CommandType,
+		payload *Payload,
+		runConfig *Run,
+		secretData map[string]string,
+		cwd string) error
+
+	// ExecuteUserCommands executes the commands like installing runners and test discovery for tas version 2
+	ExecuteUserCommandsV2(ctx context.Context, commandType CommandType, payload *Payload, runConfig *Run,
+		secretData map[string]string, cwd, subModule string, buffer *bytes.Buffer) error
+
 	// ExecuteInternalCommands executes the commands like installing runners and test discovery.
-	ExecuteInternalCommands(ctx context.Context, commandType CommandType, commands []string, cwd string, envMap, secretData map[string]string) error
+	ExecuteInternalCommands(ctx context.Context,
+		commandType CommandType,
+		commands []string,
+		cwd string, envMap,
+		secretData map[string]string) error
 	// GetEnvVariables get the environment variables from the env map given by user.
 	GetEnvVariables(envMap, secretData map[string]string) ([]string, error)
 	// StoreCommandLogs stores the command logs in the azure.

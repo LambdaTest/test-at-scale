@@ -243,7 +243,7 @@ func (s *synapse) processTask(message core.Message) {
 
 	// sending job started updates
 	if runnerOpts.PodType == core.NucleusPod {
-		jobInfo := CreateJobInfo(core.JobStarted, &runnerOpts)
+		jobInfo := CreateJobInfo(core.JobStarted, &runnerOpts, "")
 		s.logger.Infof("Sending update to neuron %+v", jobInfo)
 		resourceStatsMessage := CreateJobUpdateMessage(jobInfo)
 		s.writeMessageToBuffer(&resourceStatsMessage)
@@ -282,7 +282,7 @@ func (s *synapse) runAndUpdateJobStatus(runnerOpts core.RunnerOptions) {
 	if status.Done {
 		jobStatus = core.JobCompleted
 	}
-	jobInfo := CreateJobInfo(jobStatus, &runnerOpts)
+	jobInfo := CreateJobInfo(jobStatus, &runnerOpts, status.Error.Message)
 	s.logger.Infof("Sending update to neuron %+v", jobInfo)
 	resourceStatsMessage := CreateJobUpdateMessage(jobInfo)
 	s.writeMessageToBuffer(&resourceStatsMessage)
@@ -297,11 +297,12 @@ func (s *synapse) login() {
 	}
 	lambdatestConfig := s.secretsManager.GetLambdatestSecrets()
 	loginDetails := core.LoginDetails{
-		Name:      s.secretsManager.GetSynapseName(),
-		SecretKey: lambdatestConfig.SecretKey,
-		CPU:       cpu,
-		RAM:       ram,
-		SynapseID: id,
+		Name:           s.secretsManager.GetSynapseName(),
+		SecretKey:      lambdatestConfig.SecretKey,
+		CPU:            cpu,
+		RAM:            ram,
+		SynapseID:      id,
+		SynapseVersion: global.SynapseBinaryVersion,
 	}
 	s.logger.Infof("Login synapse with id %s", loginDetails.SynapseID)
 
