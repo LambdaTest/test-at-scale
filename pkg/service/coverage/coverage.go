@@ -78,7 +78,7 @@ func (c *codeCoverageService) mergeCodeCoverageFiles(ctx context.Context, commit
 
 	coverageFiles := make([]string, 0)
 	if err := filepath.WalkDir(commitDir, func(path string, d fs.DirEntry, err error) error {
-		//add all individual coverage json files
+		// add all individual coverage json files
 		if d.Name() == coverageJSONFileName {
 			coverageFiles = append(coverageFiles, path)
 		}
