@@ -208,22 +208,22 @@ func ERR_DOCKER_STRT(err string) Err {
 		Message: fmt.Sprintf("Docker start failed with error:  \n%s", err)}
 }
 
-// ERR_DOCKER_VOL_CRT function returns error with code "ERR::DOCKER::VOL::CRT"
-func ERR_DOCKER_VOL_CRT(err string) Err {
+// ErrDockerVolCrt function returns error with code "ERR::DOCKER::VOL::CRT"
+func ErrDockerVolCrt(err string) Err {
 	return Err{
 		Code:    "ERR::DOCKER::VOL::CRT",
 		Message: fmt.Sprintf("Docker volume create failed with error:  \n%s", err)}
 }
 
-// ERR_DOCKER_CP function returns error with code "ERR::DOCKER::CP"
-func ERR_DOCKER_CP(err string) Err {
+// ErrDockerCP function returns error with code "ERR::DOCKER::CP"
+func ErrDockerCP(err string) Err {
 	return Err{
 		Code:    "ERR::DOCKER::CP",
 		Message: fmt.Sprintf("Error copying file to docker:  \n%s", err)}
 }
 
-// ERR_SECRET_LOAD function returns error with code "ERR::SECRET::LOAD"
-func ERR_SECRET_LOAD(err string) Err {
+// ErrSecretLoad function returns error with code "ERR::SECRET::LOAD"
+func ErrSecretLoad(err string) Err {
 	return Err{
 		Code:    "ERR::SECRET::LOAD",
 		Message: fmt.Sprintf("Error in loading secrets:  \n%s", err)}

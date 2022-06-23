@@ -14,7 +14,7 @@ func Setup(ctx context.Context, wg *sync.WaitGroup, logger lumber.Logger, runner
 	defer wg.Done()
 
 	c := cron.New()
-	if _, err := c.AddFunc("@every 5m", func() { cleanupBuildCache(logger, runner) }); err != nil {
+	if _, err := c.AddFunc("@every 5m", func() { cleanupBuildCache(runner) }); err != nil {
 		logger.Errorf("error setting up cron")
 		return
 	}
@@ -25,6 +25,6 @@ func Setup(ctx context.Context, wg *sync.WaitGroup, logger lumber.Logger, runner
 	logger.Infof("Caller has requested graceful shutdown. Returning.....")
 }
 
-func cleanupBuildCache(logger lumber.Logger, runner core.DockerRunner) {
+func cleanupBuildCache(runner core.DockerRunner) {
 	runner.RemoveOldVolumes(context.Background())
 }

@@ -85,7 +85,7 @@ func New(secretsManager core.SecretsManager,
 
 func (d *docker) CreateVolume(ctx context.Context, r *core.RunnerOptions) error {
 	volumeOptions := d.getVolumeConfiguration(r)
-	isVolume, err := d.findVolumes(ctx, volumeOptions.Name)
+	isVolume, err := d.findVolumes(volumeOptions.Name)
 	if err != nil {
 		return err
 	}
@@ -138,7 +138,7 @@ func (d *docker) Create(ctx context.Context, r *core.RunnerOptions) core.Contain
 	if err = d.CreateVolume(ctx, r); err != nil {
 		d.logger.Errorf("Error in creating docker volume: %+v", err)
 		containerStatus.Done = false
-		containerStatus.Error = errs.ERR_DOCKER_VOL_CRT(err.Error())
+		containerStatus.Error = errs.ErrDockerVolCrt(err.Error())
 		return containerStatus
 	}
 
@@ -173,7 +173,7 @@ func (d *docker) Create(ctx context.Context, r *core.RunnerOptions) core.Contain
 	if err != nil {
 		d.logger.Errorf("Error in loading git secrets: %s", err.Error())
 		containerStatus.Done = false
-		containerStatus.Error = errs.ERR_SECRET_LOAD(err.Error())
+		containerStatus.Error = errs.ErrSecretLoad(err.Error())
 		return containerStatus
 	}
 	if err = d.CopyFileToContainer(
@@ -184,7 +184,7 @@ func (d *docker) Create(ctx context.Context, r *core.RunnerOptions) core.Contain
 		gitSecretBytes,
 	); err != nil {
 		containerStatus.Done = false
-		containerStatus.Error = errs.ERR_DOCKER_CP(err.Error())
+		containerStatus.Error = errs.ErrDockerCP(err.Error())
 		return containerStatus
 	}
 
@@ -201,7 +201,7 @@ func (d *docker) Create(ctx context.Context, r *core.RunnerOptions) core.Contain
 			repoSecretBytes,
 		); err != nil {
 			containerStatus.Done = false
-			containerStatus.Error = errs.ERR_DOCKER_CP(err.Error())
+			containerStatus.Error = errs.ErrDockerCP(err.Error())
 			return containerStatus
 		}
 	}
@@ -402,7 +402,7 @@ func (d *docker) writeLogs(ctx context.Context, r *core.RunnerOptions) error {
 	return nil
 }
 
-func (d *docker) findVolumes(ctx context.Context, volumeName string) (bool, error) {
+func (d *docker) findVolumes(volumeName string) (bool, error) {
 	volumeFilter := filters.KeyValuePair{Key: "name", Value: volumeName}
 	volumes, err := d.client.VolumeList(context.Background(), filters.NewArgs(volumeFilter))
 	if err != nil {
