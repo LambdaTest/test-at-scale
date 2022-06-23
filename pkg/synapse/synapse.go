@@ -10,7 +10,6 @@ import (
 	"github.com/LambdaTest/test-at-scale/pkg/core"
 	"github.com/LambdaTest/test-at-scale/pkg/global"
 	"github.com/LambdaTest/test-at-scale/pkg/lumber"
-	"github.com/LambdaTest/test-at-scale/pkg/utils"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/denisbrodbeck/machineid"
 	"github.com/gorilla/websocket"
@@ -251,38 +250,27 @@ func (s *synapse) processTask(message core.Message) {
 	// mounting secrets to container
 	runnerOpts.HostVolumePath = fmt.Sprintf("/tmp/synapse/data/%s", runnerOpts.ContainerName)
 
-	if err := utils.CreateDirectory(runnerOpts.HostVolumePath); err != nil {
-		s.logger.Errorf("error creating file directory: %v", err)
-	}
-	if err := s.secretsManager.WriteGitSecrets(runnerOpts.HostVolumePath); err != nil {
-		s.logger.Errorf("error creating secrets %v", err)
-	}
-
-	if err := s.secretsManager.WriteRepoSecrets(runnerOpts.Label[Repo], runnerOpts.HostVolumePath); err != nil {
-		s.logger.Errorf("error creating repo secrets %v", err)
-	}
-	s.runAndUpdateJobStatus(runnerOpts)
-
+	s.runAndUpdateJobStatus(&runnerOpts)
 }
 
 // runAndUpdateJobStatus intiate and sends jobs status
-func (s *synapse) runAndUpdateJobStatus(runnerOpts core.RunnerOptions) {
+func (s *synapse) runAndUpdateJobStatus(runnerOpts *core.RunnerOptions) {
 	// starting container
 	statusChan := make(chan core.ContainerStatus)
 	defer close(statusChan)
 	s.logger.Debugf("starting container %s for build %s...", runnerOpts.ContainerName, runnerOpts.Label[BuildID])
-	go s.runner.Initiate(context.TODO(), &runnerOpts, statusChan)
+	go s.runner.Initiate(context.TODO(), runnerOpts, statusChan)
 
 	status := <-statusChan
 	// post job completion steps
 	s.logger.Debugf("jobID %s, buildID %s  status  %+v", runnerOpts.Label[JobID], runnerOpts.Label[BuildID], status)
 
-	s.sendResourceUpdates(core.ResourceRelease, &runnerOpts, runnerOpts.Label[JobID], runnerOpts.Label[BuildID])
+	s.sendResourceUpdates(core.ResourceRelease, runnerOpts, runnerOpts.Label[JobID], runnerOpts.Label[BuildID])
 	jobStatus := core.JobFailed
 	if status.Done {
 		jobStatus = core.JobCompleted
 	}
-	jobInfo := CreateJobInfo(jobStatus, &runnerOpts, status.Error.Message)
+	jobInfo := CreateJobInfo(jobStatus, runnerOpts, status.Error.Message)
 	s.logger.Infof("Sending update to neuron %+v", jobInfo)
 	resourceStatsMessage := CreateJobUpdateMessage(jobInfo)
 	s.writeMessageToBuffer(&resourceStatsMessage)

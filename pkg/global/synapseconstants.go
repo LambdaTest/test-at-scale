@@ -10,6 +10,7 @@ const (
 	ProxyServerPort       = "8000"
 	DirectoryPermissions  = 0755
 	FilePermissions       = 0755
+	VaultSecretDir        = "/vault/secrets"
 	GitConfigFileName     = "oauth"
 	RepoSecretsFileName   = "reposecrets"
 	SynapseContainerURL   = "http://synapse:8000"

@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"time"
 
 	"github.com/LambdaTest/test-at-scale/config"
 	"github.com/LambdaTest/test-at-scale/pkg/errs"
@@ -62,6 +63,26 @@ type DockerRunner interface {
 
 	// KillRunningDocker kills  container spawn by synapse
 	KillRunningDocker(ctx context.Context)
+
+	CreateVolume(ctx context.Context, r *RunnerOptions) error
+
+	// RemoveOldVolumes removes volumes that are older than X hours
+	RemoveOldVolumes(ctx context.Context)
+
+	// CopyFileToContainer copies content to container in file
+	CopyFileToContainer(ctx context.Context, path, fileName, containerID string, content []byte) error
+}
+
+// VolumeDetails docker volume options
+type VolumeDetails struct {
+	CreatedAt  time.Time              `json:"CreatedAt,omitempty"`
+	Driver     string                 `json:"Driver"`
+	Labels     map[string]string      `json:"Labels"`
+	Mountpoint string                 `json:"Mountpoint"`
+	Name       string                 `json:"Name"`
+	Options    map[string]string      `json:"Options"`
+	Scope      string                 `json:"Scope"`
+	Status     map[string]interface{} `json:"Status,omitempty"`
 }
 
 // RunnerOptions provides the the required instructions for execution engine.

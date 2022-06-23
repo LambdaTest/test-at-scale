@@ -15,6 +15,7 @@ import (
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
+	"github.com/docker/docker/api/types/volume"
 )
 
 const (
@@ -22,11 +23,23 @@ const (
 	repoSourcePath   = "/tmp/synapse/%s/nucleus"
 	nanoCPUUnit      = 1e9
 	// GB defines number of bytes in 1 GB
-	GB int64 = 1e+9
+	GB           int64 = 1e+9
+	volumePrefix       = "tas-build"
 )
 
-func (d *docker) getContainerConfiguration(r *core.RunnerOptions) *container.Config {
+func (d *docker) getVolumeName(r *core.RunnerOptions) string {
+	return fmt.Sprintf("%s-%s", volumePrefix, r.Label[synapse.BuildID])
+}
 
+func (d *docker) getVolumeConfiguration(r *core.RunnerOptions) *volume.VolumeCreateBody {
+	return &volume.VolumeCreateBody{
+		Driver: "local",
+		Name:   d.getVolumeName(r),
+		Labels: map[string]string{synapse.BuildID: r.Label[synapse.BuildID]},
+	}
+}
+
+func (d *docker) getContainerConfiguration(r *core.RunnerOptions) *container.Config {
 	return &container.Config{
 		Image:   r.DockerImage,
 		Env:     r.Env,
@@ -46,8 +59,8 @@ func (d *docker) getContainerHostConfiguration(r *core.RunnerOptions) *container
 	d.logger.Infof("Specs %+v", specs)
 	mounts := []mount.Mount{
 		{
-			Type:   mount.TypeBind,
-			Source: r.HostVolumePath,
+			Type:   mount.TypeVolume,
+			Source: d.getVolumeName(r),
 			Target: defaultVaultPath,
 		},
 	}
@@ -57,8 +70,8 @@ func (d *docker) getContainerHostConfiguration(r *core.RunnerOptions) *container
 			d.logger.Errorf("error creating directory: %v", err)
 		}
 		mounts = append(mounts, mount.Mount{
-			Type:   mount.TypeBind,
-			Source: repoBuildSourcePath,
+			Type:   mount.TypeVolume,
+			Source: d.getVolumeName(r),
 			Target: global.WorkspaceCacheDir,
 		})
 	}
@@ -73,7 +86,6 @@ func (d *docker) getContainerHostConfiguration(r *core.RunnerOptions) *container
 	if err != nil {
 		d.logger.Errorf("Error reading os env AutoRemove with error: %v \n returning default host config", err)
 		return &hostConfig
-
 	}
 	hostConfig.AutoRemove = autoRemove
 	return &hostConfig
