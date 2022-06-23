@@ -71,6 +71,6 @@ var FrameworkLanguageMap = map[string]string{
 	"jasmine": "javascript",
 	"mocha":   "javascript",
 	"jest":    "javascript",
-	"golang":  "golang", // TODO: replace with the go bin path.
+	"golang":  "golang",
 	"junit":   "java",
 }
