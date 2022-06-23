@@ -43,7 +43,6 @@ RUN rm -rf /tmp/custom-runners
 RUN mkdir /home/nucleus
 
 # install nvm for nucleus user
-# RUN su - nucleus -c "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | /bin/bash"
 RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | /bin/bash
 
 WORKDIR /home/nucleus
