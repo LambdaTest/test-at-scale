@@ -69,7 +69,7 @@ func New(execManager core.ExecutionManager,
 
 }
 
-//mergeCodeCoverageFiles merge all the coverage.json into single entity
+// mergeCodeCoverageFiles merge all the coverage.json into single entity
 func (c *codeCoverageService) mergeCodeCoverageFiles(ctx context.Context, commitDir, coverageManifestPath string, threshold bool) error {
 	if _, err := os.Lstat(commitDir); os.IsNotExist(err) {
 		c.logger.Errorf("coverage files not found, skipping merge")

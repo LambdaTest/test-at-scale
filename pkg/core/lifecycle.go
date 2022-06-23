@@ -23,6 +23,7 @@ import (
 const (
 	endpointPostTestResults = "http://localhost:9876/results"
 	endpointPostTestList    = "http://localhost:9876/test-list"
+	languageJs              = "javascript"
 )
 
 // NewPipeline creates and returns a new Pipeline instance
@@ -210,7 +211,7 @@ func (pl *Pipeline) runOldVersion(ctx context.Context,
 
 	language := global.FrameworkLanguageMap[tasConfig.Framework]
 
-	if language == "javascript" {
+	if language == languageJs {
 		cacheKey = fmt.Sprintf("%s/%s/%s/%s", tasConfig.Cache.Version, payload.OrgID, payload.RepoID, tasConfig.Cache.Key)
 	}
 
@@ -218,7 +219,7 @@ func (pl *Pipeline) runOldVersion(ctx context.Context,
 
 	os.Setenv("REPO_CACHE_DIR", global.RepoCacheDir)
 
-	if tasConfig.NodeVersion != "" && language == "javascript" {
+	if tasConfig.NodeVersion != "" && language == languageJs {
 		nodeVersion := tasConfig.NodeVersion
 		if nodeErr := pl.installNodeVersion(ctx, nodeVersion); nodeErr != nil {
 			return nodeErr
@@ -301,7 +302,7 @@ func (pl *Pipeline) runDiscoveryV1(ctx context.Context,
 	}
 	g, errCtx := errgroup.WithContext(ctx)
 
-	if language == "javascript" {
+	if language == languageJs {
 		g.Go(func() error {
 			if errG := pl.CacheStore.Download(errCtx, cacheKey); errG != nil {
 				pl.Logger.Errorf("Unable to download cache: %v", errG)
@@ -345,7 +346,7 @@ func (pl *Pipeline) runDiscoveryV1(ctx context.Context,
 		}
 	}
 
-	if language == "javascript" {
+	if language == languageJs {
 		err = pl.ExecutionManager.ExecuteInternalCommands(ctx, InstallRunners, global.InstallRunnerCmds, global.RepoDir, nil, nil)
 		if err != nil {
 			pl.Logger.Errorf("Unable to install custom runners %v", err)
@@ -368,7 +369,7 @@ func (pl *Pipeline) runDiscoveryV1(ctx context.Context,
 		err = &errs.StatusFailed{Remark: "Failed in discovering tests"}
 		return err
 	}
-	if language == "javascript" {
+	if language == languageJs {
 		if err = pl.CacheStore.Upload(ctx, cacheKey, tasConfig.Cache.Paths...); err != nil {
 			pl.Logger.Errorf("Unable to upload cache: %v", err)
 			err = errs.New(errs.GenericErrRemark.Error())

@@ -60,11 +60,9 @@ func (tds *testDiscoveryService) Discover(ctx context.Context,
 
 	args := []string{}
 	if language == "java" {
-		args = append(args, "-jar", "/test-at-scale-java-1.0-jar-with-dependencies.jar")
-		args = append(args, global.LangArgKeyMap["command"], "discover")
+		args = append(args, "-jar", "/test-at-scale-java-1.0-jar-with-dependencies.jar", global.LangArgKeyMap["command"], "discover")
 	} else {
 		args = append(args, global.LangArgKeyMap["command"], "discover")
-		//args := []string{global.LangArgKeyMap[language]["command"], "discover"}
 	}
 
 	if !impactAll {
