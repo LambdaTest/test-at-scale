@@ -35,6 +35,7 @@ func NewPipeline(cfg *config.NucleusConfig, logger lumber.Logger) (*Pipeline, er
 }
 
 // Start starts pipeline lifecycle
+//nolint
 func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -57,7 +58,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	pl.Logger.Debugf("Payload for current task: %+v \n", *payload)
 
 	if pl.Cfg.CoverageMode {
-		if err := pl.CoverageService.MergeAndUpload(ctx, payload); err != nil {
+		if err = pl.CoverageService.MergeAndUpload(ctx, payload); err != nil {
 			pl.Logger.Fatalf("error while merge and upload coverage files %v", err)
 		}
 		os.Exit(0)
@@ -311,6 +312,13 @@ func (pl *Pipeline) runDiscoveryV1(ctx context.Context,
 			}
 			return nil
 		})
+
+		err := pl.ExecutionManager.ExecuteInternalCommands(ctx, InstallRunners, global.InstallRunnerCmds, global.RepoDir, nil, nil)
+		if err != nil {
+			pl.Logger.Errorf("Unable to install custom runners %v", err)
+			err = errs.New(errs.GenericErrRemark.Error())
+			return err
+		}
 	}
 
 	pl.Logger.Infof("Identifying changed files ...")
@@ -342,15 +350,6 @@ func (pl *Pipeline) runDiscoveryV1(ctx context.Context,
 		if err != nil {
 			pl.Logger.Errorf("Unable to run pre-run steps %v", err)
 			err = &errs.StatusFailed{Remark: "Failed in running pre-run steps"}
-			return err
-		}
-	}
-
-	if language == languageJs {
-		err = pl.ExecutionManager.ExecuteInternalCommands(ctx, InstallRunners, global.InstallRunnerCmds, global.RepoDir, nil, nil)
-		if err != nil {
-			pl.Logger.Errorf("Unable to install custom runners %v", err)
-			err = errs.New(errs.GenericErrRemark.Error())
 			return err
 		}
 	}
