@@ -236,7 +236,7 @@ func (s *synapse) processErrorMessage(message core.Message, duplicateConnectionC
 	}
 }
 
-// processAbortTask handles aborting a running task
+// processAbortTask handles aborting a running build
 func (s *synapse) processAbortBuild(message core.Message) {
 	buildID := string(message.Content)
 	buildAbortMap[buildID] = true

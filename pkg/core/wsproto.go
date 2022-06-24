@@ -69,6 +69,7 @@ type JobInfo struct {
 	Message string     `json:"message"`
 }
 
+// BuildAbortMsg struct defines message for aborting a build
 type BuildAbortMsg struct {
 	BuildID string `json:"build_id"`
 }

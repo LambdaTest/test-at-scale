@@ -151,7 +151,6 @@ func TestClone(t *testing.T) {
 		defer removeFile("testRepo")
 		defer removeFile(commitID + ".zip")
 		defer removeFile(global.RepoDir)
-		defer removeFile("clonedir")
 
 		if err != nil && err.Error() != expErr {
 			t.Errorf("Error: %v", err)
