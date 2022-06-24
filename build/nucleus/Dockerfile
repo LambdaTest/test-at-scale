@@ -55,7 +55,7 @@ ENV PATH /home/nucleus/bin:$PATH
 COPY ./build/nucleus/golang/server /home/nucleus
 
 RUN chown nucleus:nucleus /home/nucleus && \
-    chmod 744 /home/nucleus
+    chmod 744 /home/nucleus/server
 
 # install nvm for nucleus user
 RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | /bin/bash
