@@ -28,6 +28,8 @@ const (
 	duplicateConnectionSleepDuration = 15 * time.Second
 )
 
+var buildAbortMap = make(map[string]bool)
+
 type synapse struct {
 	conn                     *websocket.Conn
 	runner                   core.DockerRunner
@@ -215,6 +217,9 @@ func (s *synapse) processMessage(msg []byte, duplicateConnectionChan chan struct
 	case core.MsgTask:
 		s.logger.Debugf("task message received from server")
 		go s.processTask(message)
+	case core.MsgBuildAbort:
+		s.logger.Debugf("abort-build message received from server")
+		go s.processAbortBuild(message)
 	default:
 		s.logger.Errorf("message type not found")
 	}
@@ -229,6 +234,17 @@ func (s *synapse) processErrorMessage(message core.Message, duplicateConnectionC
 	}
 	if errMsg == DuplicateConnectionErr {
 		duplicateConnectionChan <- struct{}{}
+	}
+}
+
+// processAbortTask handles aborting a running task
+func (s *synapse) processAbortBuild(message core.Message) {
+	buildID := string(message.Content)
+	buildAbortMap[buildID] = true
+	s.logger.Debugf("message received to abort build %s", buildID)
+	if err := s.runner.KillContianerForBuildID(buildID); err != nil {
+		s.logger.Errorf("error while terminating container for buildID: %s, error: %v", buildID, err)
+		return
 	}
 }
 
@@ -269,6 +285,9 @@ func (s *synapse) runAndUpdateJobStatus(runnerOpts *core.RunnerOptions) {
 	jobStatus := core.JobFailed
 	if status.Done {
 		jobStatus = core.JobCompleted
+	}
+	if buildAbortMap[runnerOpts.Label[BuildID]] {
+		jobStatus = core.JobAborted
 	}
 	jobInfo := CreateJobInfo(jobStatus, runnerOpts, status.Error.Message)
 	s.logger.Infof("Sending update to neuron %+v", jobInfo)
