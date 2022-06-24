@@ -223,11 +223,6 @@ func (d *docker) Destroy(ctx context.Context, r *core.RunnerOptions) error {
 		// if autoRemove is set then it docker container will be removed once it stopped or exited
 		return nil
 	}
-	d.logger.Debugf("\nautoremove: %v\n", autoRemove)
-	if autoRemove {
-		// if autoRemove is set then it docker container will be removed once it stopped or exited
-		return nil
-	}
 	err = d.client.ContainerRemove(ctx, r.ContainerID, types.ContainerRemoveOptions{
 		RemoveVolumes: true,
 		Force:         true,
