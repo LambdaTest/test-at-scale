@@ -48,7 +48,6 @@ func New(
 	logger lumber.Logger,
 	secretsManager core.SecretsManager,
 ) core.SynapseManager {
-
 	return &synapse{
 		runner:                   runner,
 		logger:                   logger,

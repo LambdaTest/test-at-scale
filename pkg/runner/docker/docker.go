@@ -224,10 +224,10 @@ func (d *docker) Destroy(ctx context.Context, r *core.RunnerOptions) error {
 		return nil
 	}
 	d.logger.Debugf("\nautoremove: %v\n", autoRemove)
-	// if autoRemove {
-	// 	// if autoRemove is set then it docker container will be removed once it stopped or exited
-	// 	return nil
-	// }
+	if autoRemove {
+		// if autoRemove is set then it docker container will be removed once it stopped or exited
+		return nil
+	}
 	err = d.client.ContainerRemove(ctx, r.ContainerID, types.ContainerRemoveOptions{
 		RemoveVolumes: true,
 		Force:         true,
@@ -345,9 +345,7 @@ func (d *docker) KillRunningDocker(ctx context.Context) {
 
 func (d *docker) KillContianerForBuildID(buildID string) error {
 	for _, r := range d.RunningContainers {
-		d.logger.Debugf("\nrunnerLabel: %+v\n", r.Label)
 		if r.Label[BuildID] == buildID {
-			d.logger.Debugf("\nbuildID: %s\n", r.Label[BuildID])
 			if err := d.Destroy(context.Background(), r); err != nil {
 				d.logger.Errorf("error while destroying container: %v", err)
 				return err
