@@ -248,6 +248,13 @@ func (pl *Pipeline) runTestExecutionV1(ctx context.Context,
 	coverageDir string,
 	secretMap map[string]string,
 	taskPayload *TaskPayload, payload *Payload) error {
+	blYml := pl.BlockTestService.GetBlocklistYMLV1(tasConfig)
+	if errG := pl.BlockTestService.GetBlockTests(ctx, blYml, payload.BranchName); errG != nil {
+		pl.Logger.Errorf("Unable to fetch blocklisted tests: %v", errG)
+		errG = errs.New(errs.GenericErrRemark.Error())
+		return errG
+	}
+
 	executionResults, err := pl.TestExecutionService.RunV1(ctx, tasConfig, pl.Payload, coverageDir, secretMap)
 	if err != nil {
 		pl.Logger.Infof("Unable to perform test execution: %v", err)
