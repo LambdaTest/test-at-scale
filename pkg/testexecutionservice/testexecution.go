@@ -313,7 +313,7 @@ func (tes *testExecutionService) buildCmdArgsV1(ctx context.Context,
 	language := global.FrameworkLanguageMap[tasConfig.Framework]
 
 	if language == "java" {
-		args = append(args, "-jar", "/test-at-scale-java-1.0-jar-with-dependencies.jar",
+		args = append(args, "-jar", "/test-at-scale-java.jar",
 			global.LangArgKeyMap["command"], "execute", global.LangArgKeyMap["frameworkVersion"],
 			strconv.Itoa(tasConfig.FrameworkVersion))
 	} else {
