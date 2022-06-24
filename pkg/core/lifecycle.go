@@ -35,7 +35,6 @@ func NewPipeline(cfg *config.NucleusConfig, logger lumber.Logger) (*Pipeline, er
 }
 
 // Start starts pipeline lifecycle
-//nolint
 func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
