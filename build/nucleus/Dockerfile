@@ -58,11 +58,11 @@ RUN chown nucleus:nucleus /home/nucleus && \
     chmod 744 /home/nucleus
 
 # install nvm for nucleus user
-RUN su - nucleus -c "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | /bin/bash"
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | /bin/bash
 
 WORKDIR /home/nucleus
 # copy the binary from builder
-COPY --chown=nucleus:nucleus --from=builder /nucleus/nucleus /usr/local/bin/
+COPY --from=builder /nucleus/nucleus /usr/local/bin/
 # run the binary
 COPY ./build/nucleus/entrypoint.sh /
 
