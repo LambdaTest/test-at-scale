@@ -41,6 +41,8 @@ RUN tar -zcf /custom-runners/custom-runners.tgz node_modules
 RUN rm -rf /tmp/custom-runners
 
 RUN mkdir /home/nucleus
+RUN mkdir /home/nucleus/.nvm
+ENV NVM_DIR=/home/nucleus/.nvm
 
 # install nvm for nucleus user
 RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | /bin/bash
