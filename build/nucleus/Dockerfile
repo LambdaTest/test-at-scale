@@ -18,7 +18,7 @@ ARG VERSION
 ENV VERSION=$VERSION
 
 # Installing chromium so that all linux libs get automatically installed for running puppeteer tests
-RUN apt update && apt install -y git zstd chromium curl unzip zip
+RUN apt update && apt install -y git zstd chromium curl unzip zip xmlstarlet
 RUN curl -LJO https://go.dev/dl/go1.18.3.linux-amd64.tar.gz
 RUN tar -C /usr/local -xzf go1.18.3.linux-amd64.tar.gz
 RUN apt update && apt install -y build-essential
@@ -67,7 +67,7 @@ RUN apt update -y && apt upgrade -y
 RUN  curl -s https://get.sdkman.io | bash
 RUN /bin/bash -c "source $HOME/.sdkman/bin/sdkman-init.sh;sdk install java 18.0.1-oracle"
 
-ENV JAVA_HOME="/home/nucleus/.sdkman/candidates/java/current"
+ENV JAVA_HOME="/root/.sdkman/candidates/java/current"
 ENV PATH=$JAVA_HOME:$PATH
 ENV PATH=$JAVA_HOME/bin:$PATH
 
@@ -92,7 +92,10 @@ RUN mkdir -p /usr/share/maven /usr/share/maven/ref \
 
 # Define environmental variables required by Maven, like Maven_Home directory and where the maven repo is located
 ENV MAVEN_HOME /usr/share/maven
-ENV MAVEN_CONFIG "/home/nucleus/.m2"
+RUN mkdir -p /home/nucleus/.m2
+
+#update settings.xml file for new maven local repo location
+RUN xmlstarlet ed -O --inplace -N a='http://maven.apache.org/SETTINGS/1.0.0' -s /a:settings --type elem --name "localRepository" -v /home/nucleus/.m2/repository /usr/share/maven/conf/settings.xml
 
 COPY ./build/nucleus/java/test-at-scale-java.jar /
 RUN curl -o /home/nucleus/junit-platform-console-standalone-1.8.2.jar https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/1.8.2/junit-platform-console-standalone-1.8.2.jar
