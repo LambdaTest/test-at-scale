@@ -555,6 +555,14 @@ func (pl *Pipeline) runTestExecutionV2(ctx context.Context,
 		pl.Logger.Errorf("Error finding sub module %s in tas config file", pl.Cfg.SubModule)
 		return err
 	}
+
+	blYml := pl.BlockTestService.GetBlocklistYMLV2(subModule)
+	if errG := pl.BlockTestService.GetBlockTests(ctx, blYml, payload.BranchName); errG != nil {
+		pl.Logger.Errorf("Unable to fetch blocklisted tests: %v", errG)
+		errG = errs.New(errs.GenericErrRemark.Error())
+		return errG
+	}
+
 	var envMap map[string]string
 	var target []string
 

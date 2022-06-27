@@ -60,30 +60,30 @@ func (tds *testDiscoveryService) Discover(ctx context.Context,
 
 	args := []string{}
 	if language == "java" {
-		args = append(args, "-jar", "/test-at-scale-java.jar", global.LangArgKeyMap["command"], "discover")
+		args = append(args, "-jar", "/test-at-scale-java.jar", global.ArgCommand, "discover")
 	} else {
-		args = append(args, global.LangArgKeyMap["command"], "discover")
+		args = append(args, global.ArgCommand, "discover")
 	}
 
 	if !impactAll {
 		if len(diff) == 0 && diffExists {
 			// empty diff; in PR, a commit added and then reverted to cause an overall empty PR diff
-			args = append(args, global.LangArgKeyMap["diff"])
+			args = append(args, global.ArgDiff)
 		} else {
 			for k, v := range diff {
 				// in changed files we only have added or modified files.
 				if v != core.FileRemoved {
-					args = append(args, global.LangArgKeyMap["diff"], k)
+					args = append(args, global.ArgDiff, k)
 				}
 			}
 		}
 	}
 	if tasConfig.ConfigFile != "" {
-		args = append(args, global.LangArgKeyMap["config"], tasConfig.ConfigFile)
+		args = append(args, global.ArgConfig, tasConfig.ConfigFile)
 	}
 
 	for _, pattern := range target {
-		args = append(args, global.LangArgKeyMap["pattern"], pattern)
+		args = append(args, global.ArgPattern, pattern)
 	}
 	tds.logger.Debugf("Discovering tests at paths %+v", target)
 
@@ -186,26 +186,26 @@ func (tds *testDiscoveryService) DiscoverV2(ctx context.Context,
 	// discover all tests if tas.yml modified or smart run feature is set to false
 	discoverAll := tasYmlModified || !tasConfig.SmartRun
 
-	args := []string{"--command", "discover"}
+	args := []string{global.ArgCommand, "discover"}
 	if !discoverAll {
 		if len(diff) == 0 && diffExists {
 			// empty diff; in PR, a commit added and then reverted to cause an overall empty PR diff
-			args = append(args, "--diff")
+			args = append(args, global.ArgDiff)
 		} else {
 			for k, v := range diff {
 				// in changed files we only have added or modified files.
 				if v != core.FileRemoved {
-					args = append(args, "--diff", k)
+					args = append(args, global.ArgDiff, k)
 				}
 			}
 		}
 	}
 	if subModule.ConfigFile != "" {
-		args = append(args, "--config", subModule.ConfigFile)
+		args = append(args, global.ArgConfig, subModule.ConfigFile)
 	}
 
 	for _, pattern := range target {
-		args = append(args, "--pattern", pattern)
+		args = append(args, global.ArgPattern, pattern)
 	}
 	tds.logger.Debugf("Discovering tests at paths %+v", target)
 

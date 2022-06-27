@@ -317,7 +317,6 @@ type TASConfig struct {
 	Tier              Tier               `yaml:"tier" validate:"oneof=xsmall small medium large xlarge"`
 	NodeVersion       string             `yaml:"nodeVersion" validate:"omitempty,semver"`
 	ContainerImage    string             `yaml:"containerImage"`
-	Language          string             `yaml:"language"`
 	FrameworkVersion  int                `yaml:"frameworkVersion" validate:"omitempty"`
 	Version           string             `yaml:"version" validate:"required"`
 }

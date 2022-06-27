@@ -314,17 +314,17 @@ func (tes *testExecutionService) buildCmdArgsV1(ctx context.Context,
 
 	if language == "java" {
 		args = append(args, "-jar", "/test-at-scale-java.jar",
-			global.LangArgKeyMap["command"], "execute", global.LangArgKeyMap["frameworkVersion"],
+			global.ArgCommand, "execute", global.ArgFrameworVersion,
 			strconv.Itoa(tasConfig.FrameworkVersion))
 	} else {
-		args = append(args, global.LangArgKeyMap["command"], "execute")
+		args = append(args, global.ArgCommand, "execute")
 	}
 
 	if tasConfig.ConfigFile != "" {
-		args = append(args, global.LangArgKeyMap["config"], tasConfig.ConfigFile)
+		args = append(args, global.ArgConfig, tasConfig.ConfigFile)
 	}
 	for _, pattern := range target {
-		args = append(args, global.LangArgKeyMap["pattern"], pattern)
+		args = append(args, global.ArgPattern, pattern)
 	}
 
 	if payload.LocatorAddress != "" {
@@ -335,7 +335,7 @@ func (tes *testExecutionService) buildCmdArgsV1(ctx context.Context,
 			return nil, err
 		}
 
-		args = append(args, global.LangArgKeyMap["locator-file"], locatorFile)
+		args = append(args, global.ArgLocator, locatorFile)
 	}
 
 	return args, nil
@@ -345,12 +345,12 @@ func (tes *testExecutionService) buildCmdArgsV2(ctx context.Context,
 	subModule *core.SubModule,
 	payload *core.Payload,
 	target []string) ([]string, error) {
-	args := []string{global.FrameworkRunnerMap[subModule.Framework], "--command", "execute"}
+	args := []string{global.FrameworkRunnerMap[subModule.Framework], global.ArgCommand, "execute"}
 	if subModule.ConfigFile != "" {
-		args = append(args, "--config", subModule.ConfigFile)
+		args = append(args, global.ArgConfig, subModule.ConfigFile)
 	}
 	for _, pattern := range target {
-		args = append(args, "--pattern", pattern)
+		args = append(args, global.ArgPattern, pattern)
 	}
 
 	if payload.LocatorAddress != "" {
@@ -360,7 +360,7 @@ func (tes *testExecutionService) buildCmdArgsV2(ctx context.Context,
 			tes.logger.Errorf("failed to get locator file, error: %v", err)
 			return nil, err
 		}
-		args = append(args, "--locator-file", locatorFile)
+		args = append(args, global.ArgLocator, locatorFile)
 	}
 	return args, nil
 }

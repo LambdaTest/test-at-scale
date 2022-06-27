@@ -31,6 +31,12 @@ const (
 	ModulePath               = "MODULE_PATH"
 	CacheVersion             = "v1"
 	PackageJSON              = "package.json"
+	ArgPattern               = "--pattern"
+	ArgConfig                = "--config"
+	ArgDiff                  = "--diff"
+	ArgCommand               = "--command"
+	ArgLocator               = "--locator-file"
+	ArgFrameworVersion       = "--frameworkVersion"
 )
 
 // FrameworkRunnerMap is map of framework with there respective runner location
@@ -38,7 +44,7 @@ var FrameworkRunnerMap = map[string]string{
 	"jasmine": "./node_modules/.bin/jasmine-runner",
 	"mocha":   "./node_modules/.bin/mocha-runner",
 	"jest":    "./node_modules/.bin/jest-runner",
-	"golang":  "/home/nucleus/server", // TODO: replace with the go bin path.
+	"golang":  "/home/nucleus/server",
 	"junit":   "java",
 }
 
@@ -58,15 +64,6 @@ var NeuronHost string
 // SetNeuronHost is setter for NeuronHost
 func SetNeuronHost(host string) {
 	NeuronHost = host
-}
-
-var LangArgKeyMap = map[string]string{
-	"pattern":          "--pattern",
-	"config":           "--config",
-	"diff":             "--diff",
-	"command":          "--command",
-	"locator-file":     "--locator-file",
-	"frameworkVersion": "--frameworkVersion",
 }
 
 var FrameworkLanguageMap = map[string]string{
