@@ -65,24 +65,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	// set payload on pipeline object
 	pl.Payload = payload
 
-	taskPayload := &TaskPayload{
-		TaskID:      payload.TaskID,
-		BuildID:     payload.BuildID,
-		RepoSlug:    payload.RepoSlug,
-		RepoLink:    payload.RepoLink,
-		OrgID:       payload.OrgID,
-		RepoID:      payload.RepoID,
-		GitProvider: payload.GitProvider,
-		StartTime:   startTime,
-		Status:      Running,
-	}
-	if pl.Cfg.DiscoverMode {
-		taskPayload.Type = DiscoveryTask
-	} else if pl.Cfg.FlakyMode {
-		taskPayload.Type = FlakyTask
-	} else {
-		taskPayload.Type = ExecutionTask
-	}
+	taskPayload := getTaskPayLoad(payload, startTime, pl)
 	payload.TaskType = taskPayload.Type
 	pl.Logger.Infof("Running nucleus in %s mode", taskPayload.Type)
 
@@ -191,6 +174,28 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 
 	err = pl.runOldVersion(ctx, payload, taskPayload, oauth, coverageDir, secretMap)
 	return err
+}
+
+func getTaskPayLoad(payload *Payload, startTime time.Time, pl *Pipeline) *TaskPayload {
+	taskPayload := &TaskPayload{
+		TaskID:      payload.TaskID,
+		BuildID:     payload.BuildID,
+		RepoSlug:    payload.RepoSlug,
+		RepoLink:    payload.RepoLink,
+		OrgID:       payload.OrgID,
+		RepoID:      payload.RepoID,
+		GitProvider: payload.GitProvider,
+		StartTime:   startTime,
+		Status:      Running,
+	}
+	if pl.Cfg.DiscoverMode {
+		taskPayload.Type = DiscoveryTask
+	} else if pl.Cfg.FlakyMode {
+		taskPayload.Type = FlakyTask
+	} else {
+		taskPayload.Type = ExecutionTask
+	}
+	return taskPayload
 }
 
 func (pl *Pipeline) runOldVersion(ctx context.Context,
