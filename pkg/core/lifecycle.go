@@ -280,7 +280,7 @@ func (pl *Pipeline) runDiscoveryV1(ctx context.Context,
 	// discover test cases
 	// mark status as passed
 	// Upload cache once for other builds
-	if postErr := pl.TestDiscoveryService.UpdateSubmoduleList(ctx, payload.BuildID, 1); postErr != nil {
+	if postErr := pl.ListSubModuleService.Send(ctx, payload.BuildID, 1); postErr != nil {
 		return postErr
 	}
 	blYml := pl.BlockTestService.GetBlocklistYMLV1(tasConfig)
@@ -632,7 +632,7 @@ func (pl *Pipeline) runDiscoveryV2Helper(ctx context.Context,
 	readerBuffer *bytes.Buffer,
 	secretMap map[string]string) error {
 	totalSubmoduleCount := len(subModuleList)
-	if apiErr := pl.TestDiscoveryService.UpdateSubmoduleList(ctx, payload.BuildID, totalSubmoduleCount); apiErr != nil {
+	if apiErr := pl.ListSubModuleService.Send(ctx, payload.BuildID, totalSubmoduleCount); apiErr != nil {
 		return apiErr
 	}
 	errChannelPreRun := make(chan error, totalSubmoduleCount)

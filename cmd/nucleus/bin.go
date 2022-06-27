@@ -23,6 +23,7 @@ import (
 	"github.com/LambdaTest/test-at-scale/pkg/diffmanager"
 	"github.com/LambdaTest/test-at-scale/pkg/gitmanager"
 	"github.com/LambdaTest/test-at-scale/pkg/global"
+	"github.com/LambdaTest/test-at-scale/pkg/listsubmoduleservice"
 	"github.com/LambdaTest/test-at-scale/pkg/lumber"
 	"github.com/LambdaTest/test-at-scale/pkg/payloadmanager"
 	"github.com/LambdaTest/test-at-scale/pkg/requestutils"
@@ -145,6 +146,7 @@ func run(cmd *cobra.Command, args []string) {
 	if err != nil {
 		logger.Fatalf("failed to initialize coverage service: %v", err)
 	}
+	listsubmodule := listsubmoduleservice.New(defaultRequests, logger)
 
 	pl.PayloadManager = pm
 	pl.TASConfigManager = tcm
@@ -159,6 +161,7 @@ func run(cmd *cobra.Command, args []string) {
 	pl.Task = t
 	pl.CacheStore = cache
 	pl.SecretParser = secretParser
+	pl.ListSubModuleService = listsubmodule
 
 	logger.Infof("LambdaTest Nucleus version: %s", global.NucleusBinaryVersion)
 

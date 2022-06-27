@@ -19,12 +19,11 @@ import (
 )
 
 type testDiscoveryService struct {
-	logger                lumber.Logger
-	execManager           core.ExecutionManager
-	tdResChan             chan core.DiscoveryResult
-	requests              core.Requests
-	discoveryEndpoint     string
-	subModuleListEndpoint string
+	logger            lumber.Logger
+	execManager       core.ExecutionManager
+	tdResChan         chan core.DiscoveryResult
+	requests          core.Requests
+	discoveryEndpoint string
 }
 
 // NewTestDiscoveryService creates and returns a new testDiscoveryService instance
@@ -34,12 +33,11 @@ func NewTestDiscoveryService(ctx context.Context,
 	requests core.Requests,
 	logger lumber.Logger) core.TestDiscoveryService {
 	return &testDiscoveryService{
-		logger:                logger,
-		execManager:           execManager,
-		tdResChan:             tdResChan,
-		requests:              requests,
-		discoveryEndpoint:     global.NeuronHost + "/test-list",
-		subModuleListEndpoint: global.NeuronHost + "/submodule-list",
+		logger:            logger,
+		execManager:       execManager,
+		tdResChan:         tdResChan,
+		requests:          requests,
+		discoveryEndpoint: global.NeuronHost + "/test-list",
 	}
 }
 
@@ -258,26 +256,4 @@ func populateTestDiscoveryV2(testDiscoveryResult *core.DiscoveryResult, subModul
 	testDiscoveryResult.SubModule = subModule.Name
 	testDiscoveryResult.Tier = tasConfig.Tier
 	testDiscoveryResult.ContainerImage = tasConfig.ContainerImage
-}
-
-func (tds *testDiscoveryService) UpdateSubmoduleList(ctx context.Context, buildID string, totalSubmodule int) error {
-	subModuleList := core.SubModuleList{
-		BuildID:        buildID,
-		TotalSubModule: totalSubmodule,
-	}
-	reqBody, err := json.Marshal(&subModuleList)
-	if err != nil {
-		tds.logger.Errorf("error while json marshal %v", err)
-		return err
-	}
-	params := utils.FetchQueryParams()
-	headers := map[string]string{
-		"Authorization": fmt.Sprintf("%s %s", "Bearer", os.Getenv("TOKEN")),
-	}
-	if _, statusCode, err := tds.requests.MakeAPIRequest(ctx, http.MethodPost, tds.subModuleListEndpoint,
-		reqBody, params, headers); err != nil || statusCode != 200 {
-		tds.logger.Errorf("error while making submodule-list api call status code %d, err %v", statusCode, err)
-		return err
-	}
-	return nil
 }

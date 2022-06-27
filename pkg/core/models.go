@@ -135,6 +135,7 @@ type Pipeline struct {
 	TestStats            TestStats
 	Task                 Task
 	SecretParser         SecretParser
+	ListSubModuleService ListSubModuleService
 }
 
 type DiscoveryResult struct {

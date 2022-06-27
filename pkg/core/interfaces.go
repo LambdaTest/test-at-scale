@@ -45,8 +45,6 @@ type TestDiscoveryService interface {
 	// DiscoverV2 executes the test discovery scripts for TAS V2.
 	DiscoverV2(ctx context.Context, subModule *SubModule, payload *Payload, secretData map[string]string,
 		tasConfig *TASConfigV2, diff map[string]int, diffExists bool) error
-	// UpdateSubmoduleList sends count of submodules to TAS server
-	UpdateSubmoduleList(ctx context.Context, buildID string, totalSubmodule int) error
 }
 
 // BlockTestService is used for fetching blocklisted tests
@@ -170,4 +168,10 @@ type Requests interface {
 	// MakeAPIRequest makes an HTTP request with auth
 	MakeAPIRequest(ctx context.Context, httpMethod, endpoint string, body []byte, params,
 		headers map[string]string) (rawbody []byte, statusCode int, err error)
+}
+
+// ListSubModuleService will sends the submodule count in TAS server
+type ListSubModuleService interface {
+	// Send sends count of submodules to TAS server
+	Send(ctx context.Context, buildID string, totalSubmodule int) error
 }
