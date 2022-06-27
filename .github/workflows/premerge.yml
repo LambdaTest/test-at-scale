@@ -125,11 +125,11 @@ jobs:
           cd ..
           rm -rf goreportcard
           goreportcard-cli | tee reportcard.txt
-          files=$(cat reportcard.txt| grep 'Files:' | awk  '{print $2}' | tr -d \%)
-          issues=$(cat reportcard.txt| grep 'Issues:' | awk  '{print $2}' | tr -d \%)
-          gofmt_score=$(cat reportcard.txt| grep 'gofmt:' | awk  '{print $2}' | tr -d \%)
-          go_vet_score=$(cat reportcard.txt| grep 'go_vet:' | awk  '{print $2}' | tr -d \%)
-          gocyclo_score=$(cat reportcard.txt| grep 'gocyclo:' | awk  '{print $2}' | tr -d \%)
+          files=$(cat reportcard.txt| grep 'Files ' | awk  '{print $3}' | tr -d \%)
+          issues=$(cat reportcard.txt| grep 'Issues ' | awk  '{print $3}' | tr -d \%)
+          gofmt_score=$(cat reportcard.txt| grep 'gofmt ' | awk  '{print $3}' | tr -d \%)
+          go_vet_score=$(cat reportcard.txt| grep 'go_vet ' | awk  '{print $3}' | tr -d \%)
+          gocyclo_score=$(cat reportcard.txt| grep 'gocyclo ' | awk  '{print $3}' | tr -d \%)
           rm reportcard.txt
           failed_checks=0
           failure_reason=""
