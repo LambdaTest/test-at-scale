@@ -31,6 +31,7 @@ const (
 	ModulePath               = "MODULE_PATH"
 	CacheVersion             = "v1"
 	PackageJSON              = "package.json"
+	DefaultTASVersion        = "1.0.0"
 )
 
 // FrameworkRunnerMap is map of framework with there respective runner location
