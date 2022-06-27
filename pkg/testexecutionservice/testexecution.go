@@ -13,7 +13,6 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/LambdaTest/test-at-scale/config"
@@ -310,22 +309,8 @@ func (tes *testExecutionService) buildCmdArgsV1(ctx context.Context,
 	payload *core.Payload,
 	target []string) ([]string, error) {
 	args := []string{global.FrameworkRunnerMap[tasConfig.Framework]}
-	language := global.FrameworkLanguageMap[tasConfig.Framework]
 
-	if language == "java" {
-		args = append(args, "-jar", "/test-at-scale-java.jar",
-			global.ArgCommand, "execute", global.ArgFrameworVersion,
-			strconv.Itoa(tasConfig.FrameworkVersion))
-	} else {
-		args = append(args, global.ArgCommand, "execute")
-	}
-
-	if tasConfig.ConfigFile != "" {
-		args = append(args, global.ArgConfig, tasConfig.ConfigFile)
-	}
-	for _, pattern := range target {
-		args = append(args, global.ArgPattern, pattern)
-	}
+	args = append(args, utils.GetArgs("execute", tasConfig, target)...)
 
 	if payload.LocatorAddress != "" {
 		locatorFile, err := tes.getLocatorsFile(ctx, payload.LocatorAddress)

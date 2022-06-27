@@ -56,14 +56,7 @@ func (tds *testDiscoveryService) Discover(ctx context.Context,
 	}
 	impactAll := tds.shouldImpactAll(tasConfig, configFilePath, diff)
 
-	language := global.FrameworkLanguageMap[tasConfig.Framework]
-
-	args := []string{}
-	if language == "java" {
-		args = append(args, "-jar", "/test-at-scale-java.jar", global.ArgCommand, "discover")
-	} else {
-		args = append(args, global.ArgCommand, "discover")
-	}
+	args := utils.GetArgs("discover", tasConfig, target)
 
 	if !impactAll {
 		if len(diff) == 0 && diffExists {
@@ -77,13 +70,6 @@ func (tds *testDiscoveryService) Discover(ctx context.Context,
 				}
 			}
 		}
-	}
-	if tasConfig.ConfigFile != "" {
-		args = append(args, global.ArgConfig, tasConfig.ConfigFile)
-	}
-
-	for _, pattern := range target {
-		args = append(args, global.ArgPattern, pattern)
 	}
 	tds.logger.Debugf("Discovering tests at paths %+v", target)
 
