@@ -43,7 +43,7 @@ RUN npm i -g nyc@^15.1.0
 
 RUN tar -zcf /custom-runners/custom-runners.tgz node_modules
 RUN rm -rf /tmp/custom-runners
-RUN useradd -u 8877 -ms /bin/bash nucleus
+RUN mkdir /home/nucleus
 
 ENV GOROOT /usr/local/go
 ENV GOPATH /home/nucleus
