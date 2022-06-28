@@ -18,11 +18,9 @@ ARG VERSION
 ENV VERSION=$VERSION
 
 # Installing chromium so that all linux libs get automatically installed for running puppeteer tests
-RUN apt update && apt install -y git zstd chromium curl unzip zip xmlstarlet
+RUN apt update && apt install -y git zstd chromium curl unzip zip xmlstarlet build-essential
 RUN curl -LJO https://go.dev/dl/go1.18.3.linux-amd64.tar.gz
 RUN tar -C /usr/local -xzf go1.18.3.linux-amd64.tar.gz
-RUN apt update && apt install -y build-essential
-RUN apt-get install -y wget
 
 COPY bundle /usr/local/bin/bundle
 RUN chmod +x /usr/local/bin/bundle
