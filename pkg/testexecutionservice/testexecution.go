@@ -330,13 +330,9 @@ func (tes *testExecutionService) buildCmdArgsV1(ctx context.Context,
 	tasConfig *core.TASConfig,
 	payload *core.Payload,
 	target []string) ([]string, string, error) {
-	args := []string{global.FrameworkRunnerMap[tasConfig.Framework], "--command", "execute"}
-	if tasConfig.ConfigFile != "" {
-		args = append(args, "--config", tasConfig.ConfigFile)
-	}
-	for _, pattern := range target {
-		args = append(args, "--pattern", pattern)
-	}
+	args := []string{global.FrameworkRunnerMap[tasConfig.Framework]}
+
+	args = append(args, utils.GetArgs("execute", tasConfig, target)...)
 
 	if payload.LocatorAddress != "" {
 		locatorFile, err := tes.getLocatorsFile(ctx, payload.LocatorAddress)
@@ -345,7 +341,8 @@ func (tes *testExecutionService) buildCmdArgsV1(ctx context.Context,
 			tes.logger.Errorf("failed to get locator file, error: %v", err)
 			return nil, "", err
 		}
-		args = append(args, "--locator-file", locatorFile)
+
+		args = append(args, global.ArgLocator, locatorFile)
 	}
 	return args, locatorFile, nil
 }
@@ -356,10 +353,10 @@ func (tes *testExecutionService) buildCmdArgsV2(ctx context.Context,
 	target []string) ([]string, string, error) {
 	args := []string{global.FrameworkRunnerMap[subModule.Framework], "--command", "execute"}
 	if subModule.ConfigFile != "" {
-		args = append(args, "--config", subModule.ConfigFile)
+		args = append(args, global.ArgConfig, subModule.ConfigFile)
 	}
 	for _, pattern := range target {
-		args = append(args, "--pattern", pattern)
+		args = append(args, global.ArgPattern, pattern)
 	}
 
 	if payload.LocatorAddress != "" {
@@ -369,7 +366,7 @@ func (tes *testExecutionService) buildCmdArgsV2(ctx context.Context,
 			tes.logger.Errorf("failed to get locator file, error: %v", err)
 			return nil, "", err
 		}
-		args = append(args, "--locator-file", locatorFile)
+		args = append(args, global.ArgLocator, locatorFile)
 	}
 	return args, locatorFile, nil
 }
