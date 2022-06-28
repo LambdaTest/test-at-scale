@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"os"
@@ -14,6 +16,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/LambdaTest/test-at-scale/config"
 	"github.com/LambdaTest/test-at-scale/pkg/core"
@@ -69,7 +72,7 @@ func (tes *testExecutionService) RunV1(ctx context.Context,
 	maskWriter := logstream.NewMasker(multiWriter, secretData)
 
 	target, envMap := getPatternAndEnvV1(payload, tasConfig)
-	args, err := tes.buildCmdArgsV1(ctx, tasConfig, payload, target)
+	args, locatorFile, err := tes.buildCmdArgsV1(ctx, tasConfig, payload, target)
 	if err != nil {
 		return nil, err
 	}
@@ -82,6 +85,11 @@ func (tes *testExecutionService) RunV1(ctx context.Context,
 		return nil, err
 	}
 
+	locatorArr, err := tes.extractLocators(locatorFile)
+	if err != nil {
+		return nil, err
+	}
+
 	executionResults := &core.ExecutionResults{
 		TaskID:   payload.TaskID,
 		BuildID:  payload.BuildID,
@@ -91,6 +99,10 @@ func (tes *testExecutionService) RunV1(ctx context.Context,
 		TaskType: payload.TaskType,
 	}
 	for i := 1; i <= tes.cfg.ConsecutiveRuns; i++ {
+		if tes.cfg.FlakyTestAlgo == core.RunningXTimesShuffle {
+			shuffleLocators(locatorArr)
+		}
+
 		var cmd *exec.Cmd
 		if tasConfig.Framework == "jasmine" || tasConfig.Framework == "mocha" {
 			if collectCoverage {
@@ -167,7 +179,7 @@ func (tes *testExecutionService) RunV2(ctx context.Context,
 
 	setModulePath(subModule, envMap)
 
-	args, err := tes.buildCmdArgsV2(ctx, subModule, payload, target)
+	args, locatorFile, err := tes.buildCmdArgsV2(ctx, subModule, payload, target)
 	if err != nil {
 		return nil, err
 	}
@@ -176,6 +188,11 @@ func (tes *testExecutionService) RunV2(ctx context.Context,
 	envVars, err := tes.execManager.GetEnvVariables(envMap, secretData)
 	if err != nil {
 		tes.logger.Errorf("failed to parse env variables, error: %v", err)
+		return nil, err
+	}
+
+	locatorArr, err := tes.extractLocators(locatorFile)
+	if err != nil {
 		return nil, err
 	}
 
@@ -188,6 +205,11 @@ func (tes *testExecutionService) RunV2(ctx context.Context,
 		TaskType: payload.TaskType,
 	}
 	for i := 1; i <= tes.cfg.ConsecutiveRuns; i++ {
+
+		if tes.cfg.FlakyTestAlgo == core.RunningXTimesShuffle {
+			shuffleLocators(locatorArr)
+		}
+
 		var cmd *exec.Cmd
 		if subModule.Framework == "jasmine" || subModule.Framework == "mocha" {
 			if collectCoverage {
@@ -307,7 +329,7 @@ func (tes *testExecutionService) closeAndWriteLog(azureWriter *io.PipeWriter, er
 func (tes *testExecutionService) buildCmdArgsV1(ctx context.Context,
 	tasConfig *core.TASConfig,
 	payload *core.Payload,
-	target []string) ([]string, error) {
+	target []string) ([]string, string, error) {
 	args := []string{global.FrameworkRunnerMap[tasConfig.Framework], "--command", "execute"}
 	if tasConfig.ConfigFile != "" {
 		args = append(args, "--config", tasConfig.ConfigFile)
@@ -321,17 +343,17 @@ func (tes *testExecutionService) buildCmdArgsV1(ctx context.Context,
 		tes.logger.Debugf("locators : %v\n", locatorFile)
 		if err != nil {
 			tes.logger.Errorf("failed to get locator file, error: %v", err)
-			return nil, err
+			return nil, "", err
 		}
 		args = append(args, "--locator-file", locatorFile)
 	}
-	return args, nil
+	return args, locatorFile, nil
 }
 
 func (tes *testExecutionService) buildCmdArgsV2(ctx context.Context,
 	subModule *core.SubModule,
 	payload *core.Payload,
-	target []string) ([]string, error) {
+	target []string) ([]string, string, error) {
 	args := []string{global.FrameworkRunnerMap[subModule.Framework], "--command", "execute"}
 	if subModule.ConfigFile != "" {
 		args = append(args, "--config", subModule.ConfigFile)
@@ -345,9 +367,47 @@ func (tes *testExecutionService) buildCmdArgsV2(ctx context.Context,
 		tes.logger.Debugf("locators : %v\n", locatorFile)
 		if err != nil {
 			tes.logger.Errorf("failed to get locator file, error: %v", err)
-			return nil, err
+			return nil, "", err
 		}
 		args = append(args, "--locator-file", locatorFile)
 	}
-	return args, nil
+	return args, locatorFile, nil
+}
+
+func (tes *testExecutionService) extractLocators(locatorFile string) ([]core.LocatorConfig, error) {
+
+	locatorArrTemp := []core.LocatorConfig{}
+	inputLocatorConfigTemp := &core.InputLocatorConfig{}
+
+	if tes.cfg.FlakyTestAlgo == core.RunningXTimesShuffle {
+		content, err := ioutil.ReadFile(locatorFile)
+		if err != nil {
+			tes.logger.Errorf("Error when opening file: ", err)
+			return nil, err
+		}
+
+		// Now let's unmarshall the data into `payload`
+
+		err = json.Unmarshal(content, &inputLocatorConfigTemp)
+		if err != nil {
+			tes.logger.Errorf("Error during Unmarshal(): ", err)
+			return nil, err
+		}
+		locatorArrTemp = inputLocatorConfigTemp.Locators
+	}
+
+	return locatorArrTemp, nil
+}
+
+func shuffleLocators(locatorArr []core.LocatorConfig) {
+
+	inputLocatorConfigTemp := &core.InputLocatorConfig{}
+
+	rand.Seed(time.Now().UnixNano())
+	rand.Shuffle(len(locatorArr), func(i, j int) { locatorArr[i], locatorArr[j] = locatorArr[j], locatorArr[i] })
+
+	inputLocatorConfigTemp.Locators = locatorArr
+	file, _ := json.Marshal(inputLocatorConfigTemp)
+	_ = ioutil.WriteFile(locatorFile, file, 0644)
+
 }
