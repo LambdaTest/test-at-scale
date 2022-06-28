@@ -39,6 +39,7 @@ const (
 	ArgLocator               = "--locator-file"
 	ArgFrameworVersion       = "--frameworkVersion"
 	DefaultTASVersion        = "1.0.0"
+	FilePermissionWrite      = 0600
 )
 
 // FrameworkRunnerMap is map of framework with there respective runner location

@@ -291,6 +291,13 @@ const (
 	Basic TokenType = "Basic"
 )
 
+const (
+	// RunningXTimes is a flaky algo
+	RunningXTimes = "running_x_times"
+	// RunningXTimes with random order
+	RunningXTimesShuffle = "running_x_times_shuffle"
+)
+
 // Oauth represents the sructure of Oauth
 type Oauth struct {
 	AccessToken  string    `json:"access_token"`
@@ -454,4 +461,13 @@ type TestExecutionArgs struct {
 	SecretData        map[string]string
 	FrameWorkVersion  int
 	CWD               string
+}
+
+// unique string to identify location of test
+type LocatorConfig struct {
+	Locator string `json:"locator"`
+}
+
+type InputLocatorConfig struct {
+	Locators []LocatorConfig `json:"locators"`
 }

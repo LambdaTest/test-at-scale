@@ -27,6 +27,7 @@ type NucleusConfig struct {
 	LocalRunner     bool   `env:"local"`
 	SynapseHost     string `env:"synapsehost"`
 	SubModule       string `json:"subModule"`
+	FlakyTestAlgo   string `env:"FLAKY_ALGO"`
 }
 
 // Azure providers the storage configuration.
