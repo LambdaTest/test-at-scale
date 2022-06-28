@@ -44,6 +44,8 @@ RUN npm i -g nyc@^15.1.0
 RUN tar -zcf /custom-runners/custom-runners.tgz node_modules
 RUN rm -rf /tmp/custom-runners
 RUN mkdir /home/nucleus
+RUN mkdir /home/nucleus/.nvm
+ENV NVM_DIR=/home/nucleus/.nvm
 
 ENV GOROOT /usr/local/go
 ENV GOPATH /home/nucleus
