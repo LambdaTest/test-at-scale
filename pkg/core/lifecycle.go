@@ -23,6 +23,7 @@ import (
 const (
 	endpointPostTestResults = "http://localhost:9876/results"
 	endpointPostTestList    = "http://localhost:9876/test-list"
+	languageJs              = "javascript"
 )
 
 // NewPipeline creates and returns a new Pipeline instance
@@ -56,7 +57,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	pl.Logger.Debugf("Payload for current task: %+v \n", *payload)
 
 	if pl.Cfg.CoverageMode {
-		if err := pl.CoverageService.MergeAndUpload(ctx, payload); err != nil {
+		if err = pl.CoverageService.MergeAndUpload(ctx, payload); err != nil {
 			pl.Logger.Fatalf("error while merge and upload coverage files %v", err)
 		}
 		os.Exit(0)
@@ -211,11 +212,19 @@ func (pl *Pipeline) runOldVersion(ctx context.Context,
 		return err
 	}
 
-	cacheKey := fmt.Sprintf("%s/%s/%s/%s", tasConfig.Cache.Version, payload.OrgID, payload.RepoID, tasConfig.Cache.Key)
+	cacheKey := ""
+
+	language := global.FrameworkLanguageMap[tasConfig.Framework]
+
+	if language == languageJs {
+		cacheKey = fmt.Sprintf("%s/%s/%s/%s", tasConfig.Cache.Version, payload.OrgID, payload.RepoID, tasConfig.Cache.Key)
+	}
+
 	pl.Logger.Infof("Tas yaml: %+v", tasConfig)
+
 	os.Setenv("REPO_CACHE_DIR", global.RepoCacheDir)
 
-	if tasConfig.NodeVersion != "" {
+	if tasConfig.NodeVersion != "" && language == languageJs {
 		nodeVersion := tasConfig.NodeVersion
 		if nodeErr := pl.installNodeVersion(ctx, nodeVersion); nodeErr != nil {
 			return nodeErr
@@ -250,6 +259,13 @@ func (pl *Pipeline) runTestExecutionV1(ctx context.Context,
 	coverageDir string,
 	secretMap map[string]string,
 	taskPayload *TaskPayload, payload *Payload) error {
+	blYml := pl.BlockTestService.GetBlocklistYMLV1(tasConfig)
+	if errG := pl.BlockTestService.GetBlockTests(ctx, blYml, payload.BranchName); errG != nil {
+		pl.Logger.Errorf("Unable to fetch blocklisted tests: %v", errG)
+		errG = errs.New(errs.GenericErrRemark.Error())
+		return errG
+	}
+
 	executionResults, err := pl.TestExecutionService.RunV1(ctx, tasConfig, pl.Payload, coverageDir, secretMap)
 	if err != nil {
 		pl.Logger.Infof("Unable to perform test execution: %v", err)
@@ -291,20 +307,31 @@ func (pl *Pipeline) runDiscoveryV1(ctx context.Context,
 	// discover test cases
 	// mark status as passed
 	// Upload cache once for other builds
+	language := global.FrameworkLanguageMap[tasConfig.Framework]
+
 	if postErr := pl.TestDiscoveryService.UpdateSubmoduleList(ctx, payload.BuildID, 1); postErr != nil {
 		return postErr
 	}
 
 	g, errCtx := errgroup.WithContext(ctx)
 
-	g.Go(func() error {
-		if errG := pl.CacheStore.Download(errCtx, cacheKey); errG != nil {
-			pl.Logger.Errorf("Unable to download cache: %v", errG)
-			errG = errs.New(errs.GenericErrRemark.Error())
-			return errG
+	if language == languageJs {
+		g.Go(func() error {
+			if errG := pl.CacheStore.Download(errCtx, cacheKey); errG != nil {
+				pl.Logger.Errorf("Unable to download cache: %v", errG)
+				errG = errs.New(errs.GenericErrRemark.Error())
+				return errG
+			}
+			return nil
+		})
+
+		err := pl.ExecutionManager.ExecuteInternalCommands(ctx, InstallRunners, global.InstallRunnerCmds, global.RepoDir, nil, nil)
+		if err != nil {
+			pl.Logger.Errorf("Unable to install custom runners %v", err)
+			err = errs.New(errs.GenericErrRemark.Error())
+			return err
 		}
-		return nil
-	})
+	}
 
 	pl.Logger.Infof("Identifying changed files ...")
 	diffExists := true
@@ -338,12 +365,6 @@ func (pl *Pipeline) runDiscoveryV1(ctx context.Context,
 			return err
 		}
 	}
-	err = pl.ExecutionManager.ExecuteInternalCommands(ctx, InstallRunners, global.InstallRunnerCmds, global.RepoDir, nil, nil)
-	if err != nil {
-		pl.Logger.Errorf("Unable to install custom runners %v", err)
-		err = errs.New(errs.GenericErrRemark.Error())
-		return err
-	}
 
 	pl.Logger.Debugf("Caching workspace")
 
@@ -359,10 +380,12 @@ func (pl *Pipeline) runDiscoveryV1(ctx context.Context,
 		err = &errs.StatusFailed{Remark: "Failed in discovering tests"}
 		return err
 	}
-	if err = pl.CacheStore.Upload(ctx, cacheKey, tasConfig.Cache.Paths...); err != nil {
-		pl.Logger.Errorf("Unable to upload cache: %v", err)
-		err = errs.New(errs.GenericErrRemark.Error())
-		return err
+	if language == languageJs {
+		if err = pl.CacheStore.Upload(ctx, cacheKey, tasConfig.Cache.Paths...); err != nil {
+			pl.Logger.Errorf("Unable to upload cache: %v", err)
+			err = errs.New(errs.GenericErrRemark.Error())
+			return err
+		}
 	}
 	taskPayload.Status = Passed
 	pl.Logger.Debugf("Cache uploaded successfully")
