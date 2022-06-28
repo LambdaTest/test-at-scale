@@ -124,7 +124,7 @@ func ValidateStructTASYmlV1(ctx context.Context, ymlContent []byte, ymlFilename 
 	if err != nil {
 		return nil, err
 	}
-	tasConfig := &core.TASConfig{SmartRun: true, Tier: core.Small, SplitMode: core.TestSplit}
+	tasConfig := &core.TASConfig{SmartRun: true, Tier: core.Small, SplitMode: core.TestSplit, Version: global.DefaultTASVersion}
 	if err := yaml.Unmarshal(ymlContent, tasConfig); err != nil {
 		return nil, fmt.Errorf("`%s` configuration file contains invalid format. Please correct the `%s` file", ymlFilename, ymlFilename)
 	}
@@ -157,7 +157,7 @@ func configureValidator(validate *validator.Validate, trans ut.Translator) {
 
 // GetVersion returns version of tas yml file
 func GetVersion(ymlContent []byte) (int, error) {
-	tasVersion := &core.TasVersion{}
+	tasVersion := &core.TasVersion{Version: global.DefaultTASVersion}
 	if err := yaml.Unmarshal(ymlContent, tasVersion); err != nil {
 		return 0, fmt.Errorf("error in unmarshling tas yml file")
 	}

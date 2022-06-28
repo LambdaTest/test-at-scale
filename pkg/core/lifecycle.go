@@ -65,24 +65,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	// set payload on pipeline object
 	pl.Payload = payload
 
-	taskPayload := &TaskPayload{
-		TaskID:      payload.TaskID,
-		BuildID:     payload.BuildID,
-		RepoSlug:    payload.RepoSlug,
-		RepoLink:    payload.RepoLink,
-		OrgID:       payload.OrgID,
-		RepoID:      payload.RepoID,
-		GitProvider: payload.GitProvider,
-		StartTime:   startTime,
-		Status:      Running,
-	}
-	if pl.Cfg.DiscoverMode {
-		taskPayload.Type = DiscoveryTask
-	} else if pl.Cfg.FlakyMode {
-		taskPayload.Type = FlakyTask
-	} else {
-		taskPayload.Type = ExecutionTask
-	}
+	taskPayload := getTaskPayLoad(payload, startTime, pl)
 	payload.TaskType = taskPayload.Type
 	pl.Logger.Infof("Running nucleus in %s mode", taskPayload.Type)
 
@@ -193,6 +176,28 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	return err
 }
 
+func getTaskPayLoad(payload *Payload, startTime time.Time, pl *Pipeline) *TaskPayload {
+	taskPayload := &TaskPayload{
+		TaskID:      payload.TaskID,
+		BuildID:     payload.BuildID,
+		RepoSlug:    payload.RepoSlug,
+		RepoLink:    payload.RepoLink,
+		OrgID:       payload.OrgID,
+		RepoID:      payload.RepoID,
+		GitProvider: payload.GitProvider,
+		StartTime:   startTime,
+		Status:      Running,
+	}
+	if pl.Cfg.DiscoverMode {
+		taskPayload.Type = DiscoveryTask
+	} else if pl.Cfg.FlakyMode {
+		taskPayload.Type = FlakyTask
+	} else {
+		taskPayload.Type = ExecutionTask
+	}
+	return taskPayload
+}
+
 func (pl *Pipeline) runOldVersion(ctx context.Context,
 	payload *Payload,
 	taskPayload *TaskPayload,
@@ -215,6 +220,12 @@ func (pl *Pipeline) runOldVersion(ctx context.Context,
 		if nodeErr := pl.installNodeVersion(ctx, nodeVersion); nodeErr != nil {
 			return nodeErr
 		}
+	}
+	blYml := pl.BlockTestService.GetBlocklistYMLV1(tasConfig)
+	if errG := pl.BlockTestService.GetBlockTests(ctx, blYml, payload.BranchName); errG != nil {
+		pl.Logger.Errorf("Unable to fetch blocklisted tests: %v", errG)
+		errG = errs.New(errs.GenericErrRemark.Error())
+		return errG
 	}
 
 	if pl.Cfg.DiscoverMode {
@@ -283,12 +294,7 @@ func (pl *Pipeline) runDiscoveryV1(ctx context.Context,
 	if postErr := pl.TestDiscoveryService.UpdateSubmoduleList(ctx, payload.BuildID, 1); postErr != nil {
 		return postErr
 	}
-	blYml := pl.BlockTestService.GetBlocklistYMLV1(tasConfig)
-	if errG := pl.BlockTestService.GetBlockTests(ctx, blYml, payload.BranchName); errG != nil {
-		pl.Logger.Errorf("Unable to fetch blocklisted tests: %v", errG)
-		errG = errs.New(errs.GenericErrRemark.Error())
-		return errG
-	}
+
 	g, errCtx := errgroup.WithContext(ctx)
 
 	g.Go(func() error {
@@ -532,27 +538,17 @@ func (pl *Pipeline) runTestExecutionV2(ctx context.Context,
 		pl.Logger.Errorf("Error finding sub module %s in tas config file", pl.Cfg.SubModule)
 		return err
 	}
+	// Get blocklist data before execution
+	blYML := pl.BlockTestService.GetBlocklistYMLV2(subModule)
+	if err = pl.BlockTestService.GetBlockTests(ctx, blYML, payload.BranchName); err != nil {
+		pl.Logger.Errorf("Unable to fetch blocklisted tests: %v", err)
+		err = errs.New(errs.GenericErrRemark.Error())
+		return err
+	}
 	var envMap map[string]string
 	var target []string
 
-	if payload.EventType == EventPullRequest {
-		target = subModule.Patterns
-		envMap = tasConfig.PreMerge.EnvMap
-	} else {
-		target = subModule.Patterns
-		envMap = tasConfig.PostMerge.EnvMap
-	}
-	if envMap == nil {
-		envMap = map[string]string{}
-	}
-
-	// overwrite the existing env with more specific one
-
-	if subModule.Prerun != nil && subModule.Prerun.EnvMap != nil {
-		for k, v := range subModule.Prerun.EnvMap {
-			envMap[k] = v
-		}
-	}
+	target, envMap = populateEnvMapAndTarget(payload, subModule, tasConfig)
 
 	/*
 		1. run PRE run steps
@@ -602,6 +598,28 @@ func (pl *Pipeline) runTestExecutionV2(ctx context.Context,
 		}
 	}
 	return nil
+}
+
+func populateEnvMapAndTarget(payload *Payload,
+	subModule *SubModule,
+	tasConfig *TASConfigV2) (target []string, envMap map[string]string) {
+	if payload.EventType == EventPullRequest {
+		target = subModule.Patterns
+		envMap = tasConfig.PreMerge.EnvMap
+	} else {
+		target = subModule.Patterns
+		envMap = tasConfig.PostMerge.EnvMap
+	}
+	if envMap == nil {
+		envMap = map[string]string{}
+	}
+	// overwrite the existing env with more specific one
+	if subModule.Prerun != nil && subModule.Prerun.EnvMap != nil {
+		for k, v := range subModule.Prerun.EnvMap {
+			envMap[k] = v
+		}
+	}
+	return target, envMap
 }
 
 func (pl *Pipeline) findSubmodule(tasConfig *TASConfigV2, payload *Payload) (*SubModule, error) {
