@@ -72,7 +72,7 @@ func (tes *testExecutionService) RunV1(ctx context.Context,
 	maskWriter := logstream.NewMasker(multiWriter, secretData)
 
 	target, envMap := getPatternAndEnvV1(payload, tasConfig)
-	args, locatorFile, err := tes.buildCmdArgsV1(ctx, tasConfig, payload, target)
+	args, locatorFilePath, err := tes.buildCmdArgsV1(ctx, tasConfig, payload, target)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +85,7 @@ func (tes *testExecutionService) RunV1(ctx context.Context,
 		return nil, err
 	}
 
-	locatorArr, err := tes.extractLocators(locatorFile)
+	locatorArr, err := tes.extractLocators(locatorFilePath)
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +100,7 @@ func (tes *testExecutionService) RunV1(ctx context.Context,
 	}
 	for i := 1; i <= tes.cfg.ConsecutiveRuns; i++ {
 		if tes.cfg.FlakyTestAlgo == core.RunningXTimesShuffle {
-			shuffleLocators(locatorArr)
+			tes.shuffleLocators(locatorArr, locatorFilePath)
 		}
 
 		var cmd *exec.Cmd
@@ -179,7 +179,7 @@ func (tes *testExecutionService) RunV2(ctx context.Context,
 
 	setModulePath(subModule, envMap)
 
-	args, locatorFile, err := tes.buildCmdArgsV2(ctx, subModule, payload, target)
+	args, locatorFilePath, err := tes.buildCmdArgsV2(ctx, subModule, payload, target)
 	if err != nil {
 		return nil, err
 	}
@@ -191,7 +191,7 @@ func (tes *testExecutionService) RunV2(ctx context.Context,
 		return nil, err
 	}
 
-	locatorArr, err := tes.extractLocators(locatorFile)
+	locatorArr, err := tes.extractLocators(locatorFilePath)
 	if err != nil {
 		return nil, err
 	}
@@ -207,7 +207,7 @@ func (tes *testExecutionService) RunV2(ctx context.Context,
 	for i := 1; i <= tes.cfg.ConsecutiveRuns; i++ {
 
 		if tes.cfg.FlakyTestAlgo == core.RunningXTimesShuffle {
-			shuffleLocators(locatorArr)
+			tes.shuffleLocators(locatorArr, locatorFilePath)
 		}
 
 		var cmd *exec.Cmd
@@ -334,6 +334,7 @@ func (tes *testExecutionService) buildCmdArgsV1(ctx context.Context,
 
 	args = append(args, utils.GetArgs("execute", tasConfig, target)...)
 
+	locatorFilePath := ""
 	if payload.LocatorAddress != "" {
 		locatorFile, err := tes.getLocatorsFile(ctx, payload.LocatorAddress)
 		tes.logger.Debugf("locators : %v\n", locatorFile)
@@ -341,10 +342,10 @@ func (tes *testExecutionService) buildCmdArgsV1(ctx context.Context,
 			tes.logger.Errorf("failed to get locator file, error: %v", err)
 			return nil, "", err
 		}
-
 		args = append(args, global.ArgLocator, locatorFile)
+		locatorFilePath = locatorFile
 	}
-	return args, locatorFile, nil
+	return args, locatorFilePath, nil
 }
 
 func (tes *testExecutionService) buildCmdArgsV2(ctx context.Context,
@@ -358,7 +359,7 @@ func (tes *testExecutionService) buildCmdArgsV2(ctx context.Context,
 	for _, pattern := range target {
 		args = append(args, global.ArgPattern, pattern)
 	}
-
+	locatorFilePath := ""
 	if payload.LocatorAddress != "" {
 		locatorFile, err := tes.getLocatorsFile(ctx, payload.LocatorAddress)
 		tes.logger.Debugf("locators : %v\n", locatorFile)
@@ -367,17 +368,18 @@ func (tes *testExecutionService) buildCmdArgsV2(ctx context.Context,
 			return nil, "", err
 		}
 		args = append(args, global.ArgLocator, locatorFile)
+		locatorFilePath = locatorFile
 	}
-	return args, locatorFile, nil
+	return args, locatorFilePath, nil
 }
 
-func (tes *testExecutionService) extractLocators(locatorFile string) ([]core.LocatorConfig, error) {
+func (tes *testExecutionService) extractLocators(locatorFilePath string) ([]core.LocatorConfig, error) {
 
 	locatorArrTemp := []core.LocatorConfig{}
 	inputLocatorConfigTemp := &core.InputLocatorConfig{}
 
 	if tes.cfg.FlakyTestAlgo == core.RunningXTimesShuffle {
-		content, err := ioutil.ReadFile(locatorFile)
+		content, err := ioutil.ReadFile(locatorFilePath)
 		if err != nil {
 			tes.logger.Errorf("Error when opening file: ", err)
 			return nil, err
@@ -396,7 +398,7 @@ func (tes *testExecutionService) extractLocators(locatorFile string) ([]core.Loc
 	return locatorArrTemp, nil
 }
 
-func shuffleLocators(locatorArr []core.LocatorConfig) {
+func (tes *testExecutionService) shuffleLocators(locatorArr []core.LocatorConfig, locatorFilePath string) {
 
 	inputLocatorConfigTemp := &core.InputLocatorConfig{}
 
@@ -405,6 +407,9 @@ func shuffleLocators(locatorArr []core.LocatorConfig) {
 
 	inputLocatorConfigTemp.Locators = locatorArr
 	file, _ := json.Marshal(inputLocatorConfigTemp)
-	_ = ioutil.WriteFile(locatorFile, file, 0644)
+	err := ioutil.WriteFile(locatorFilePath, file, 0644)
+	if err != nil {
+		tes.logger.Errorf("Error when opening file for shuffling locators: ", err)
+	}
 
 }
