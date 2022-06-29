@@ -85,6 +85,7 @@ func (tes *testExecutionService) Run(ctx context.Context,
 
 	locatorArr, err := extractLocators(locatorFilePath, tes.cfg.FlakyTestAlgo, tes.logger)
 	if err != nil {
+		tes.logger.Errorf("Error in extracting locators from file: %v", err)
 		return nil, err
 	}
 
@@ -98,7 +99,7 @@ func (tes *testExecutionService) Run(ctx context.Context,
 	}
 	for i := 1; i <= tes.cfg.ConsecutiveRuns; i++ {
 		if tes.cfg.FlakyTestAlgo == core.RunningXTimesShuffle {
-			err := shuffleLocators(locatorArr, locatorFilePath)
+			err := shuffleLocators(locatorArr, locatorFilePath, tes.logger)
 			if err != nil {
 				tes.logger.Errorf("Error in shuffling locator file %v", err)
 			}
@@ -275,7 +276,7 @@ func extractLocators(locatorFilePath, flakyTestAlgo string, logger lumber.Logger
 }
 
 // shuffling order of elements in locator array
-func shuffleLocators(locatorArr []core.LocatorConfig, locatorFilePath string) error {
+func shuffleLocators(locatorArr []core.LocatorConfig, locatorFilePath string, logger lumber.Logger) error {
 	locatorArrOrig := make([]core.LocatorConfig, len(locatorArr))
 	locatorArrSize := len(locatorArr)
 
@@ -299,5 +300,9 @@ func shuffleLocators(locatorArr []core.LocatorConfig, locatorFilePath string) er
 	inputLocatorConfigTemp.Locators = locatorArr
 	file, _ := json.Marshal(inputLocatorConfigTemp)
 	err := os.WriteFile(locatorFilePath, file, global.FilePermissionWrite)
-	return err
+	if err != nil {
+		logger.Errorf("Error While Writing Locators To File ", err)
+		return err
+	}
+	return nil
 }
