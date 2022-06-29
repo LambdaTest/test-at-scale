@@ -352,7 +352,7 @@ func (tes *testExecutionService) buildCmdArgsV2(ctx context.Context,
 	subModule *core.SubModule,
 	payload *core.Payload,
 	target []string) ([]string, string, error) {
-	args := []string{global.FrameworkRunnerMap[subModule.Framework], "--command", "execute"}
+	args := []string{global.FrameworkRunnerMap[subModule.Framework], global.ArgCommand, "execute"}
 	if subModule.ConfigFile != "" {
 		args = append(args, global.ArgConfig, subModule.ConfigFile)
 	}
@@ -373,6 +373,7 @@ func (tes *testExecutionService) buildCmdArgsV2(ctx context.Context,
 	return args, locatorFilePath, nil
 }
 
+//read locators from the file and convert it into array of locator config
 func (tes *testExecutionService) extractLocators(locatorFilePath string) ([]core.LocatorConfig, error) {
 
 	locatorArrTemp := []core.LocatorConfig{}
@@ -398,13 +399,12 @@ func (tes *testExecutionService) extractLocators(locatorFilePath string) ([]core
 	return locatorArrTemp, nil
 }
 
+// shuffling order of elements locator array
 func (tes *testExecutionService) shuffleLocators(locatorArr []core.LocatorConfig, locatorFilePath string) {
-
-	inputLocatorConfigTemp := &core.InputLocatorConfig{}
-
 	rand.Seed(time.Now().UnixNano())
 	rand.Shuffle(len(locatorArr), func(i, j int) { locatorArr[i], locatorArr[j] = locatorArr[j], locatorArr[i] })
 
+	inputLocatorConfigTemp := &core.InputLocatorConfig{}
 	inputLocatorConfigTemp.Locators = locatorArr
 	file, _ := json.Marshal(inputLocatorConfigTemp)
 	err := ioutil.WriteFile(locatorFilePath, file, 0644)
