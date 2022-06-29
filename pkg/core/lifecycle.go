@@ -324,13 +324,6 @@ func (pl *Pipeline) runDiscoveryV1(ctx context.Context,
 			}
 			return nil
 		})
-
-		err := pl.ExecutionManager.ExecuteInternalCommands(ctx, InstallRunners, global.InstallRunnerCmds, global.RepoDir, nil, nil)
-		if err != nil {
-			pl.Logger.Errorf("Unable to install custom runners %v", err)
-			err = errs.New(errs.GenericErrRemark.Error())
-			return err
-		}
 	}
 
 	pl.Logger.Infof("Identifying changed files ...")
@@ -362,6 +355,15 @@ func (pl *Pipeline) runDiscoveryV1(ctx context.Context,
 		if err != nil {
 			pl.Logger.Errorf("Unable to run pre-run steps %v", err)
 			err = &errs.StatusFailed{Remark: "Failed in running pre-run steps"}
+			return err
+		}
+	}
+
+	if language == languageJs {
+		err = pl.ExecutionManager.ExecuteInternalCommands(ctx, InstallRunners, global.InstallRunnerCmds, global.RepoDir, nil, nil)
+		if err != nil {
+			pl.Logger.Errorf("Unable to install custom runners %v", err)
+			err = errs.New(errs.GenericErrRemark.Error())
 			return err
 		}
 	}
