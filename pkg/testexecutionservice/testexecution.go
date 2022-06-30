@@ -29,6 +29,8 @@ import (
 const locatorFile = "locators"
 const locatorSizeEdgeCase int = 10
 
+const locatorSizeEdgeCase int = 10
+
 type testExecutionService struct {
 	logger         lumber.Logger
 	azureClient    core.AzureClient
