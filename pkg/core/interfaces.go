@@ -1,7 +1,6 @@
 package core
 
 import (
-	"bytes"
 	"context"
 	"io"
 )
@@ -16,11 +15,8 @@ type PayloadManager interface {
 
 // TASConfigManager defines operations for tas config
 type TASConfigManager interface {
-	// LoadAndValidateV1 loads and validates the TASConfig from the given path for V1 Tas YML
-	LoadAndValidateV1(ctx context.Context, path string, eventType EventType, licenseTier Tier) (*TASConfig, error)
-
-	// LoadAndValidateV2 loads and validates the TASConfig from the given path for V2 Tas YML
-	LoadAndValidateV2(ctx context.Context, path string, eventType EventType, licenseTier Tier) (*TASConfigV2, error)
+	// LoadAndValidate loads and returns the tas config
+	LoadAndValidate(ctx context.Context, version int, path string, eventType EventType, licenseTier Tier) (interface{}, error)
 
 	// GetVersion returns TAS yml version
 	GetVersion(path string) (int, error)
@@ -40,36 +36,23 @@ type DiffManager interface {
 // TestDiscoveryService services discovery of tests
 type TestDiscoveryService interface {
 	// Discover executes the test discovery scripts.
-	Discover(ctx context.Context, tasConfig *TASConfig, payload *Payload, secretData map[string]string,
-		diff map[string]int, diffExists bool) error
-	// DiscoverV2 executes the test discovery scripts for TAS V2.
-	DiscoverV2(ctx context.Context, subModule *SubModule, payload *Payload, secretData map[string]string,
-		tasConfig *TASConfigV2, diff map[string]int, diffExists bool) error
+	Discover(ctx context.Context, args DiscoveyArgs) (*DiscoveryResult, error)
+
+	// SendResult sends discovery result to TAS server
+	SendResult(ctx context.Context, testDiscoveryResult *DiscoveryResult) error
 }
 
 // BlockTestService is used for fetching blocklisted tests
 type BlockTestService interface {
 	GetBlockTests(ctx context.Context, blocklistYAML []string, branch string) error
-	GetBlocklistYMLV1(tasConfig *TASConfig) []string
-	GetBlocklistYMLV2(submodule *SubModule) []string
 }
 
 // TestExecutionService services execution of tests
 type TestExecutionService interface {
-	// RunV1 executes the test execution scripts for TAS version 1
-	RunV1(ctx context.Context, tasConfig *TASConfig,
-		payload *Payload, coverageDirectory string, secretMap map[string]string) (results *ExecutionResults, err error)
+	// Run executes the test execution scripts
+	Run(ctx context.Context, testExecutionArgs TestExecutionArgs) (results *ExecutionResults, err error)
 	// SendResults sends the test execution results to the TAS server.
 	SendResults(ctx context.Context, payload *ExecutionResults) (resp *TestReportResponsePayload, err error)
-	// RunV2 executes the test execution scripts for TAS version 2
-	RunV2(ctx context.Context,
-		tasConfig *TASConfigV2,
-		subModule *SubModule,
-		payload *Payload,
-		coverageDir string,
-		envMap map[string]string,
-		target []string,
-		secretData map[string]string) (*ExecutionResults, error)
 }
 
 // CoverageService services coverage of tests
@@ -145,11 +128,8 @@ type ExecutionManager interface {
 		payload *Payload,
 		runConfig *Run,
 		secretData map[string]string,
+		logwriter LogWriterStartegy,
 		cwd string) error
-
-	// ExecuteUserCommands executes the commands like installing runners and test discovery for tas version 2
-	ExecuteUserCommandsV2(ctx context.Context, commandType CommandType, payload *Payload, runConfig *Run,
-		secretData map[string]string, cwd, subModule string, buffer *bytes.Buffer) error
 
 	// ExecuteInternalCommands executes the commands like installing runners and test discovery.
 	ExecuteInternalCommands(ctx context.Context,
@@ -159,8 +139,6 @@ type ExecutionManager interface {
 		secretData map[string]string) error
 	// GetEnvVariables get the environment variables from the env map given by user.
 	GetEnvVariables(envMap, secretData map[string]string) ([]string, error)
-	// StoreCommandLogs stores the command logs in the azure.
-	StoreCommandLogs(ctx context.Context, blobPath string, reader io.Reader) <-chan error
 }
 
 // Requests is a util interface for making API Requests
@@ -174,4 +152,25 @@ type Requests interface {
 type ListSubModuleService interface {
 	// Send sends count of submodules to TAS server
 	Send(ctx context.Context, buildID string, totalSubmodule int) error
+}
+
+// Driver defines operations to be perform by pipeline
+type Driver interface {
+	// RunDiscovery runs the test discovery
+	RunDiscovery(ctx context.Context, payload *Payload,
+		taskPayload *TaskPayload, oauth *Oauth, coverageDir string, secretMap map[string]string) error
+	// RunExecution runs the test execution
+	RunExecution(ctx context.Context, payload *Payload,
+		taskPayload *TaskPayload, oauth *Oauth, coverageDir string, secretMap map[string]string) error
+}
+
+// LogWriterStartegy defines all type of log writing strategy
+type LogWriterStartegy interface {
+	Write(ctx context.Context, reader io.Reader) <-chan error
+}
+
+// Builder builds the driver for given version
+type Builder interface {
+	// GetDriver returns driver for use
+	GetDriver(version int) (Driver, error)
 }

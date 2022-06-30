@@ -36,7 +36,18 @@ func NewTASConfigManager(logger lumber.Logger) core.TASConfigManager {
 	return &tasConfigManager{logger: logger}
 }
 
-func (tc *tasConfigManager) LoadAndValidateV1(ctx context.Context,
+func (tc *tasConfigManager) LoadAndValidate(ctx context.Context,
+	version int,
+	path string,
+	eventType core.EventType,
+	licenseTier core.Tier) (interface{}, error) {
+	if version < 2 {
+		return tc.loadAndValidateV1(ctx, path, eventType, licenseTier)
+	}
+	return tc.loadAndValidateV2(ctx, path, eventType, licenseTier)
+}
+
+func (tc *tasConfigManager) loadAndValidateV1(ctx context.Context,
 	path string,
 	eventType core.EventType,
 	licenseTier core.Tier) (*core.TASConfig, error) {
@@ -176,7 +187,7 @@ func (tc *tasConfigManager) GetVersion(path string) (int, error) {
 	return versionYml, nil
 }
 
-func (tc *tasConfigManager) LoadAndValidateV2(ctx context.Context,
+func (tc *tasConfigManager) loadAndValidateV2(ctx context.Context,
 	path string,
 	eventType core.EventType,
 	licenseTier core.Tier) (*core.TASConfigV2, error) {

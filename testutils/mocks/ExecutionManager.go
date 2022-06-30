@@ -3,13 +3,9 @@
 package mocks
 
 import (
-	bytes "bytes"
 	context "context"
 
-	io "io"
-
 	core "github.com/LambdaTest/test-at-scale/pkg/core"
-
 	mock "github.com/stretchr/testify/mock"
 
 	testing "testing"
@@ -34,27 +30,13 @@ func (_m *ExecutionManager) ExecuteInternalCommands(ctx context.Context, command
 	return r0
 }
 
-// ExecuteUserCommands provides a mock function with given fields: ctx, commandType, payload, runConfig, secretData, cwd
-func (_m *ExecutionManager) ExecuteUserCommands(ctx context.Context, commandType core.CommandType, payload *core.Payload, runConfig *core.Run, secretData map[string]string, cwd string) error {
-	ret := _m.Called(ctx, commandType, payload, runConfig, secretData, cwd)
+// ExecuteUserCommands provides a mock function with given fields: ctx, commandType, payload, runConfig, secretData, logwriter, cwd
+func (_m *ExecutionManager) ExecuteUserCommands(ctx context.Context, commandType core.CommandType, payload *core.Payload, runConfig *core.Run, secretData map[string]string, logwriter core.LogWriterStartegy, cwd string) error {
+	ret := _m.Called(ctx, commandType, payload, runConfig, secretData, logwriter, cwd)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, core.CommandType, *core.Payload, *core.Run, map[string]string, string) error); ok {
-		r0 = rf(ctx, commandType, payload, runConfig, secretData, cwd)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// ExecuteUserCommandsV2 provides a mock function with given fields: ctx, commandType, payload, runConfig, secretData, cwd, subModule, buffer
-func (_m *ExecutionManager) ExecuteUserCommandsV2(ctx context.Context, commandType core.CommandType, payload *core.Payload, runConfig *core.Run, secretData map[string]string, cwd string, subModule string, buffer *bytes.Buffer) error {
-	ret := _m.Called(ctx, commandType, payload, runConfig, secretData, cwd, subModule, buffer)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, core.CommandType, *core.Payload, *core.Run, map[string]string, string, string, *bytes.Buffer) error); ok {
-		r0 = rf(ctx, commandType, payload, runConfig, secretData, cwd, subModule, buffer)
+	if rf, ok := ret.Get(0).(func(context.Context, core.CommandType, *core.Payload, *core.Run, map[string]string, core.LogWriterStartegy, string) error); ok {
+		r0 = rf(ctx, commandType, payload, runConfig, secretData, logwriter, cwd)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -83,22 +65,6 @@ func (_m *ExecutionManager) GetEnvVariables(envMap map[string]string, secretData
 	}
 
 	return r0, r1
-}
-
-// StoreCommandLogs provides a mock function with given fields: ctx, blobPath, reader
-func (_m *ExecutionManager) StoreCommandLogs(ctx context.Context, blobPath string, reader io.Reader) <-chan error {
-	ret := _m.Called(ctx, blobPath, reader)
-
-	var r0 <-chan error
-	if rf, ok := ret.Get(0).(func(context.Context, string, io.Reader) <-chan error); ok {
-		r0 = rf(ctx, blobPath, reader)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(<-chan error)
-		}
-	}
-
-	return r0
 }
 
 // NewExecutionManager creates a new instance of ExecutionManager. It also registers the testing.TB interface on the mock and a cleanup function to assert the mocks expectations.

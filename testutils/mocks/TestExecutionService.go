@@ -16,13 +16,13 @@ type TestExecutionService struct {
 	mock.Mock
 }
 
-// RunV1 provides a mock function with given fields: ctx, tasConfig, payload, coverageDirectory, secretMap
-func (_m *TestExecutionService) RunV1(ctx context.Context, tasConfig *core.TASConfig, payload *core.Payload, coverageDirectory string, secretMap map[string]string) (*core.ExecutionResults, error) {
-	ret := _m.Called(ctx, tasConfig, payload, coverageDirectory, secretMap)
+// Run provides a mock function with given fields: ctx, testExecutionArgs
+func (_m *TestExecutionService) Run(ctx context.Context, testExecutionArgs core.TestExecutionArgs) (*core.ExecutionResults, error) {
+	ret := _m.Called(ctx, testExecutionArgs)
 
 	var r0 *core.ExecutionResults
-	if rf, ok := ret.Get(0).(func(context.Context, *core.TASConfig, *core.Payload, string, map[string]string) *core.ExecutionResults); ok {
-		r0 = rf(ctx, tasConfig, payload, coverageDirectory, secretMap)
+	if rf, ok := ret.Get(0).(func(context.Context, core.TestExecutionArgs) *core.ExecutionResults); ok {
+		r0 = rf(ctx, testExecutionArgs)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.ExecutionResults)
@@ -30,31 +30,8 @@ func (_m *TestExecutionService) RunV1(ctx context.Context, tasConfig *core.TASCo
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *core.TASConfig, *core.Payload, string, map[string]string) error); ok {
-		r1 = rf(ctx, tasConfig, payload, coverageDirectory, secretMap)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// RunV2 provides a mock function with given fields: ctx, tasConfig, subModule, payload, coverageDir, envMap, target, secretData
-func (_m *TestExecutionService) RunV2(ctx context.Context, tasConfig *core.TASConfigV2, subModule *core.SubModule, payload *core.Payload, coverageDir string, envMap map[string]string, target []string, secretData map[string]string) (*core.ExecutionResults, error) {
-	ret := _m.Called(ctx, tasConfig, subModule, payload, coverageDir, envMap, target, secretData)
-
-	var r0 *core.ExecutionResults
-	if rf, ok := ret.Get(0).(func(context.Context, *core.TASConfigV2, *core.SubModule, *core.Payload, string, map[string]string, []string, map[string]string) *core.ExecutionResults); ok {
-		r0 = rf(ctx, tasConfig, subModule, payload, coverageDir, envMap, target, secretData)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*core.ExecutionResults)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *core.TASConfigV2, *core.SubModule, *core.Payload, string, map[string]string, []string, map[string]string) error); ok {
-		r1 = rf(ctx, tasConfig, subModule, payload, coverageDir, envMap, target, secretData)
+	if rf, ok := ret.Get(1).(func(context.Context, core.TestExecutionArgs) error); ok {
+		r1 = rf(ctx, testExecutionArgs)
 	} else {
 		r1 = ret.Error(1)
 	}

@@ -11,7 +11,6 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
-	"path"
 	"path/filepath"
 	"strings"
 
@@ -53,30 +52,29 @@ func NewTestExecutionService(cfg *config.NucleusConfig,
 }
 
 // Run executes the test files
-func (tes *testExecutionService) RunV1(ctx context.Context,
-	tasConfig *core.TASConfig,
-	payload *core.Payload,
-	coverageDir string,
-	secretData map[string]string) (*core.ExecutionResults, error) {
+func (tes *testExecutionService) Run(ctx context.Context,
+	testExecutionArgs core.TestExecutionArgs) (*core.ExecutionResults, error) {
 	azureReader, azureWriter := io.Pipe()
 	defer azureWriter.Close()
-	blobPath := fmt.Sprintf("%s/%s/%s/%s.log", payload.OrgID, payload.BuildID, payload.TaskID, core.Execution)
-	errChan := tes.execManager.StoreCommandLogs(ctx, blobPath, azureReader)
+	// blobPath := fmt.Sprintf("%s/%s/%s/%s.log", payload.OrgID, payload.BuildID, payload.TaskID, core.Execution)
+	// errChan := tes.execManager.StoreCommandLogs(ctx, blobPath, azureReader)
+	errChan := testExecutionArgs.LogWriterStartegy.Write(ctx, azureReader)
 	defer tes.closeAndWriteLog(azureWriter, errChan)
 	logWriter := lumber.NewWriter(tes.logger)
 	defer logWriter.Close()
 	multiWriter := io.MultiWriter(logWriter, azureWriter)
-	maskWriter := logstream.NewMasker(multiWriter, secretData)
+	maskWriter := logstream.NewMasker(multiWriter, testExecutionArgs.SecretData)
 
-	target, envMap := getPatternAndEnvV1(payload, tasConfig)
-	args, err := tes.buildCmdArgsV1(ctx, tasConfig, payload, target)
+	// testPattern, envMap := getPatternAndEnvV1(payload, tasConfig)
+	args, err := tes.buildCmdArgsV1(ctx, testExecutionArgs.TestConfigFile,
+		testExecutionArgs.FrameWork, testExecutionArgs.Payload, testExecutionArgs.TestPattern)
 	if err != nil {
 		return nil, err
 	}
-
+	payload := testExecutionArgs.Payload
 	collectCoverage := payload.CollectCoverage
 	commandArgs := args
-	envVars, err := tes.execManager.GetEnvVariables(envMap, secretData)
+	envVars, err := tes.execManager.GetEnvVariables(testExecutionArgs.EnvMap, testExecutionArgs.SecretData)
 	if err != nil {
 		tes.logger.Errorf("failed to parse env variables, error: %v", err)
 		return nil, err
@@ -92,7 +90,7 @@ func (tes *testExecutionService) RunV1(ctx context.Context,
 	}
 	for i := 1; i <= tes.cfg.ConsecutiveRuns; i++ {
 		var cmd *exec.Cmd
-		if tasConfig.Framework == "jasmine" || tasConfig.Framework == "mocha" {
+		if testExecutionArgs.FrameWork == "jasmine" || testExecutionArgs.FrameWork == "mocha" {
 			if collectCoverage {
 				cmd = exec.CommandContext(ctx, "nyc", commandArgs...)
 			} else {
@@ -147,96 +145,96 @@ func getPatternAndEnvV1(payload *core.Payload, tasConfig *core.TASConfig) (targe
 	return target, envMap
 }
 
-// Run executes the test files
-func (tes *testExecutionService) RunV2(ctx context.Context,
-	tasConfig *core.TASConfigV2,
-	subModule *core.SubModule,
-	payload *core.Payload,
-	coverageDir string,
-	envMap map[string]string,
-	target []string,
-	secretData map[string]string) (*core.ExecutionResults, error) {
-	azureReader, azureWriter := io.Pipe()
-	defer azureWriter.Close()
-	blobPath := fmt.Sprintf("%s/%s/%s/%s.log", payload.OrgID, payload.BuildID, payload.TaskID, core.Execution)
-	errChan := tes.execManager.StoreCommandLogs(ctx, blobPath, azureReader)
-	defer tes.closeAndWriteLog(azureWriter, errChan)
-	logWriter := lumber.NewWriter(tes.logger)
-	multiWriter := io.MultiWriter(logWriter, azureWriter)
-	maskWriter := logstream.NewMasker(multiWriter, secretData)
+// // Run executes the test files
+// func (tes *testExecutionService) RunV2(ctx context.Context,
+// 	tasConfig *core.TASConfigV2,
+// 	subModule *core.SubModule,
+// 	payload *core.Payload,
+// 	coverageDir string,
+// 	envMap map[string]string,
+// 	target []string,
+// 	secretData map[string]string) (*core.ExecutionResults, error) {
+// 	azureReader, azureWriter := io.Pipe()
+// 	defer azureWriter.Close()
+// 	blobPath := fmt.Sprintf("%s/%s/%s/%s.log", payload.OrgID, payload.BuildID, payload.TaskID, core.Execution)
+// 	errChan := tes.execManager.StoreCommandLogs(ctx, blobPath, azureReader)
+// 	defer tes.closeAndWriteLog(azureWriter, errChan)
+// 	logWriter := lumber.NewWriter(tes.logger)
+// 	multiWriter := io.MultiWriter(logWriter, azureWriter)
+// 	maskWriter := logstream.NewMasker(multiWriter, secretData)
 
-	setModulePath(subModule, envMap)
+// 	setModulePath(subModule, envMap)
 
-	args, err := tes.buildCmdArgsV2(ctx, subModule, payload, target)
-	if err != nil {
-		return nil, err
-	}
-	collectCoverage := payload.CollectCoverage
-	commandArgs := args
-	envVars, err := tes.execManager.GetEnvVariables(envMap, secretData)
-	if err != nil {
-		tes.logger.Errorf("failed to parse env variables, error: %v", err)
-		return nil, err
-	}
+// 	args, err := tes.buildCmdArgsV2(ctx, subModule, payload, target)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	collectCoverage := payload.CollectCoverage
+// 	commandArgs := args
+// 	envVars, err := tes.envManager.GetEnvVariables(envMap, secretData)
+// 	if err != nil {
+// 		tes.logger.Errorf("failed to parse env variables, error: %v", err)
+// 		return nil, err
+// 	}
 
-	executionResults := &core.ExecutionResults{
-		TaskID:   payload.TaskID,
-		BuildID:  payload.BuildID,
-		RepoID:   payload.RepoID,
-		OrgID:    payload.OrgID,
-		CommitID: payload.BuildTargetCommit,
-		TaskType: payload.TaskType,
-	}
-	for i := 1; i <= tes.cfg.ConsecutiveRuns; i++ {
-		var cmd *exec.Cmd
-		if subModule.Framework == "jasmine" || subModule.Framework == "mocha" {
-			if collectCoverage {
-				cmd = exec.CommandContext(ctx, "nyc", commandArgs...)
-			} else {
-				cmd = exec.CommandContext(ctx, commandArgs[0], commandArgs[1:]...) //nolint:gosec
-			}
-		} else {
-			cmd = exec.CommandContext(ctx, commandArgs[0], commandArgs[1:]...) //nolint:gosec
-			if collectCoverage {
-				envVars = append(envVars, "TAS_COLLECT_COVERAGE=true")
-			}
-		}
-		cmd.Dir = path.Join(global.RepoDir, subModule.Path)
-		cmd.Env = envVars
-		cmd.Stdout = maskWriter
-		cmd.Stderr = maskWriter
-		tes.logger.Debugf("Executing test execution command: %s", cmd.String())
-		if err := cmd.Start(); err != nil {
-			tes.logger.Errorf("failed to execute test %s %v", cmd.String(), err)
-			return nil, err
-		}
-		pid := int32(cmd.Process.Pid)
-		tes.logger.Debugf("execution command started with pid %d", pid)
+// 	executionResults := &core.ExecutionResults{
+// 		TaskID:   payload.TaskID,
+// 		BuildID:  payload.BuildID,
+// 		RepoID:   payload.RepoID,
+// 		OrgID:    payload.OrgID,
+// 		CommitID: payload.BuildTargetCommit,
+// 		TaskType: payload.TaskType,
+// 	}
+// 	for i := 1; i <= tes.cfg.ConsecutiveRuns; i++ {
+// 		var cmd *exec.Cmd
+// 		if subModule.Framework == "jasmine" || subModule.Framework == "mocha" {
+// 			if collectCoverage {
+// 				cmd = exec.CommandContext(ctx, "nyc", commandArgs...)
+// 			} else {
+// 				cmd = exec.CommandContext(ctx, commandArgs[0], commandArgs[1:]...) //nolint:gosec
+// 			}
+// 		} else {
+// 			cmd = exec.CommandContext(ctx, commandArgs[0], commandArgs[1:]...) //nolint:gosec
+// 			if collectCoverage {
+// 				envVars = append(envVars, "TAS_COLLECT_COVERAGE=true")
+// 			}
+// 		}
+// 		cmd.Dir = path.Join(global.RepoDir, subModule.Path)
+// 		cmd.Env = envVars
+// 		cmd.Stdout = maskWriter
+// 		cmd.Stderr = maskWriter
+// 		tes.logger.Debugf("Executing test execution command: %s", cmd.String())
+// 		if err := cmd.Start(); err != nil {
+// 			tes.logger.Errorf("failed to execute test %s %v", cmd.String(), err)
+// 			return nil, err
+// 		}
+// 		pid := int32(cmd.Process.Pid)
+// 		tes.logger.Debugf("execution command started with pid %d", pid)
 
-		if err := tes.ts.CaptureTestStats(pid, tes.cfg.CollectStats); err != nil {
-			tes.logger.Errorf("failed to find process for command %s with pid %d %v", cmd.String(), pid, err)
-			return nil, err
-		}
-		// not returning error because runner like jest will return error in case of test failure
-		// and we want to run test multiple times
-		if err := cmd.Wait(); err != nil {
-			tes.logger.Errorf("error in test execution: %+v", err)
-		}
-		result := <-tes.ts.ExecutionResultOutputChannel
-		if result != nil {
-			executionResults.Results = append(executionResults.Results, result.Results...)
-		}
-	}
-	return executionResults, nil
-}
+// 		if err := tes.ts.CaptureTestStats(pid, tes.cfg.CollectStats); err != nil {
+// 			tes.logger.Errorf("failed to find process for command %s with pid %d %v", cmd.String(), pid, err)
+// 			return nil, err
+// 		}
+// 		// not returning error because runner like jest will return error in case of test failure
+// 		// and we want to run test multiple times
+// 		if err := cmd.Wait(); err != nil {
+// 			tes.logger.Errorf("error in test execution: %+v", err)
+// 		}
+// 		result := <-tes.ts.ExecutionResultOutputChannel
+// 		if result != nil {
+// 			executionResults.Results = append(executionResults.Results, result.Results...)
+// 		}
+// 	}
+// 	return executionResults, nil
+// }
 
-func setModulePath(subModule *core.SubModule, envMap map[string]string) {
-	if path.Join(global.RepoDir, subModule.Path) == global.RepoDir {
-		envMap[global.ModulePath] = ""
-	} else {
-		envMap[global.ModulePath] = subModule.Path
-	}
-}
+// func setModulePath(subModule *core.SubModule, envMap map[string]string) {
+// 	if path.Join(global.RepoDir, subModule.Path) == global.RepoDir {
+// 		envMap[global.ModulePath] = ""
+// 	} else {
+// 		envMap[global.ModulePath] = subModule.Path
+// 	}
+// }
 
 func (tes *testExecutionService) SendResults(ctx context.Context,
 	payload *core.ExecutionResults) (resp *core.TestReportResponsePayload, err error) {
@@ -305,12 +303,13 @@ func (tes *testExecutionService) closeAndWriteLog(azureWriter *io.PipeWriter, er
 }
 
 func (tes *testExecutionService) buildCmdArgsV1(ctx context.Context,
-	tasConfig *core.TASConfig,
+	testConfigFile string,
+	frameWork string,
 	payload *core.Payload,
 	target []string) ([]string, error) {
-	args := []string{global.FrameworkRunnerMap[tasConfig.Framework], "--command", "execute"}
-	if tasConfig.ConfigFile != "" {
-		args = append(args, "--config", tasConfig.ConfigFile)
+	args := []string{global.FrameworkRunnerMap[frameWork], "--command", "execute"}
+	if testConfigFile != "" {
+		args = append(args, "--config", testConfigFile)
 	}
 	for _, pattern := range target {
 		args = append(args, "--pattern", pattern)
@@ -328,26 +327,26 @@ func (tes *testExecutionService) buildCmdArgsV1(ctx context.Context,
 	return args, nil
 }
 
-func (tes *testExecutionService) buildCmdArgsV2(ctx context.Context,
-	subModule *core.SubModule,
-	payload *core.Payload,
-	target []string) ([]string, error) {
-	args := []string{global.FrameworkRunnerMap[subModule.Framework], "--command", "execute"}
-	if subModule.ConfigFile != "" {
-		args = append(args, "--config", subModule.ConfigFile)
-	}
-	for _, pattern := range target {
-		args = append(args, "--pattern", pattern)
-	}
+// func (tes *testExecutionService) buildCmdArgsV2(ctx context.Context,
+// 	subModule *core.SubModule,
+// 	payload *core.Payload,
+// 	target []string) ([]string, error) {
+// 	args := []string{global.FrameworkRunnerMap[subModule.Framework], "--command", "execute"}
+// 	if subModule.ConfigFile != "" {
+// 		args = append(args, "--config", subModule.ConfigFile)
+// 	}
+// 	for _, pattern := range target {
+// 		args = append(args, "--pattern", pattern)
+// 	}
 
-	if payload.LocatorAddress != "" {
-		locatorFile, err := tes.getLocatorsFile(ctx, payload.LocatorAddress)
-		tes.logger.Debugf("locators : %v\n", locatorFile)
-		if err != nil {
-			tes.logger.Errorf("failed to get locator file, error: %v", err)
-			return nil, err
-		}
-		args = append(args, "--locator-file", locatorFile)
-	}
-	return args, nil
-}
+// 	if payload.LocatorAddress != "" {
+// 		locatorFile, err := tes.getLocatorsFile(ctx, payload.LocatorAddress)
+// 		tes.logger.Debugf("locators : %v\n", locatorFile)
+// 		if err != nil {
+// 			tes.logger.Errorf("failed to get locator file, error: %v", err)
+// 			return nil, err
+// 		}
+// 		args = append(args, "--locator-file", locatorFile)
+// 	}
+// 	return args, nil
+// }

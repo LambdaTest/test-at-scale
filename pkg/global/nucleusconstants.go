@@ -31,6 +31,7 @@ const (
 	ModulePath               = "MODULE_PATH"
 	CacheVersion             = "v1"
 	PackageJSON              = "package.json"
+	SubModuleName            = "SUBMODULE_NAME"
 )
 
 // FrameworkRunnerMap is map of framework with there respective runner location

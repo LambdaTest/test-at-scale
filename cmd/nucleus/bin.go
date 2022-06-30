@@ -21,6 +21,7 @@ import (
 	"github.com/LambdaTest/test-at-scale/pkg/command"
 	"github.com/LambdaTest/test-at-scale/pkg/core"
 	"github.com/LambdaTest/test-at-scale/pkg/diffmanager"
+	"github.com/LambdaTest/test-at-scale/pkg/driver"
 	"github.com/LambdaTest/test-at-scale/pkg/gitmanager"
 	"github.com/LambdaTest/test-at-scale/pkg/global"
 	"github.com/LambdaTest/test-at-scale/pkg/listsubmoduleservice"
@@ -148,6 +149,18 @@ func run(cmd *cobra.Command, args []string) {
 	}
 	listsubmodule := listsubmoduleservice.New(defaultRequests, logger)
 
+	builder := driver.Builder{
+		Logger:               logger,
+		TestExecutionService: tes,
+		AzureClient:          azureClient,
+		BlockTestService:     tbs,
+		ExecutionManager:     execManager,
+		TASConfigManager:     tcm,
+		CacheStore:           cache,
+		DiffManager:          dm,
+		ListSubModuleService: listsubmodule,
+	}
+
 	pl.PayloadManager = pm
 	pl.TASConfigManager = tcm
 	pl.GitManager = gm
@@ -162,6 +175,7 @@ func run(cmd *cobra.Command, args []string) {
 	pl.CacheStore = cache
 	pl.SecretParser = secretParser
 	pl.ListSubModuleService = listsubmodule
+	pl.Builder = &builder
 
 	logger.Infof("LambdaTest Nucleus version: %s", global.NucleusBinaryVersion)
 

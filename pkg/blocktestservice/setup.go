@@ -163,11 +163,3 @@ func (tbs *TestBlockTestService) populateBlockList(blocktestSource string, block
 		}
 	}
 }
-
-func (tbs *TestBlockTestService) GetBlocklistYMLV1(tasConfig *core.TASConfig) []string {
-	return tasConfig.Blocklist
-}
-
-func (tbs *TestBlockTestService) GetBlocklistYMLV2(subModule *core.SubModule) []string {
-	return subModule.Blocklist
-}

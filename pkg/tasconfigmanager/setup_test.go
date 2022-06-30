@@ -160,10 +160,11 @@ func TestLoadAndValidateV1(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tasConfig, err := tasConfigManager.LoadAndValidateV1(ctx, tt.FilePath, tt.EventType, core.Small)
+		tas, err := tasConfigManager.LoadAndValidate(ctx, 1, tt.FilePath, tt.EventType, core.Small)
 		if err != nil {
 			assert.Equal(t, err.Error(), tt.wantErr.Error(), "error mismatch")
 		} else {
+			tasConfig := tas.(*core.TASConfig)
 			err = assertTasConfigV1(tasConfig, tt.want)
 			if err != nil {
 				t.Errorf(err.Error())
@@ -269,10 +270,11 @@ func TestLoadAndValidateV2(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tasConfig, err := tasConfigManager.LoadAndValidateV2(ctx, tt.FilePath, tt.EventType, core.Small)
+		tas, err := tasConfigManager.LoadAndValidate(ctx, 2, tt.FilePath, tt.EventType, core.Small)
 		if err != nil {
 			assert.Equal(t, err.Error(), tt.wantErr.Error(), "error mismatch")
 		} else {
+			tasConfig := tas.(*core.TASConfigV2)
 			err = assertTasConfigV2(tasConfig, tt.want)
 			if err != nil {
 				t.Errorf(err.Error())

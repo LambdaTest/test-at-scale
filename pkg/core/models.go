@@ -136,8 +136,8 @@ type Pipeline struct {
 	Task                 Task
 	SecretParser         SecretParser
 	ListSubModuleService ListSubModuleService
+	Builder              Builder
 }
-
 type DiscoveryResult struct {
 	Tests           []TestPayload      `json:"tests"`
 	ImpactedTests   []string           `json:"impactedTests"`
@@ -426,4 +426,29 @@ type TasVersion struct {
 type SubModuleList struct {
 	BuildID        string `json:"buildID"`
 	TotalSubModule int    `json:"totalSubModule"`
+}
+
+// DiscoveyArgs  specify the arguments need for discovery
+type DiscoveyArgs struct {
+	TestPattern    []string
+	Payload        *Payload
+	EnvMap         map[string]string
+	SecretData     map[string]string
+	TestConfigFile string
+	FrameWork      string
+	SmartRun       bool
+	Diff           map[string]int
+	DiffExists     bool
+}
+
+// TestExecutionArgs specify the argument for test discovery
+type TestExecutionArgs struct {
+	Payload           *Payload
+	CoverageDir       string
+	LogWriterStartegy LogWriterStartegy
+	TestPattern       []string
+	EnvMap            map[string]string
+	TestConfigFile    string
+	FrameWork         string
+	SecretData        map[string]string
 }

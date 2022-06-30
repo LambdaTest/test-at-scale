@@ -16,41 +16,36 @@ type TestDiscoveryService struct {
 	mock.Mock
 }
 
-// Discover provides a mock function with given fields: ctx, tasConfig, payload, secretData, diff, diffExists
-func (_m *TestDiscoveryService) Discover(ctx context.Context, tasConfig *core.TASConfig, payload *core.Payload, secretData map[string]string, diff map[string]int, diffExists bool) error {
-	ret := _m.Called(ctx, tasConfig, payload, secretData, diff, diffExists)
+// Discover provides a mock function with given fields: ctx, args
+func (_m *TestDiscoveryService) Discover(ctx context.Context, args core.DiscoveyArgs) (*core.DiscoveryResult, error) {
+	ret := _m.Called(ctx, args)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *core.TASConfig, *core.Payload, map[string]string, map[string]int, bool) error); ok {
-		r0 = rf(ctx, tasConfig, payload, secretData, diff, diffExists)
+	var r0 *core.DiscoveryResult
+	if rf, ok := ret.Get(0).(func(context.Context, core.DiscoveyArgs) *core.DiscoveryResult); ok {
+		r0 = rf(ctx, args)
 	} else {
-		r0 = ret.Error(0)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*core.DiscoveryResult)
+		}
 	}
 
-	return r0
-}
-
-// DiscoverV2 provides a mock function with given fields: ctx, subModule, payload, secretData, tasConfig, diff, diffExists
-func (_m *TestDiscoveryService) DiscoverV2(ctx context.Context, subModule *core.SubModule, payload *core.Payload, secretData map[string]string, tasConfig *core.TASConfigV2, diff map[string]int, diffExists bool) error {
-	ret := _m.Called(ctx, subModule, payload, secretData, tasConfig, diff, diffExists)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *core.SubModule, *core.Payload, map[string]string, *core.TASConfigV2, map[string]int, bool) error); ok {
-		r0 = rf(ctx, subModule, payload, secretData, tasConfig, diff, diffExists)
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, core.DiscoveyArgs) error); ok {
+		r1 = rf(ctx, args)
 	} else {
-		r0 = ret.Error(0)
+		r1 = ret.Error(1)
 	}
 
-	return r0
+	return r0, r1
 }
 
-// UpdateSubmoduleList provides a mock function with given fields: ctx, buildID, totalSubmodule
-func (_m *TestDiscoveryService) UpdateSubmoduleList(ctx context.Context, buildID string, totalSubmodule int) error {
-	ret := _m.Called(ctx, buildID, totalSubmodule)
+// SendResult provides a mock function with given fields: ctx, testDiscoveryResult
+func (_m *TestDiscoveryService) SendResult(ctx context.Context, testDiscoveryResult *core.DiscoveryResult) error {
+	ret := _m.Called(ctx, testDiscoveryResult)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, int) error); ok {
-		r0 = rf(ctx, buildID, totalSubmodule)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.DiscoveryResult) error); ok {
+		r0 = rf(ctx, testDiscoveryResult)
 	} else {
 		r0 = ret.Error(0)
 	}
