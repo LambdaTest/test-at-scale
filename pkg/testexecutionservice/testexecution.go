@@ -383,7 +383,6 @@ func (tes *testExecutionService) buildCmdArgsV2(ctx context.Context,
 
 // Read locators from the file and convert it into array of locator config
 func extractLocators(locatorFilePath, flakyTestAlgo string, logger lumber.Logger) ([]core.LocatorConfig, error) {
-
 	locatorArrTemp := []core.LocatorConfig{}
 	inputLocatorConfigTemp := &core.InputLocatorConfig{}
 
@@ -429,6 +428,6 @@ func shuffleLocators(locatorArr []core.LocatorConfig, locatorFilePath string) er
 	inputLocatorConfigTemp := &core.InputLocatorConfig{}
 	inputLocatorConfigTemp.Locators = locatorArr
 	file, _ := json.Marshal(inputLocatorConfigTemp)
-	err := os.WriteFile(locatorFilePath, file, 0644)
+	err := os.WriteFile(locatorFilePath, file, 0600)
 	return err
 }
