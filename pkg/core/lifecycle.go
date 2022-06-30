@@ -150,12 +150,10 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 		return err
 	}
 	if pl.Cfg.DiscoverMode {
-		if discoveryErr := newDriver.RunDiscovery(ctx, payload, taskPayload, oauth, coverageDir, secretMap); discoveryErr != nil {
-			err = discoveryErr
-			return err
-		}
+		err = newDriver.RunDiscovery(ctx, payload, taskPayload, oauth, coverageDir, secretMap)
+	} else {
+		err = newDriver.RunExecution(ctx, payload, taskPayload, oauth, coverageDir, secretMap)
 	}
-	err = newDriver.RunExecution(ctx, payload, taskPayload, oauth, coverageDir, secretMap)
 
 	return err
 }

@@ -152,6 +152,7 @@ func run(cmd *cobra.Command, args []string) {
 	builder := driver.Builder{
 		Logger:               logger,
 		TestExecutionService: tes,
+		TestDiscoveryService: tds,
 		AzureClient:          azureClient,
 		BlockTestService:     tbs,
 		ExecutionManager:     execManager,

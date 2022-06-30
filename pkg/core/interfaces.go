@@ -36,7 +36,7 @@ type DiffManager interface {
 // TestDiscoveryService services discovery of tests
 type TestDiscoveryService interface {
 	// Discover executes the test discovery scripts.
-	Discover(ctx context.Context, args DiscoveyArgs) (*DiscoveryResult, error)
+	Discover(ctx context.Context, args *DiscoveyArgs) (*DiscoveryResult, error)
 
 	// SendResult sends discovery result to TAS server
 	SendResult(ctx context.Context, testDiscoveryResult *DiscoveryResult) error

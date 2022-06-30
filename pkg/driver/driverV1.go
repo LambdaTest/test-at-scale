@@ -85,7 +85,7 @@ func (d *driverV1) RunDiscovery(ctx context.Context, payload *core.Payload,
 
 	args := d.buildDiscoveryArgs(payload, tasConfig, secretMap, setupResults.diffExists, setupResults.diff)
 
-	discoveryResult, err := d.TestDiscoveryService.Discover(ctx, args)
+	discoveryResult, err := d.TestDiscoveryService.Discover(ctx, &args)
 	if err != nil {
 		d.logger.Errorf("Unable to perform test discovery: %+v", err)
 		err = &errs.StatusFailed{Remark: "Failed in discovering tests"}
@@ -93,7 +93,7 @@ func (d *driverV1) RunDiscovery(ctx context.Context, payload *core.Payload,
 	}
 
 	populateDiscovery(discoveryResult, tasConfig)
-	if err := d.TestDiscoveryService.SendResult(ctx, discoveryResult); err != nil {
+	if err = d.TestDiscoveryService.SendResult(ctx, discoveryResult); err != nil {
 		d.logger.Errorf("error while sending discovery API call , error %v", err)
 		return err
 	}
@@ -158,7 +158,6 @@ func (b *driverV1) RunExecution(ctx context.Context, payload *core.Payload,
 }
 
 func (b *driverV1) setUp(ctx context.Context, payload *core.Payload, tasConfig *core.TASConfig, oauth *core.Oauth) (*setUpResultV1, error) {
-
 	cacheKey := fmt.Sprintf("%s/%s/%s/%s", tasConfig.Cache.Version, payload.OrgID, payload.RepoID, tasConfig.Cache.Key)
 	b.logger.Infof("Tas yaml: %+v", tasConfig)
 	os.Setenv("REPO_CACHE_DIR", global.RepoCacheDir)
@@ -212,7 +211,6 @@ func (b *driverV1) setUp(ctx context.Context, payload *core.Payload, tasConfig *
 		diff:       diff,
 		cacheKey:   cacheKey,
 	}, nil
-
 }
 
 func (b *driverV1) buildDiscoveryArgs(payload *core.Payload, tasConfig *core.TASConfig,
@@ -256,7 +254,6 @@ func (b *driverV1) getEnvAndPattern(payload *core.Payload, tasConfig *core.TASCo
 		return tasConfig.Premerge.Patterns, tasConfig.Premerge.EnvMap
 	}
 	return tasConfig.Postmerge.Patterns, tasConfig.Postmerge.EnvMap
-
 }
 
 func populateDiscovery(testDiscoveryResult *core.DiscoveryResult, tasConfig *core.TASConfig) {

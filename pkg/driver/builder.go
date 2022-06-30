@@ -15,6 +15,7 @@ type (
 	Builder struct {
 		Logger               lumber.Logger
 		TestExecutionService core.TestExecutionService
+		TestDiscoveryService core.TestDiscoveryService
 		AzureClient          core.AzureClient
 		BlockTestService     core.BlockTestService
 		ExecutionManager     core.ExecutionManager
@@ -34,6 +35,7 @@ func (b *Builder) GetDriver(version int) (core.Driver, error) {
 		return &driverV1{
 			logger:               b.Logger,
 			TestExecutionService: b.TestExecutionService,
+			TestDiscoveryService: b.TestDiscoveryService,
 			AzureClient:          b.AzureClient,
 			BlockTestService:     b.BlockTestService,
 			ExecutionManager:     b.ExecutionManager,
@@ -41,6 +43,7 @@ func (b *Builder) GetDriver(version int) (core.Driver, error) {
 			CacheStore:           b.CacheStore,
 			DiffManager:          b.DiffManager,
 			ListSubModuleService: b.ListSubModuleService,
+			TASVersion:           1,
 			nodeInstaller: NodeInstaller{
 				logger:           b.Logger,
 				ExecutionManager: b.ExecutionManager,
@@ -50,6 +53,7 @@ func (b *Builder) GetDriver(version int) (core.Driver, error) {
 	return &driverV2{
 		logger:               b.Logger,
 		TestExecutionService: b.TestExecutionService,
+		TestDiscoveryService: b.TestDiscoveryService,
 		AzureClient:          b.AzureClient,
 		BlockTestService:     b.BlockTestService,
 		ExecutionManager:     b.ExecutionManager,
@@ -57,6 +61,7 @@ func (b *Builder) GetDriver(version int) (core.Driver, error) {
 		CacheStore:           b.CacheStore,
 		DiffManager:          b.DiffManager,
 		ListSubModuleService: b.ListSubModuleService,
+		TASVersion:           2,
 		nodeInstaller: NodeInstaller{
 			logger:           b.Logger,
 			ExecutionManager: b.ExecutionManager,

@@ -58,7 +58,7 @@ func Test_testDiscoveryService_Discover(t *testing.T) {
 	tests := getTestCases()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := tds.Discover(tt.args.ctx, tt.args.discoveryArgs)
+			_, err := tds.Discover(tt.args.ctx, &tt.args.discoveryArgs)
 			if !reflect.DeepEqual(PassedEnvMap, tt.wantEnvMap) || !reflect.DeepEqual(PassedSecretDataMap, tt.wantSecretData) {
 				t.Errorf("expected Envmap: %+v, received: %+v\nexpected SecretDataMap: %+v, received: %+v\n",
 					tt.wantEnvMap, PassedEnvMap, tt.wantSecretData, PassedSecretDataMap)
