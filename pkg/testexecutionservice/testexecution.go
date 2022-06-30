@@ -428,6 +428,6 @@ func shuffleLocators(locatorArr []core.LocatorConfig, locatorFilePath string) er
 	inputLocatorConfigTemp := &core.InputLocatorConfig{}
 	inputLocatorConfigTemp.Locators = locatorArr
 	file, _ := json.Marshal(inputLocatorConfigTemp)
-	err := os.WriteFile(locatorFilePath, file, 0600)
+	err := os.WriteFile(locatorFilePath, file, global.FilePermissionWrite)
 	return err
 }
