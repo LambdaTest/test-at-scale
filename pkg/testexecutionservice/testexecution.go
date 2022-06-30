@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"net/url"
@@ -29,6 +28,8 @@ import (
 )
 
 const locatorFile = "locators"
+
+const locatorSizeEdgeCase int = 10
 
 type testExecutionService struct {
 	logger         lumber.Logger
@@ -380,14 +381,14 @@ func (tes *testExecutionService) buildCmdArgsV2(ctx context.Context,
 	return args, locatorFilePath, nil
 }
 
-//read locators from the file and convert it into array of locator config
-func extractLocators(locatorFilePath string, flakyTestAlgo string, logger lumber.Logger) ([]core.LocatorConfig, error) {
+// Read locators from the file and convert it into array of locator config
+func extractLocators(locatorFilePath, flakyTestAlgo string, logger lumber.Logger) ([]core.LocatorConfig, error) {
 
 	locatorArrTemp := []core.LocatorConfig{}
 	inputLocatorConfigTemp := &core.InputLocatorConfig{}
 
 	if flakyTestAlgo == core.RunningXTimesShuffle {
-		content, err := ioutil.ReadFile(locatorFilePath)
+		content, err := os.ReadFile(locatorFilePath)
 		if err != nil {
 			logger.Errorf("Error when opening file: ", err)
 			return nil, err
@@ -409,7 +410,7 @@ func shuffleLocators(locatorArr []core.LocatorConfig, locatorFilePath string) er
 	locatorArrOrig := make([]core.LocatorConfig, len(locatorArr))
 	locatorArrSize := len(locatorArr)
 
-	if locatorArrSize < 10 {
+	if locatorArrSize < locatorSizeEdgeCase {
 		copy(locatorArrOrig, locatorArr)
 	}
 
@@ -418,7 +419,7 @@ func shuffleLocators(locatorArr []core.LocatorConfig, locatorFilePath string) er
 
 	// For smaller number probability that random order becomes the original order is high, to handle those edge case
 	// we reverse the array if the shuffled order is same as original, For larger size this probability is negligible.
-	if locatorArrSize < 10 {
+	if locatorArrSize < locatorSizeEdgeCase {
 		if reflect.DeepEqual(locatorArrOrig, locatorArr) {
 			for i, j := 0, len(locatorArr)-1; i < j; i, j = i+1, j-1 {
 				locatorArr[i], locatorArr[j] = locatorArr[j], locatorArr[i]
@@ -428,7 +429,6 @@ func shuffleLocators(locatorArr []core.LocatorConfig, locatorFilePath string) er
 	inputLocatorConfigTemp := &core.InputLocatorConfig{}
 	inputLocatorConfigTemp.Locators = locatorArr
 	file, _ := json.Marshal(inputLocatorConfigTemp)
-	err := ioutil.WriteFile(locatorFilePath, file, 0644)
+	err := os.WriteFile(locatorFilePath, file, 0644)
 	return err
-
 }

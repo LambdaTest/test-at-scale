@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	"io/ioutil"
+	"os"
 	"reflect"
 	"strings"
 	"testing"
@@ -64,11 +64,11 @@ func TestNewTestExecutionService(t *testing.T) {
 
 func Test_shuffleLocators(t *testing.T) {
 
-	locatorArrValue := []core.LocatorConfig{core.LocatorConfig{
+	locatorArrValue := []core.LocatorConfig{{
 		Locator: "Locator_A"},
-		core.LocatorConfig{
+		{
 			Locator: "Locator_B"},
-		core.LocatorConfig{
+		{
 			Locator: "Locator_C"}}
 
 	type args struct {
@@ -89,7 +89,7 @@ func Test_shuffleLocators(t *testing.T) {
 				t.Errorf("shuffleLocators() throws error %v", err)
 			}
 
-			content, err := ioutil.ReadFile(tt.args.locatorFilePath)
+			content, err := os.ReadFile(tt.args.locatorFilePath)
 			if err != nil {
 				t.Errorf("In test_shuffleLocators error in opening file = %v", err)
 				return
@@ -102,7 +102,9 @@ func Test_shuffleLocators(t *testing.T) {
 				t.Errorf("Error in unmarshlling = %v", err)
 				return
 			}
-			if payload.Locators[0].Locator == "Locator_A" && payload.Locators[1].Locator == "Locator_B" && payload.Locators[2].Locator == "Locator_C" {
+			if payload.Locators[0].Locator == "Locator_A" &&
+				payload.Locators[1].Locator == "Locator_B" &&
+				payload.Locators[2].Locator == "Locator_C" {
 				t.Errorf("Shuffling could not be done, order is same as original")
 			}
 
@@ -114,13 +116,13 @@ func Test_shuffleLocators(t *testing.T) {
 func Test_extractLocators(t *testing.T) {
 	logger, err := testutils.GetLogger()
 	if err != nil {
-		t.Errorf("Couldn't initialise logger, error: %v", err)
+		t.Errorf("Couldn't initialize logger, error: %v", err)
 	}
-	locatorArrValue := []core.LocatorConfig{core.LocatorConfig{
+	locatorArrValue := []core.LocatorConfig{{
 		Locator: "Locator_A"},
-		core.LocatorConfig{
+		{
 			Locator: "Locator_B"},
-		core.LocatorConfig{
+		{
 			Locator: "Locator_C"}}
 	type args struct {
 		locatorFilePath string
@@ -142,8 +144,11 @@ func Test_extractLocators(t *testing.T) {
 			var payload core.InputLocatorConfig
 			payload.Locators = locatorArrValue
 			file, _ := json.Marshal(payload)
-			_ = ioutil.WriteFile(tt.args.locatorFilePath, file, 0644)
-
+			_ = os.WriteFile(tt.args.locatorFilePath, file, 0644)
+			if err != nil {
+				t.Errorf("In test_extractLocators error in writing to file = %v", err)
+				return
+			}
 			locatorArr, err := extractLocators(tt.args.locatorFilePath, tt.args.flakyTestAlgo, tt.args.logger)
 			if err != nil {
 				t.Errorf("extractLocators() throws error %v", err)
@@ -224,7 +229,7 @@ func Test_testExecutionService_GetLocatorsFile(t *testing.T) {
 			if got != tt.want {
 				t.Errorf("testExecutionService.GetLocatorsFile() = %v, want %v", got, tt.want)
 			}
-			file, err := ioutil.ReadFile(got)
+			file, err := os.ReadFile(got)
 			if err != nil {
 				t.Errorf("testExecutionService.GetLocatorsFile() error in opening file = %v", err)
 				return
