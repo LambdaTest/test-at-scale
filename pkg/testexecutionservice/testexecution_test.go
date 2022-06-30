@@ -140,7 +140,7 @@ func Test_extractLocators(t *testing.T) {
 			var payload core.InputLocatorConfig
 			payload.Locators = locatorArrValue
 			file, _ := json.Marshal(payload)
-			_ = os.WriteFile(tt.args.locatorFilePath, file, 0600)
+			_ = os.WriteFile(tt.args.locatorFilePath, file, global.FilePermissionWrite)
 			if err != nil {
 				t.Errorf("In test_extractLocators error in writing to file = %v", err)
 				return
@@ -153,7 +153,6 @@ func Test_extractLocators(t *testing.T) {
 			if !reflect.DeepEqual(locatorArrValue, locatorArr) {
 				t.Errorf("extractLocators(), array got %s, want %s", locatorArr, locatorArrValue)
 			}
-
 		})
 	}
 }
