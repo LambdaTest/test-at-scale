@@ -19,6 +19,7 @@ import (
 const (
 	endpointPostTestResults = "http://localhost:9876/results"
 	endpointPostTestList    = "http://localhost:9876/test-list"
+	languageJs              = "javascript"
 )
 
 // NewPipeline creates and returns a new Pipeline instance
@@ -52,7 +53,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	pl.Logger.Debugf("Payload for current task: %+v \n", *payload)
 
 	if pl.Cfg.CoverageMode {
-		if err := pl.CoverageService.MergeAndUpload(ctx, payload); err != nil {
+		if err = pl.CoverageService.MergeAndUpload(ctx, payload); err != nil {
 			pl.Logger.Fatalf("error while merge and upload coverage files %v", err)
 		}
 		os.Exit(0)

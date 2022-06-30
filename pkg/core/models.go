@@ -303,7 +303,7 @@ type Oauth struct {
 // TASConfig represents the .tas.yml file
 type TASConfig struct {
 	SmartRun          bool               `yaml:"smartRun"`
-	Framework         string             `yaml:"framework" validate:"required,oneof=jest mocha jasmine"`
+	Framework         string             `yaml:"framework" validate:"required,oneof=jest mocha jasmine golang junit"`
 	Blocklist         []string           `yaml:"blocklist"`
 	Postmerge         *Merge             `yaml:"postMerge" validate:"omitempty"`
 	Premerge          *Merge             `yaml:"preMerge" validate:"omitempty"`
@@ -318,6 +318,7 @@ type TASConfig struct {
 	Tier              Tier               `yaml:"tier" validate:"oneof=xsmall small medium large xlarge"`
 	NodeVersion       string             `yaml:"nodeVersion" validate:"omitempty,semver"`
 	ContainerImage    string             `yaml:"containerImage"`
+	FrameworkVersion  int                `yaml:"frameworkVersion" validate:"omitempty"`
 	Version           string             `yaml:"version" validate:"required"`
 }
 
@@ -430,15 +431,16 @@ type SubModuleList struct {
 
 // DiscoveyArgs  specify the arguments need for discovery
 type DiscoveyArgs struct {
-	TestPattern    []string
-	Payload        *Payload
-	EnvMap         map[string]string
-	SecretData     map[string]string
-	TestConfigFile string
-	FrameWork      string
-	SmartRun       bool
-	Diff           map[string]int
-	DiffExists     bool
+	TestPattern      []string
+	Payload          *Payload
+	EnvMap           map[string]string
+	SecretData       map[string]string
+	TestConfigFile   string
+	FrameWork        string
+	SmartRun         bool
+	Diff             map[string]int
+	DiffExists       bool
+	FrameWorkVersion int
 }
 
 // TestExecutionArgs specify the argument for test discovery
@@ -451,4 +453,5 @@ type TestExecutionArgs struct {
 	TestConfigFile    string
 	FrameWork         string
 	SecretData        map[string]string
+	FrameWorkVersion  int
 }

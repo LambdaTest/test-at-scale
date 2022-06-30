@@ -92,7 +92,8 @@ func (tc *tasConfigManager) validateYMLV1(ctx context.Context,
 		return nil, err
 	}
 
-	if tasConfig.Cache == nil {
+	language := global.FrameworkLanguageMap[tasConfig.Framework]
+	if tasConfig.Cache == nil && language == "javascript" {
 		checksum, err := utils.ComputeChecksum(fmt.Sprintf("%s/%s", global.RepoDir, global.PackageJSON))
 		if err != nil {
 			tc.logger.Errorf("Error while computing checksum, error %v", err)

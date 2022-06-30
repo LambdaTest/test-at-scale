@@ -46,26 +46,21 @@ func (tds *testDiscoveryService) Discover(ctx context.Context, discoveryArgs *co
 		return nil, err
 	}
 	impactAll := tds.shouldImpactAll(discoveryArgs.SmartRun, configFilePath, discoveryArgs.Diff)
-	args := []string{"--command", "discover"}
+
+	args := utils.GetArgs("discover", discoveryArgs.FrameWork, discoveryArgs.FrameWorkVersion, discoveryArgs.TestConfigFile, discoveryArgs.TestPattern)
+
 	if !impactAll {
 		if len(discoveryArgs.Diff) == 0 && discoveryArgs.DiffExists {
 			// empty diff; in PR, a commit added and then reverted to cause an overall empty PR diff
-			args = append(args, "--diff")
+			args = append(args, global.ArgDiff)
 		} else {
 			for k, v := range discoveryArgs.Diff {
 				// in changed files we only have added or modified files.
 				if v != core.FileRemoved {
-					args = append(args, "--diff", k)
+					args = append(args, global.ArgDiff, k)
 				}
 			}
 		}
-	}
-	if discoveryArgs.TestConfigFile != "" {
-		args = append(args, "--config", discoveryArgs.TestConfigFile)
-	}
-
-	for _, pattern := range discoveryArgs.TestPattern {
-		args = append(args, "--pattern", pattern)
 	}
 	tds.logger.Debugf("Discovering tests at paths %+v", discoveryArgs.TestPattern)
 
