@@ -63,7 +63,6 @@ func TestNewTestExecutionService(t *testing.T) {
 }
 
 func Test_shuffleLocators(t *testing.T) {
-
 	locatorArrValue := []core.LocatorConfig{{
 		Locator: "Locator_A"},
 		{
@@ -107,10 +106,8 @@ func Test_shuffleLocators(t *testing.T) {
 				payload.Locators[2].Locator == "Locator_C" {
 				t.Errorf("Shuffling could not be done, order is same as original")
 			}
-
 		})
 	}
-
 }
 
 func Test_extractLocators(t *testing.T) {
@@ -140,11 +137,10 @@ func Test_extractLocators(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			var payload core.InputLocatorConfig
 			payload.Locators = locatorArrValue
 			file, _ := json.Marshal(payload)
-			_ = os.WriteFile(tt.args.locatorFilePath, file, 0644)
+			_ = os.WriteFile(tt.args.locatorFilePath, file, 0600)
 			if err != nil {
 				t.Errorf("In test_extractLocators error in writing to file = %v", err)
 				return
@@ -160,7 +156,6 @@ func Test_extractLocators(t *testing.T) {
 
 		})
 	}
-
 }
 
 func Test_testExecutionService_GetLocatorsFile(t *testing.T) {
