@@ -365,6 +365,8 @@ func (d *driverV2) buildDiscoveryArgs(payload *core.Payload, tasConfig *core.TAS
 	diff map[string]int) core.DiscoveyArgs {
 	testPattern := subModule.Patterns
 	envMap := getEnv(payload, tasConfig, subModule)
+	modulePath := path.Join(global.RepoDir, subModule.Path)
+
 	return core.DiscoveyArgs{
 		TestPattern:    testPattern,
 		Payload:        payload,
@@ -375,6 +377,7 @@ func (d *driverV2) buildDiscoveryArgs(payload *core.Payload, tasConfig *core.TAS
 		SmartRun:       tasConfig.SmartRun,
 		Diff:           diff,
 		DiffExists:     diffExists,
+		CWD:            modulePath,
 	}
 }
 
@@ -436,6 +439,7 @@ func (d *driverV2) buildTestExecutionArgs(payload *core.Payload,
 	target := subModule.Patterns
 	blobPath := fmt.Sprintf("%s/%s/%s/%s.log", payload.OrgID, payload.BuildID, os.Getenv("TASK_ID"), core.Execution)
 	envMap := getEnv(payload, tasConfig, subModule)
+	modulePath := path.Join(global.RepoDir, subModule.Path)
 
 	azureLogWriter := logwriter.NewAzureLogWriter(d.AzureClient, blobPath, d.logger)
 	return core.TestExecutionArgs{
@@ -447,5 +451,6 @@ func (d *driverV2) buildTestExecutionArgs(payload *core.Payload,
 		TestConfigFile:    subModule.ConfigFile,
 		FrameWork:         subModule.Framework,
 		SecretData:        secretMap,
+		CWD:               modulePath,
 	}
 }

@@ -441,6 +441,7 @@ type DiscoveyArgs struct {
 	Diff             map[string]int
 	DiffExists       bool
 	FrameWorkVersion int
+	CWD              string
 }
 
 // TestExecutionArgs specify the argument for test discovery
@@ -454,4 +455,5 @@ type TestExecutionArgs struct {
 	FrameWork         string
 	SecretData        map[string]string
 	FrameWorkVersion  int
+	CWD               string
 }

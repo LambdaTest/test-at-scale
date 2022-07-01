@@ -14,6 +14,8 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+const languageJs = "javascript"
+
 type (
 	driverV1 struct {
 		logger               lumber.Logger
@@ -46,7 +48,8 @@ func (d *driverV1) RunDiscovery(ctx context.Context, payload *core.Payload,
 		return err
 	}
 	tasConfig := tas.(*core.TASConfig)
-	setupResults, err := d.setUp(ctx, payload, tasConfig, oauth)
+	language := global.FrameworkLanguageMap[tasConfig.Framework]
+	setupResults, err := d.setUp(ctx, payload, tasConfig, oauth, language)
 	if err != nil {
 		d.logger.Errorf("Error while doing common opertations error %v", err)
 		return err
@@ -97,11 +100,12 @@ func (d *driverV1) RunDiscovery(ctx context.Context, payload *core.Payload,
 		d.logger.Errorf("error while sending discovery API call , error %v", err)
 		return err
 	}
-
-	if err = d.CacheStore.Upload(ctx, setupResults.cacheKey, tasConfig.Cache.Paths...); err != nil {
-		d.logger.Errorf("Unable to upload cache: %v", err)
-		err = errs.New(errs.GenericErrRemark.Error())
-		return err
+	if language == languageJs {
+		if err = d.CacheStore.Upload(ctx, setupResults.cacheKey, tasConfig.Cache.Paths...); err != nil {
+			d.logger.Errorf("Unable to upload cache: %v", err)
+			err = errs.New(errs.GenericErrRemark.Error())
+			return err
+		}
 	}
 
 	taskPayload.Status = core.Passed
@@ -157,11 +161,17 @@ func (b *driverV1) RunExecution(ctx context.Context, payload *core.Payload,
 	return nil
 }
 
-func (b *driverV1) setUp(ctx context.Context, payload *core.Payload, tasConfig *core.TASConfig, oauth *core.Oauth) (*setUpResultV1, error) {
-	cacheKey := fmt.Sprintf("%s/%s/%s/%s", tasConfig.Cache.Version, payload.OrgID, payload.RepoID, tasConfig.Cache.Key)
+func (b *driverV1) setUp(ctx context.Context, payload *core.Payload,
+	tasConfig *core.TASConfig, oauth *core.Oauth, language string) (*setUpResultV1, error) {
 	b.logger.Infof("Tas yaml: %+v", tasConfig)
+
+	cacheKey := ""
+	if language == languageJs {
+		cacheKey = fmt.Sprintf("%s/%s/%s/%s", tasConfig.Cache.Version, payload.OrgID, payload.RepoID, tasConfig.Cache.Key)
+	}
+
 	os.Setenv("REPO_CACHE_DIR", global.RepoCacheDir)
-	if tasConfig.NodeVersion != "" {
+	if tasConfig.NodeVersion != "" && language == languageJs {
 		nodeVersion := tasConfig.NodeVersion
 		if nodeErr := b.nodeInstaller.InstallNodeVersion(ctx, nodeVersion); nodeErr != nil {
 			return nil, nodeErr
@@ -175,15 +185,16 @@ func (b *driverV1) setUp(ctx context.Context, payload *core.Payload, tasConfig *
 	}
 
 	g, errCtx := errgroup.WithContext(ctx)
-
-	g.Go(func() error {
-		if errG := b.CacheStore.Download(errCtx, cacheKey); errG != nil {
-			b.logger.Errorf("Unable to download cache: %v", errG)
-			errG = errs.New(errs.GenericErrRemark.Error())
-			return errG
-		}
-		return nil
-	})
+	if language == languageJs {
+		g.Go(func() error {
+			if errG := b.CacheStore.Download(errCtx, cacheKey); errG != nil {
+				b.logger.Errorf("Unable to download cache: %v", errG)
+				errG = errs.New(errs.GenericErrRemark.Error())
+				return errG
+			}
+			return nil
+		})
+	}
 
 	b.logger.Infof("Identifying changed files ...")
 	diffExists := true
@@ -219,15 +230,17 @@ func (b *driverV1) buildDiscoveryArgs(payload *core.Payload, tasConfig *core.TAS
 	diff map[string]int) core.DiscoveyArgs {
 	testPattern, envMap := b.getEnvAndPattern(payload, tasConfig)
 	return core.DiscoveyArgs{
-		TestPattern:    testPattern,
-		Payload:        payload,
-		EnvMap:         envMap,
-		SecretData:     secretMap,
-		TestConfigFile: tasConfig.ConfigFile,
-		FrameWork:      tasConfig.Framework,
-		SmartRun:       tasConfig.SmartRun,
-		Diff:           diff,
-		DiffExists:     diffExists,
+		TestPattern:      testPattern,
+		Payload:          payload,
+		EnvMap:           envMap,
+		SecretData:       secretMap,
+		TestConfigFile:   tasConfig.ConfigFile,
+		FrameWork:        tasConfig.Framework,
+		SmartRun:         tasConfig.SmartRun,
+		Diff:             diff,
+		DiffExists:       diffExists,
+		FrameWorkVersion: tasConfig.FrameworkVersion,
+		CWD:              global.RepoDir,
 	}
 }
 
@@ -246,6 +259,8 @@ func (b *driverV1) buildTestExecutionArgs(payload *core.Payload, tasConfig *core
 		TestConfigFile:    tasConfig.ConfigFile,
 		FrameWork:         tasConfig.Framework,
 		SecretData:        secretMap,
+		FrameWorkVersion:  tasConfig.FrameworkVersion,
+		CWD:               global.RepoDir,
 	}
 }
 

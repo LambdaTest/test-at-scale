@@ -102,7 +102,7 @@ func (tes *testExecutionService) Run(ctx context.Context,
 				envVars = append(envVars, "TAS_COLLECT_COVERAGE=true")
 			}
 		}
-		cmd.Dir = global.RepoDir
+		cmd.Dir = testExecutionArgs.CWD
 		cmd.Env = envVars
 		cmd.Stdout = maskWriter
 		cmd.Stderr = maskWriter

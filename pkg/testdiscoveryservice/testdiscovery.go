@@ -65,7 +65,7 @@ func (tds *testDiscoveryService) Discover(ctx context.Context, discoveryArgs *co
 	tds.logger.Debugf("Discovering tests at paths %+v", discoveryArgs.TestPattern)
 
 	cmd := exec.CommandContext(ctx, global.FrameworkRunnerMap[discoveryArgs.FrameWork], args...) //nolint:gosec
-	cmd.Dir = global.RepoDir
+	cmd.Dir = discoveryArgs.CWD
 	envVars, err := tds.execManager.GetEnvVariables(discoveryArgs.EnvMap, discoveryArgs.SecretData)
 	if err != nil {
 		tds.logger.Errorf("failed to parse env variables, error: %v", err)
