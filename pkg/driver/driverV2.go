@@ -1,3 +1,6 @@
+/*
+This file implements core.Driver with operation over TAS config (YAML) version 2
+*/
 package driver
 
 import (
