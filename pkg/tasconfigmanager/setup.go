@@ -41,7 +41,7 @@ func (tc *tasConfigManager) LoadAndValidate(ctx context.Context,
 	path string,
 	eventType core.EventType,
 	licenseTier core.Tier) (interface{}, error) {
-	if version < 2 {
+	if version < global.NewTASVersion {
 		return tc.loadAndValidateV1(ctx, path, eventType, licenseTier)
 	}
 	return tc.loadAndValidateV2(ctx, path, eventType, licenseTier)

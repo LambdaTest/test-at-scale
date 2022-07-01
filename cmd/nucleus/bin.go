@@ -175,7 +175,6 @@ func run(cmd *cobra.Command, args []string) {
 	pl.Task = t
 	pl.CacheStore = cache
 	pl.SecretParser = secretParser
-	pl.ListSubModuleService = listsubmodule
 	pl.Builder = &builder
 
 	logger.Infof("LambdaTest Nucleus version: %s", global.NucleusBinaryVersion)

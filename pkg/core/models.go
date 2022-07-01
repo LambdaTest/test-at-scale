@@ -135,7 +135,6 @@ type Pipeline struct {
 	TestStats            TestStats
 	Task                 Task
 	SecretParser         SecretParser
-	ListSubModuleService ListSubModuleService
 	Builder              Builder
 }
 type DiscoveryResult struct {
@@ -429,7 +428,7 @@ type SubModuleList struct {
 	TotalSubModule int    `json:"totalSubModule"`
 }
 
-// DiscoveyArgs  specify the arguments need for discovery
+// DiscoveyArgs specify the arguments for discovery
 type DiscoveyArgs struct {
 	TestPattern      []string
 	Payload          *Payload

@@ -57,7 +57,6 @@ func (b *BufferLogWriter) Write(ctx context.Context, reader io.Reader) <-chan er
 			errChan <- err
 			return
 		}
-		// errChan <- nil
 		close(errChan)
 		b.logger.Debugf("written logs for sub module %s to buffer", b.subModule)
 	}()

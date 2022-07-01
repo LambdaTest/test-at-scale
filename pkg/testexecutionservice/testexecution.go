@@ -53,11 +53,10 @@ func NewTestExecutionService(cfg *config.NucleusConfig,
 
 // Run executes the test files
 func (tes *testExecutionService) Run(ctx context.Context,
-	testExecutionArgs core.TestExecutionArgs) (*core.ExecutionResults, error) {
+	testExecutionArgs *core.TestExecutionArgs) (*core.ExecutionResults, error) {
 	azureReader, azureWriter := io.Pipe()
 	defer azureWriter.Close()
-	// blobPath := fmt.Sprintf("%s/%s/%s/%s.log", payload.OrgID, payload.BuildID, payload.TaskID, core.Execution)
-	// errChan := tes.execManager.StoreCommandLogs(ctx, blobPath, azureReader)
+
 	errChan := testExecutionArgs.LogWriterStartegy.Write(ctx, azureReader)
 	defer tes.closeAndWriteLog(azureWriter, errChan)
 	logWriter := lumber.NewWriter(tes.logger)
@@ -65,12 +64,12 @@ func (tes *testExecutionService) Run(ctx context.Context,
 	multiWriter := io.MultiWriter(logWriter, azureWriter)
 	maskWriter := logstream.NewMasker(multiWriter, testExecutionArgs.SecretData)
 
-	// testPattern, envMap := getPatternAndEnvV1(payload, tasConfig)
 	args, err := tes.buildCmdArgsV1(ctx, testExecutionArgs.TestConfigFile,
 		testExecutionArgs.FrameWork, testExecutionArgs.FrameWorkVersion, testExecutionArgs.Payload, testExecutionArgs.TestPattern)
 	if err != nil {
 		return nil, err
 	}
+
 	payload := testExecutionArgs.Payload
 	collectCoverage := payload.CollectCoverage
 	commandArgs := args
@@ -234,27 +233,3 @@ func (tes *testExecutionService) buildCmdArgsV1(ctx context.Context,
 
 	return args, nil
 }
-
-// func (tes *testExecutionService) buildCmdArgsV2(ctx context.Context,
-// 	subModule *core.SubModule,
-// 	payload *core.Payload,
-// 	target []string) ([]string, error) {
-// 	args := []string{global.FrameworkRunnerMap[subModule.Framework], "--command", "execute"}
-// 	if subModule.ConfigFile != "" {
-// 		args = append(args, "--config", subModule.ConfigFile)
-// 	}
-// 	for _, pattern := range target {
-// 		args = append(args, "--pattern", pattern)
-// 	}
-
-// 	if payload.LocatorAddress != "" {
-// 		locatorFile, err := tes.getLocatorsFile(ctx, payload.LocatorAddress)
-// 		tes.logger.Debugf("locators : %v\n", locatorFile)
-// 		if err != nil {
-// 			tes.logger.Errorf("failed to get locator file, error: %v", err)
-// 			return nil, err
-// 		}
-// 		args = append(args, "--locator-file", locatorFile)
-// 	}
-// 	return args, nil
-// }

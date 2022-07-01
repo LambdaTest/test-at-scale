@@ -117,46 +117,46 @@ func (d *driverV1) RunDiscovery(ctx context.Context, payload *core.Payload,
 	// return nil
 }
 
-func (b *driverV1) RunExecution(ctx context.Context, payload *core.Payload,
+func (d *driverV1) RunExecution(ctx context.Context, payload *core.Payload,
 	taskPayload *core.TaskPayload, oauth *core.Oauth, coverageDir string, secretMap map[string]string) error {
-	tas, err := b.TASConfigManager.LoadAndValidate(ctx, 1, payload.TasFileName, payload.EventType, payload.LicenseTier)
+	tas, err := d.TASConfigManager.LoadAndValidate(ctx, 1, payload.TasFileName, payload.EventType, payload.LicenseTier)
 	if err != nil {
-		b.logger.Errorf("Unable to load tas yaml file, error: %v", err)
+		d.logger.Errorf("Unable to load tas yaml file, error: %v", err)
 		err = &errs.StatusFailed{Remark: err.Error()}
 		return err
 	}
 	tasConfig := tas.(*core.TASConfig)
-	if errG := b.BlockTestService.GetBlockTests(ctx, tasConfig.Blocklist, payload.BranchName); errG != nil {
-		b.logger.Errorf("Unable to fetch blocklisted tests: %v", errG)
+	if errG := d.BlockTestService.GetBlockTests(ctx, tasConfig.Blocklist, payload.BranchName); errG != nil {
+		d.logger.Errorf("Unable to fetch blocklisted tests: %v", errG)
 		errG = errs.New(errs.GenericErrRemark.Error())
 		return errG
 	}
-	buildArgs := b.buildTestExecutionArgs(payload, tasConfig, secretMap, coverageDir)
-	executionResults, err := b.TestExecutionService.Run(ctx, buildArgs)
+	buildArgs := d.buildTestExecutionArgs(payload, tasConfig, secretMap, coverageDir)
+	executionResults, err := d.TestExecutionService.Run(ctx, &buildArgs)
 	if err != nil {
-		b.logger.Infof("Unable to perform test execution: %v", err)
+		d.logger.Infof("Unable to perform test execution: %v", err)
 		err = &errs.StatusFailed{Remark: "Failed in executing tests."}
 		if executionResults == nil {
 			return err
 		}
 	}
 
-	resp, err := b.TestExecutionService.SendResults(ctx, executionResults)
+	resp, err := d.TestExecutionService.SendResults(ctx, executionResults)
 	if err != nil {
-		b.logger.Errorf("error while sending test reports %v", err)
+		d.logger.Errorf("error while sending test reports %v", err)
 		err = errs.New(errs.GenericErrRemark.Error())
 		return err
 	}
 
 	taskPayload.Status = resp.TaskStatus
 	blobPath := fmt.Sprintf("%s/%s/%s/%s.log", payload.OrgID, payload.BuildID, os.Getenv("TASK_ID"), core.PostRun)
-	logWriter := logwriter.NewAzureLogWriter(b.AzureClient, blobPath, b.logger)
+	logWriter := logwriter.NewAzureLogWriter(d.AzureClient, blobPath, d.logger)
 
 	if tasConfig.Postrun != nil {
-		b.logger.Infof("Running post-run steps")
-		err = b.ExecutionManager.ExecuteUserCommands(ctx, core.PostRun, payload, tasConfig.Postrun, secretMap, logWriter, global.RepoDir)
+		d.logger.Infof("Running post-run steps")
+		err = d.ExecutionManager.ExecuteUserCommands(ctx, core.PostRun, payload, tasConfig.Postrun, secretMap, logWriter, global.RepoDir)
 		if err != nil {
-			b.logger.Errorf("Unable to run post-run steps %v", err)
+			d.logger.Errorf("Unable to run post-run steps %v", err)
 			err = &errs.StatusFailed{Remark: "Failed in running post-run steps."}
 			return err
 		}
@@ -164,9 +164,9 @@ func (b *driverV1) RunExecution(ctx context.Context, payload *core.Payload,
 	return nil
 }
 
-func (b *driverV1) setUp(ctx context.Context, payload *core.Payload,
+func (d *driverV1) setUp(ctx context.Context, payload *core.Payload,
 	tasConfig *core.TASConfig, oauth *core.Oauth, language string) (*setUpResultV1, error) {
-	b.logger.Infof("Tas yaml: %+v", tasConfig)
+	d.logger.Infof("Tas yaml: %+v", tasConfig)
 
 	cacheKey := ""
 	if language == languageJs {
@@ -176,13 +176,13 @@ func (b *driverV1) setUp(ctx context.Context, payload *core.Payload,
 	os.Setenv("REPO_CACHE_DIR", global.RepoCacheDir)
 	if tasConfig.NodeVersion != "" && language == languageJs {
 		nodeVersion := tasConfig.NodeVersion
-		if nodeErr := b.nodeInstaller.InstallNodeVersion(ctx, nodeVersion); nodeErr != nil {
+		if nodeErr := d.nodeInstaller.InstallNodeVersion(ctx, nodeVersion); nodeErr != nil {
 			return nil, nodeErr
 		}
 	}
 	blYml := tasConfig.Blocklist
-	if errG := b.BlockTestService.GetBlockTests(ctx, blYml, payload.BranchName); errG != nil {
-		b.logger.Errorf("Unable to fetch blocklisted tests: %v", errG)
+	if errG := d.BlockTestService.GetBlockTests(ctx, blYml, payload.BranchName); errG != nil {
+		d.logger.Errorf("Unable to fetch blocklisted tests: %v", errG)
 		errG = errs.New(errs.GenericErrRemark.Error())
 		return nil, errG
 	}
@@ -190,8 +190,8 @@ func (b *driverV1) setUp(ctx context.Context, payload *core.Payload,
 	g, errCtx := errgroup.WithContext(ctx)
 	if language == languageJs {
 		g.Go(func() error {
-			if errG := b.CacheStore.Download(errCtx, cacheKey); errG != nil {
-				b.logger.Errorf("Unable to download cache: %v", errG)
+			if errG := d.CacheStore.Download(errCtx, cacheKey); errG != nil {
+				d.logger.Errorf("Unable to download cache: %v", errG)
 				errG = errs.New(errs.GenericErrRemark.Error())
 				return errG
 			}
@@ -199,16 +199,16 @@ func (b *driverV1) setUp(ctx context.Context, payload *core.Payload,
 		})
 	}
 
-	b.logger.Infof("Identifying changed files ...")
+	d.logger.Infof("Identifying changed files ...")
 	diffExists := true
 	diff := map[string]int{}
 	g.Go(func() error {
-		diffC, errG := b.DiffManager.GetChangedFiles(errCtx, payload, oauth)
+		diffC, errG := d.DiffManager.GetChangedFiles(errCtx, payload, oauth)
 		if errG != nil {
 			if errors.Is(errG, errs.ErrGitDiffNotFound) {
 				diffExists = false
 			} else {
-				b.logger.Errorf("Unable to identify changed files %s", errG)
+				d.logger.Errorf("Unable to identify changed files %s", errG)
 				errG = errs.New("Error occurred in fetching diff from GitHub")
 				return errG
 			}
@@ -227,11 +227,11 @@ func (b *driverV1) setUp(ctx context.Context, payload *core.Payload,
 	}, nil
 }
 
-func (b *driverV1) buildDiscoveryArgs(payload *core.Payload, tasConfig *core.TASConfig,
+func (d *driverV1) buildDiscoveryArgs(payload *core.Payload, tasConfig *core.TASConfig,
 	secretMap map[string]string,
 	diffExists bool,
 	diff map[string]int) core.DiscoveyArgs {
-	testPattern, envMap := b.getEnvAndPattern(payload, tasConfig)
+	testPattern, envMap := d.getEnvAndPattern(payload, tasConfig)
 	return core.DiscoveyArgs{
 		TestPattern:      testPattern,
 		Payload:          payload,
@@ -247,12 +247,12 @@ func (b *driverV1) buildDiscoveryArgs(payload *core.Payload, tasConfig *core.TAS
 	}
 }
 
-func (b *driverV1) buildTestExecutionArgs(payload *core.Payload, tasConfig *core.TASConfig,
+func (d *driverV1) buildTestExecutionArgs(payload *core.Payload, tasConfig *core.TASConfig,
 	secretMap map[string]string,
 	coverageDir string) core.TestExecutionArgs {
-	testPattern, envMap := b.getEnvAndPattern(payload, tasConfig)
+	testPattern, envMap := d.getEnvAndPattern(payload, tasConfig)
 	blobPath := fmt.Sprintf("%s/%s/%s/%s.log", payload.OrgID, payload.BuildID, payload.TaskID, core.Execution)
-	logWriter := logwriter.NewAzureLogWriter(b.AzureClient, blobPath, b.logger)
+	logWriter := logwriter.NewAzureLogWriter(d.AzureClient, blobPath, d.logger)
 	return core.TestExecutionArgs{
 		Payload:           payload,
 		CoverageDir:       coverageDir,
@@ -267,7 +267,7 @@ func (b *driverV1) buildTestExecutionArgs(payload *core.Payload, tasConfig *core
 	}
 }
 
-func (b *driverV1) getEnvAndPattern(payload *core.Payload, tasConfig *core.TASConfig) (target []string, envMap map[string]string) {
+func (d *driverV1) getEnvAndPattern(payload *core.Payload, tasConfig *core.TASConfig) (target []string, envMap map[string]string) {
 	if payload.EventType == core.EventPullRequest {
 		return tasConfig.Premerge.Patterns, tasConfig.Premerge.EnvMap
 	}

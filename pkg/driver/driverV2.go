@@ -74,13 +74,13 @@ func (d *driverV2) RunDiscovery(ctx context.Context, payload *core.Payload,
 	}()
 
 	if payload.EventType == core.EventPush {
-		if discoveryErr := d.runDiscoveryV2Helper(ctx, tasConfig.PostMerge.PreRun,
+		if discoveryErr := d.runDiscoveryHelper(ctx, tasConfig.PostMerge.PreRun,
 			tasConfig.PostMerge.SubModules, payload, tasConfig,
 			taskPayload, setUpResult.diff, setUpResult.diffExists, mainBuffer, secretMap); discoveryErr != nil {
 			return discoveryErr
 		}
 	} else {
-		if discoveryErr := d.runDiscoveryV2Helper(ctx, tasConfig.PreMerge.PreRun, tasConfig.PreMerge.SubModules,
+		if discoveryErr := d.runDiscoveryHelper(ctx, tasConfig.PreMerge.PreRun, tasConfig.PreMerge.SubModules,
 			payload, tasConfig, taskPayload, setUpResult.diff, setUpResult.diffExists, mainBuffer, secretMap); discoveryErr != nil {
 			return discoveryErr
 		}
@@ -144,7 +144,7 @@ func (d *driverV2) RunExecution(ctx context.Context, payload *core.Payload,
 		}
 	}
 	args := d.buildTestExecutionArgs(payload, tasConfig, subModule, secretMap, coverageDir)
-	testResult, err := d.TestExecutionService.Run(ctx, args)
+	testResult, err := d.TestExecutionService.Run(ctx, &args)
 	if err != nil {
 		return err
 	}
@@ -172,7 +172,7 @@ func (d *driverV2) RunExecution(ctx context.Context, payload *core.Payload,
 	return nil
 }
 
-func (d *driverV2) runDiscoveryV2Helper(ctx context.Context,
+func (d *driverV2) runDiscoveryHelper(ctx context.Context,
 	topPreRun *core.Run,
 	subModuleList []core.SubModule,
 	payload *core.Payload,
@@ -186,54 +186,16 @@ func (d *driverV2) runDiscoveryV2Helper(ctx context.Context,
 	if apiErr := d.ListSubModuleService.Send(ctx, payload.BuildID, totalSubmoduleCount); apiErr != nil {
 		return apiErr
 	}
-	errChannelPreRun := make(chan error, totalSubmoduleCount)
-	preRunWaitGroup := sync.WaitGroup{}
+
 	if tasConfig.NodeVersion != "" {
 		if err := d.nodeInstaller.InstallNodeVersion(ctx, tasConfig.NodeVersion); err != nil {
 			return err
 		}
 	}
-	if topPreRun != nil {
-		d.logger.Debugf("Running Pre Run on top level")
-		if _, err := mainBuffer.WriteString(preRunLog); err != nil {
-			return err
-		}
-		bufferWirter := logwriter.NewABufferLogWriter("TOP-LEVEL", mainBuffer, d.logger)
-		if err := d.ExecutionManager.ExecuteUserCommands(ctx, core.PreRun, payload,
-			topPreRun, secretMap, bufferWirter, global.RepoDir); err != nil {
-			d.logger.Errorf("Error occurred running top level PreRun , err %v", err)
-			return err
-		}
+
+	if err := d.runPreRunCommand(ctx, topPreRun, mainBuffer, payload, secretMap, taskPayload, subModuleList); err != nil {
+		return err
 	}
-	bufferList := []*bytes.Buffer{}
-	d.logger.Debugf("pre run on top level ended")
-	for i := 0; i < totalSubmoduleCount; i++ {
-		preRunWaitGroup.Add(1)
-		newBuffer := new(bytes.Buffer)
-		bufferList = append(bufferList, newBuffer)
-		go func(subModule *core.SubModule) {
-			defer preRunWaitGroup.Done()
-			bufferWirterSubmodule := logwriter.NewABufferLogWriter(subModule.Name, newBuffer, d.logger)
-			dicoveryErr := d.runPreRunForEachSubModule(ctx, payload, subModule, secretMap, bufferWirterSubmodule)
-			if dicoveryErr != nil {
-				taskPayload.Status = core.Error
-				d.logger.Errorf("error while running discovery for sub module %s, error %v", subModule.Name, dicoveryErr)
-			}
-			errChannelPreRun <- dicoveryErr
-		}(&subModuleList[i])
-	}
-	preRunWaitGroup.Wait()
-	for i := 0; i < totalSubmoduleCount; i++ {
-		mainBuffer.WriteString(bufferList[i].String())
-	}
-	d.logger.Debugf("checking the pre runs errors ")
-	for i := 0; i < totalSubmoduleCount; i++ {
-		e := <-errChannelPreRun
-		if e != nil {
-			return e
-		}
-	}
-	d.logger.Debugf("checked the pre run errors")
 	d.logger.Debugf("Caching workspace")
 	// TODO: this will be change after we move to parallel pod executuon
 	if err := d.CacheStore.CacheWorkspace(ctx, ""); err != nil {
@@ -256,6 +218,67 @@ func (d *driverV2) runDiscoveryV2Helper(ctx context.Context,
 	for i := 0; i < totalSubmoduleCount; i++ {
 		e := <-errChannelDiscovery
 		if e != nil {
+			return e
+		}
+	}
+	return nil
+}
+
+func (d *driverV2) runPreRunCommand(ctx context.Context,
+	topPreRun *core.Run,
+	mainBuffer *bytes.Buffer, payload *core.Payload,
+	secretMap map[string]string, taskPayload *core.TaskPayload,
+	subModuleList []core.SubModule) error {
+	totalSubmoduleCount := len(subModuleList)
+
+	errChannelPreRun := make(chan error, totalSubmoduleCount)
+
+	preRunWaitGroup := sync.WaitGroup{}
+
+	if topPreRun != nil {
+		d.logger.Debugf("Running Pre Run on top level")
+		if _, err := mainBuffer.WriteString(preRunLog); err != nil {
+			return err
+		}
+		bufferWirter := logwriter.NewABufferLogWriter("TOP-LEVEL", mainBuffer, d.logger)
+		if err := d.ExecutionManager.ExecuteUserCommands(ctx, core.PreRun, payload,
+			topPreRun, secretMap, bufferWirter, global.RepoDir); err != nil {
+			d.logger.Errorf("Error occurred running top level PreRun , err %v", err)
+			return err
+		}
+	}
+
+	bufferList := []*bytes.Buffer{}
+
+	d.logger.Debugf("pre run on top level ended")
+	for i := 0; i < totalSubmoduleCount; i++ {
+		preRunWaitGroup.Add(1)
+
+		newBuffer := new(bytes.Buffer)
+
+		bufferList = append(bufferList, newBuffer)
+
+		go func(subModule *core.SubModule) {
+			defer preRunWaitGroup.Done()
+			bufferWirterSubmodule := logwriter.NewABufferLogWriter(subModule.Name, newBuffer, d.logger)
+			dicoveryErr := d.runPreRunForEachSubModule(ctx, payload, subModule, secretMap, bufferWirterSubmodule)
+			if dicoveryErr != nil {
+				taskPayload.Status = core.Error
+				d.logger.Errorf("error while running discovery for sub module %s, error %v", subModule.Name, dicoveryErr)
+			}
+			errChannelPreRun <- dicoveryErr
+		}(&subModuleList[i])
+	}
+
+	preRunWaitGroup.Wait()
+
+	for i := 0; i < totalSubmoduleCount; i++ {
+		mainBuffer.WriteString(bufferList[i].String())
+	}
+	for i := 0; i < totalSubmoduleCount; i++ {
+		e := <-errChannelPreRun
+		if e != nil {
+			d.logger.Debugf("pre run failed with error %v", e)
 			return e
 		}
 	}

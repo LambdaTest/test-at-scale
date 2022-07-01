@@ -50,7 +50,7 @@ type BlockTestService interface {
 // TestExecutionService services execution of tests
 type TestExecutionService interface {
 	// Run executes the test execution scripts
-	Run(ctx context.Context, testExecutionArgs TestExecutionArgs) (results *ExecutionResults, err error)
+	Run(ctx context.Context, testExecutionArgs *TestExecutionArgs) (results *ExecutionResults, err error)
 	// SendResults sends the test execution results to the TAS server.
 	SendResults(ctx context.Context, payload *ExecutionResults) (resp *TestReportResponsePayload, err error)
 }
@@ -148,13 +148,13 @@ type Requests interface {
 		headers map[string]string) (rawbody []byte, statusCode int, err error)
 }
 
-// ListSubModuleService will sends the submodule count in TAS server
+// ListSubModuleService will sends the submodule count to TAS server
 type ListSubModuleService interface {
 	// Send sends count of submodules to TAS server
 	Send(ctx context.Context, buildID string, totalSubmodule int) error
 }
 
-// Driver defines operations to be perform by pipeline
+// Driver has the responsibility to run discovery and test execution
 type Driver interface {
 	// RunDiscovery runs the test discovery
 	RunDiscovery(ctx context.Context, payload *Payload,
@@ -164,12 +164,12 @@ type Driver interface {
 		taskPayload *TaskPayload, oauth *Oauth, coverageDir string, secretMap map[string]string) error
 }
 
-// LogWriterStartegy defines all type of log writing strategy
+// LogWriterStartegy will be implemented by all different type of log writer
 type LogWriterStartegy interface {
 	Write(ctx context.Context, reader io.Reader) <-chan error
 }
 
-// Builder builds the driver for given version
+// Builder builds the driver for given tas yml version
 type Builder interface {
 	// GetDriver returns driver for use
 	GetDriver(version int) (Driver, error)

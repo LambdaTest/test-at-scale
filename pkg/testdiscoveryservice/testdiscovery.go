@@ -47,7 +47,8 @@ func (tds *testDiscoveryService) Discover(ctx context.Context, discoveryArgs *co
 	}
 	impactAll := tds.shouldImpactAll(discoveryArgs.SmartRun, configFilePath, discoveryArgs.Diff)
 
-	args := utils.GetArgs("discover", discoveryArgs.FrameWork, discoveryArgs.FrameWorkVersion, discoveryArgs.TestConfigFile, discoveryArgs.TestPattern)
+	args := utils.GetArgs("discover", discoveryArgs.FrameWork, discoveryArgs.FrameWorkVersion,
+		discoveryArgs.TestConfigFile, discoveryArgs.TestPattern)
 
 	if !impactAll {
 		if len(discoveryArgs.Diff) == 0 && discoveryArgs.DiffExists {
@@ -88,8 +89,8 @@ func (tds *testDiscoveryService) Discover(ctx context.Context, discoveryArgs *co
 	return &testDiscoveryResult, nil
 }
 
-func (tds *testDiscoveryService) shouldImpactAll(SmartRun bool, configFilePath string, diff map[string]int) bool {
-	impactAll := !SmartRun
+func (tds *testDiscoveryService) shouldImpactAll(smartRun bool, configFilePath string, diff map[string]int) bool {
+	impactAll := !smartRun
 	if _, ok := diff[configFilePath]; ok {
 		impactAll = true
 	}
