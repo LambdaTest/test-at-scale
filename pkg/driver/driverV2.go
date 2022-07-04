@@ -117,30 +117,11 @@ func (d *driverV2) RunExecution(ctx context.Context, payload *core.Payload,
 		return err
 	}
 
-	/*
-		1. run PRE run steps
-		2. run Test execution
-		3. run POST run steps
-	*/
-
 	modulePath := path.Join(global.RepoDir, subModule.Path)
 	// PRE RUN steps should be run only if RunPrerunEveryTime is set to true
 	if subModule.Prerun != nil && subModule.RunPrerunEveryTime {
-		d.logger.Infof("Running pre-run steps for submodule %s", subModule.Name)
-		blobPath := fmt.Sprintf("%s/%s/%s/%s.log", payload.OrgID, payload.BuildID, os.Getenv("TASK_ID"), core.PreRun)
-
-		azureLogwriter := logwriter.NewAzureLogWriter(d.AzureClient, blobPath, d.logger)
-		err = d.ExecutionManager.ExecuteUserCommands(ctx, core.PreRun, payload, subModule.Prerun, secretMap, azureLogwriter, modulePath)
-		if err != nil {
-			d.logger.Errorf("Unable to run pre-run steps %v", err)
-			err = &errs.StatusFailed{Remark: "Failed in running pre-run steps"}
-			return err
-		}
-		if err = d.ExecutionManager.ExecuteInternalCommands(ctx, core.InstallRunners, global.InstallRunnerCmds,
-			global.RepoDir, nil, nil); err != nil {
-			d.logger.Errorf("Unable to install custom runners %v", err)
-			err = errs.New(errs.GenericErrRemark.Error())
-			return err
+		if preErr := d.runPreRunBeforeTestExecution(ctx, tasConfig, subModule, payload, secretMap, modulePath); preErr != nil {
+			return preErr
 		}
 	}
 	args := d.buildTestExecutionArgs(payload, tasConfig, subModule, secretMap, coverageDir)
@@ -168,6 +149,40 @@ func (d *driverV2) RunExecution(ctx context.Context, payload *core.Payload,
 			err = &errs.StatusFailed{Remark: "Failed in running post-run steps."}
 			return err
 		}
+	}
+	return nil
+}
+
+func (d *driverV2) runPreRunBeforeTestExecution(ctx context.Context,
+	tasConfig *core.TASConfigV2,
+	subModule *core.SubModule,
+	payload *core.Payload,
+	secretMap map[string]string,
+	modulePath string) error {
+	if tasConfig.NodeVersion != "" {
+		// install node version before preRuns
+		if err := d.nodeInstaller.InstallNodeVersion(ctx, tasConfig.NodeVersion); err != nil {
+			d.logger.Debugf("error while installing node of version %s, error %v ", tasConfig.NodeVersion, err)
+			return err
+		}
+	}
+
+	d.logger.Infof("Running pre-run steps for submodule %s", subModule.Name)
+	blobPath := fmt.Sprintf("%s/%s/%s/%s.log", payload.OrgID, payload.BuildID, os.Getenv("TASK_ID"), core.PreRun)
+
+	azureLogwriter := logwriter.NewAzureLogWriter(d.AzureClient, blobPath, d.logger)
+	err := d.ExecutionManager.ExecuteUserCommands(ctx, core.PreRun, payload, subModule.Prerun, secretMap, azureLogwriter, modulePath)
+	if err != nil {
+		d.logger.Errorf("Unable to run pre-run steps %v", err)
+		err = &errs.StatusFailed{Remark: "Failed in running pre-run steps"}
+		return err
+	}
+	d.logger.Debugf("installing runners at path %s", modulePath)
+	if err = d.ExecutionManager.ExecuteInternalCommands(ctx, core.InstallRunners, global.InstallRunnerCmds,
+		modulePath, nil, nil); err != nil {
+		d.logger.Errorf("Unable to install custom runners %v", err)
+		err = errs.New(errs.GenericErrRemark.Error())
+		return err
 	}
 	return nil
 }

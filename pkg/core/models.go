@@ -412,7 +412,6 @@ type SubModule struct {
 	Prerun             *Run     `yaml:"preRun" validate:"omitempty"`
 	Postrun            *Run     `yaml:"postRun" validate:"omitempty"`
 	RunPrerunEveryTime bool     `yaml:"runPreRunEveryTime"`
-	NodeVersion        string   `yaml:"nodeVersion" validate:"omitempty,semver"`
 	Parallelism        int      `yaml:"parallelism"` // TODO: will be supported later
 	ConfigFile         string   `yaml:"configFile" validate:"omitempty"`
 }
