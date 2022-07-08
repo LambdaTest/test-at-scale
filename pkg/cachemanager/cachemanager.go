@@ -213,7 +213,7 @@ func (c *cache) getDefaultDirs() ([]string, error) {
 		}
 		// if pnmpm-lock.yaml is present, cache .pnpm-store cache
 		if d.Name() == pnpmLock {
-			defaultDirs = append(defaultDirs, filepath.Join(c.homeDir, ".pnpm-store"))
+			defaultDirs = append(defaultDirs, filepath.Join(c.homeDir, ".local", "share", "pnpm", "store"))
 			return defaultDirs, nil
 		}
 	}
