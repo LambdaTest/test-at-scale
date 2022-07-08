@@ -6,12 +6,20 @@ postMerge:
         - "./x/y/z"
       framework: mocha
       configFile: "x/y/z"
+    
 
 preMerge:
   subModules:
     - name: some-module-1
       path: "./somepath"
       framework: jasmine
+      pattern:
+        - "./x/y/z"
+      configFile: "/x/y/z"
+
+    - name: some-module-1
+      path: "./somepath-2"
+      framework: mocha
       pattern:
         - "./x/y/z"
       configFile: "/x/y/z"

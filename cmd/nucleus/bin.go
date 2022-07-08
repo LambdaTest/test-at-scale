@@ -21,8 +21,10 @@ import (
 	"github.com/LambdaTest/test-at-scale/pkg/command"
 	"github.com/LambdaTest/test-at-scale/pkg/core"
 	"github.com/LambdaTest/test-at-scale/pkg/diffmanager"
+	"github.com/LambdaTest/test-at-scale/pkg/driver"
 	"github.com/LambdaTest/test-at-scale/pkg/gitmanager"
 	"github.com/LambdaTest/test-at-scale/pkg/global"
+	"github.com/LambdaTest/test-at-scale/pkg/listsubmoduleservice"
 	"github.com/LambdaTest/test-at-scale/pkg/lumber"
 	"github.com/LambdaTest/test-at-scale/pkg/payloadmanager"
 	"github.com/LambdaTest/test-at-scale/pkg/requestutils"
@@ -145,6 +147,20 @@ func run(cmd *cobra.Command, args []string) {
 	if err != nil {
 		logger.Fatalf("failed to initialize coverage service: %v", err)
 	}
+	listsubmodule := listsubmoduleservice.New(defaultRequests, logger)
+
+	builder := driver.Builder{
+		Logger:               logger,
+		TestExecutionService: tes,
+		TestDiscoveryService: tds,
+		AzureClient:          azureClient,
+		BlockTestService:     tbs,
+		ExecutionManager:     execManager,
+		TASConfigManager:     tcm,
+		CacheStore:           cache,
+		DiffManager:          dm,
+		ListSubModuleService: listsubmodule,
+	}
 
 	pl.PayloadManager = pm
 	pl.TASConfigManager = tcm
@@ -159,6 +175,7 @@ func run(cmd *cobra.Command, args []string) {
 	pl.Task = t
 	pl.CacheStore = cache
 	pl.SecretParser = secretParser
+	pl.Builder = &builder
 
 	logger.Infof("LambdaTest Nucleus version: %s", global.NucleusBinaryVersion)
 

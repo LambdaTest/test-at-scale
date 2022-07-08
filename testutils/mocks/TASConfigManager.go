@@ -37,45 +37,22 @@ func (_m *TASConfigManager) GetVersion(path string) (int, error) {
 	return r0, r1
 }
 
-// LoadAndValidateV1 provides a mock function with given fields: ctx, path, eventType, licenseTier
-func (_m *TASConfigManager) LoadAndValidateV1(ctx context.Context, path string, eventType core.EventType, licenseTier core.Tier) (*core.TASConfig, error) {
-	ret := _m.Called(ctx, path, eventType, licenseTier)
+// LoadAndValidate provides a mock function with given fields: ctx, version, path, eventType, licenseTier
+func (_m *TASConfigManager) LoadAndValidate(ctx context.Context, version int, path string, eventType core.EventType, licenseTier core.Tier) (interface{}, error) {
+	ret := _m.Called(ctx, version, path, eventType, licenseTier)
 
-	var r0 *core.TASConfig
-	if rf, ok := ret.Get(0).(func(context.Context, string, core.EventType, core.Tier) *core.TASConfig); ok {
-		r0 = rf(ctx, path, eventType, licenseTier)
+	var r0 interface{}
+	if rf, ok := ret.Get(0).(func(context.Context, int, string, core.EventType, core.Tier) interface{}); ok {
+		r0 = rf(ctx, version, path, eventType, licenseTier)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*core.TASConfig)
+			r0 = ret.Get(0).(interface{})
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, core.EventType, core.Tier) error); ok {
-		r1 = rf(ctx, path, eventType, licenseTier)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// LoadAndValidateV2 provides a mock function with given fields: ctx, path, eventType, licenseTier
-func (_m *TASConfigManager) LoadAndValidateV2(ctx context.Context, path string, eventType core.EventType, licenseTier core.Tier) (*core.TASConfigV2, error) {
-	ret := _m.Called(ctx, path, eventType, licenseTier)
-
-	var r0 *core.TASConfigV2
-	if rf, ok := ret.Get(0).(func(context.Context, string, core.EventType, core.Tier) *core.TASConfigV2); ok {
-		r0 = rf(ctx, path, eventType, licenseTier)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*core.TASConfigV2)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, core.EventType, core.Tier) error); ok {
-		r1 = rf(ctx, path, eventType, licenseTier)
+	if rf, ok := ret.Get(1).(func(context.Context, int, string, core.EventType, core.Tier) error); ok {
+		r1 = rf(ctx, version, path, eventType, licenseTier)
 	} else {
 		r1 = ret.Error(1)
 	}

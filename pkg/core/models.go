@@ -135,8 +135,8 @@ type Pipeline struct {
 	TestStats            TestStats
 	Task                 Task
 	SecretParser         SecretParser
+	Builder              Builder
 }
-
 type DiscoveryResult struct {
 	Tests           []TestPayload      `json:"tests"`
 	ImpactedTests   []string           `json:"impactedTests"`
@@ -412,7 +412,6 @@ type SubModule struct {
 	Prerun             *Run     `yaml:"preRun" validate:"omitempty"`
 	Postrun            *Run     `yaml:"postRun" validate:"omitempty"`
 	RunPrerunEveryTime bool     `yaml:"runPreRunEveryTime"`
-	NodeVersion        string   `yaml:"nodeVersion" validate:"omitempty,semver"`
 	Parallelism        int      `yaml:"parallelism"` // TODO: will be supported later
 	ConfigFile         string   `yaml:"configFile" validate:"omitempty"`
 }
@@ -426,4 +425,33 @@ type TasVersion struct {
 type SubModuleList struct {
 	BuildID        string `json:"buildID"`
 	TotalSubModule int    `json:"totalSubModule"`
+}
+
+// DiscoveyArgs specify the arguments for discovery
+type DiscoveyArgs struct {
+	TestPattern      []string
+	Payload          *Payload
+	EnvMap           map[string]string
+	SecretData       map[string]string
+	TestConfigFile   string
+	FrameWork        string
+	SmartRun         bool
+	Diff             map[string]int
+	DiffExists       bool
+	FrameWorkVersion int
+	CWD              string
+}
+
+// TestExecutionArgs specify the argument for test discovery
+type TestExecutionArgs struct {
+	Payload           *Payload
+	CoverageDir       string
+	LogWriterStrategy LogWriterStrategy
+	TestPattern       []string
+	EnvMap            map[string]string
+	TestConfigFile    string
+	FrameWork         string
+	SecretData        map[string]string
+	FrameWorkVersion  int
+	CWD               string
 }

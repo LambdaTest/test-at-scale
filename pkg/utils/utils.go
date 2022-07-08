@@ -241,20 +241,22 @@ func FetchQueryParams() (params map[string]string) {
 	return params
 }
 
-func GetArgs(command string, tasConfig *core.TASConfig, target []string) []string {
-	language := global.FrameworkLanguageMap[tasConfig.Framework]
+func GetArgs(command string, frameWork string, frameworkVersion int,
+	configFile string,
+	target []string) []string {
+	language := global.FrameworkLanguageMap[frameWork]
 
 	args := []string{}
 	if language == "java" {
 		args = append(args, "-jar", "/test-at-scale-java.jar",
 			global.ArgCommand, command, global.ArgFrameworVersion,
-			strconv.Itoa(tasConfig.FrameworkVersion))
+			strconv.Itoa(frameworkVersion))
 	} else {
 		args = append(args, global.ArgCommand, command)
 	}
 
-	if tasConfig.ConfigFile != "" {
-		args = append(args, global.ArgConfig, tasConfig.ConfigFile)
+	if configFile != "" {
+		args = append(args, global.ArgConfig, configFile)
 	}
 
 	for _, pattern := range target {
