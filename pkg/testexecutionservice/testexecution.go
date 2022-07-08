@@ -57,7 +57,7 @@ func (tes *testExecutionService) Run(ctx context.Context,
 	azureReader, azureWriter := io.Pipe()
 	defer azureWriter.Close()
 
-	errChan := testExecutionArgs.LogWriterStartegy.Write(ctx, azureReader)
+	errChan := testExecutionArgs.LogWriterStrategy.Write(ctx, azureReader)
 	defer tes.closeAndWriteLog(azureWriter, errChan)
 	logWriter := lumber.NewWriter(tes.logger)
 	defer logWriter.Close()

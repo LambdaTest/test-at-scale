@@ -256,7 +256,7 @@ func (d *driverV1) buildTestExecutionArgs(payload *core.Payload, tasConfig *core
 	return core.TestExecutionArgs{
 		Payload:           payload,
 		CoverageDir:       coverageDir,
-		LogWriterStartegy: logWriter,
+		LogWriterStrategy: logWriter,
 		TestPattern:       testPattern,
 		EnvMap:            envMap,
 		TestConfigFile:    tasConfig.ConfigFile,

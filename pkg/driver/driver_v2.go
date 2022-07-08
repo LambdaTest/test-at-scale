@@ -486,7 +486,7 @@ func (d *driverV2) buildTestExecutionArgs(payload *core.Payload,
 	return core.TestExecutionArgs{
 		Payload:           payload,
 		CoverageDir:       coverageDir,
-		LogWriterStartegy: azureLogWriter,
+		LogWriterStrategy: azureLogWriter,
 		TestPattern:       target,
 		EnvMap:            envMap,
 		TestConfigFile:    subModule.ConfigFile,
