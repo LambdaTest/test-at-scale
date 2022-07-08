@@ -446,7 +446,7 @@ type DiscoveyArgs struct {
 type TestExecutionArgs struct {
 	Payload           *Payload
 	CoverageDir       string
-	LogWriterStartegy LogWriterStartegy
+	LogWriterStartegy LogWriterStrategy
 	TestPattern       []string
 	EnvMap            map[string]string
 	TestConfigFile    string

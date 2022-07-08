@@ -255,7 +255,7 @@ func (d *driverV2) runPreRunCommand(ctx context.Context,
 		if _, err := mainBuffer.WriteString(preRunLog); err != nil {
 			return err
 		}
-		bufferWirter := logwriter.NewABufferLogWriter("TOP-LEVEL", mainBuffer, d.logger)
+		bufferWirter := logwriter.NewBufferLogWriter("TOP-LEVEL", mainBuffer, d.logger)
 		if err := d.ExecutionManager.ExecuteUserCommands(ctx, core.PreRun, payload,
 			topPreRun, secretMap, bufferWirter, global.RepoDir); err != nil {
 			d.logger.Errorf("Error occurred running top level PreRun , err %v", err)
@@ -275,7 +275,7 @@ func (d *driverV2) runPreRunCommand(ctx context.Context,
 
 		go func(subModule *core.SubModule) {
 			defer preRunWaitGroup.Done()
-			bufferWirterSubmodule := logwriter.NewABufferLogWriter(subModule.Name, newBuffer, d.logger)
+			bufferWirterSubmodule := logwriter.NewBufferLogWriter(subModule.Name, newBuffer, d.logger)
 			dicoveryErr := d.runPreRunForEachSubModule(ctx, payload, subModule, secretMap, bufferWirterSubmodule)
 			if dicoveryErr != nil {
 				taskPayload.Status = core.Error
@@ -326,7 +326,7 @@ func (d *driverV2) runPreRunForEachSubModule(ctx context.Context,
 	payload *core.Payload,
 	subModule *core.SubModule,
 	secretMap map[string]string,
-	bufferWirterSubmodule core.LogWriterStartegy) error {
+	bufferWirterSubmodule core.LogWriterStrategy) error {
 	d.logger.Debugf("Running discovery for sub module %s", subModule.Name)
 	blYML := subModule.Blocklist
 	if err := d.BlockTestService.GetBlockTests(ctx, blYML, payload.BranchName); err != nil {

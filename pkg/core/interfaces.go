@@ -128,7 +128,7 @@ type ExecutionManager interface {
 		payload *Payload,
 		runConfig *Run,
 		secretData map[string]string,
-		logwriter LogWriterStartegy,
+		logwriter LogWriterStrategy,
 		cwd string) error
 
 	// ExecuteInternalCommands executes the commands like installing runners and test discovery.
@@ -164,8 +164,9 @@ type Driver interface {
 		taskPayload *TaskPayload, oauth *Oauth, coverageDir string, secretMap map[string]string) error
 }
 
-// LogWriterStartegy will be implemented by all different type of log writer
-type LogWriterStartegy interface {
+// LogWriterStrategy interface is used to tag all log writing strategy
+type LogWriterStrategy interface {
+	// Write reads data from io.Reader and write it to various data stream
 	Write(ctx context.Context, reader io.Reader) <-chan error
 }
 

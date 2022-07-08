@@ -64,7 +64,7 @@ func (tes *testExecutionService) Run(ctx context.Context,
 	multiWriter := io.MultiWriter(logWriter, azureWriter)
 	maskWriter := logstream.NewMasker(multiWriter, testExecutionArgs.SecretData)
 
-	args, err := tes.buildCmdArgsV1(ctx, testExecutionArgs.TestConfigFile,
+	args, err := tes.buildCmdArgs(ctx, testExecutionArgs.TestConfigFile,
 		testExecutionArgs.FrameWork, testExecutionArgs.FrameWorkVersion, testExecutionArgs.Payload, testExecutionArgs.TestPattern)
 	if err != nil {
 		return nil, err
@@ -210,7 +210,7 @@ func (tes *testExecutionService) closeAndWriteLog(azureWriter *io.PipeWriter, er
 	}
 }
 
-func (tes *testExecutionService) buildCmdArgsV1(ctx context.Context,
+func (tes *testExecutionService) buildCmdArgs(ctx context.Context,
 	testConfigFile string,
 	frameWork string,
 	frameworkVersion int,

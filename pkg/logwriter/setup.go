@@ -26,7 +26,7 @@ type (
 
 func NewAzureLogWriter(azureClient core.AzureClient,
 	blobPath string,
-	logger lumber.Logger) core.LogWriterStartegy {
+	logger lumber.Logger) core.LogWriterStrategy {
 	return &AzureLogWriter{
 		azureClient: azureClient,
 		blobPath:    blobPath,
@@ -34,9 +34,9 @@ func NewAzureLogWriter(azureClient core.AzureClient,
 	}
 }
 
-func NewABufferLogWriter(subModule string,
+func NewBufferLogWriter(subModule string,
 	buffer *bytes.Buffer,
-	logger lumber.Logger) core.LogWriterStartegy {
+	logger lumber.Logger) core.LogWriterStrategy {
 	return &BufferLogWriter{
 		subModule: subModule,
 		buffer:    buffer,

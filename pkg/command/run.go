@@ -34,7 +34,7 @@ func (m *manager) ExecuteUserCommands(ctx context.Context,
 	payload *core.Payload,
 	runConfig *core.Run,
 	secretData map[string]string,
-	logwriter core.LogWriterStartegy,
+	logwriter core.LogWriterStrategy,
 	cwd string) error {
 	script, err := m.createScript(runConfig.Commands, secretData)
 	if err != nil {

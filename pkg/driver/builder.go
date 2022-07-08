@@ -7,8 +7,12 @@ import (
 
 	"github.com/LambdaTest/test-at-scale/pkg/core"
 	"github.com/LambdaTest/test-at-scale/pkg/errs"
-	"github.com/LambdaTest/test-at-scale/pkg/global"
 	"github.com/LambdaTest/test-at-scale/pkg/lumber"
+)
+
+const (
+	firstVersion  = 1
+	secondVersion = 2
 )
 
 type (
@@ -31,7 +35,8 @@ type (
 )
 
 func (b *Builder) GetDriver(version int) (core.Driver, error) {
-	if version < global.NewTASVersion {
+	switch version {
+	case firstVersion:
 		return &driverV1{
 			logger:               b.Logger,
 			TestExecutionService: b.TestExecutionService,
@@ -43,30 +48,33 @@ func (b *Builder) GetDriver(version int) (core.Driver, error) {
 			CacheStore:           b.CacheStore,
 			DiffManager:          b.DiffManager,
 			ListSubModuleService: b.ListSubModuleService,
-			TASVersion:           1,
+			TASVersion:           firstVersion,
 			nodeInstaller: NodeInstaller{
 				logger:           b.Logger,
 				ExecutionManager: b.ExecutionManager,
 			},
 		}, nil
+	case secondVersion:
+		return &driverV2{
+			logger:               b.Logger,
+			TestExecutionService: b.TestExecutionService,
+			TestDiscoveryService: b.TestDiscoveryService,
+			AzureClient:          b.AzureClient,
+			BlockTestService:     b.BlockTestService,
+			ExecutionManager:     b.ExecutionManager,
+			TASConfigManager:     b.TASConfigManager,
+			CacheStore:           b.CacheStore,
+			DiffManager:          b.DiffManager,
+			ListSubModuleService: b.ListSubModuleService,
+			TASVersion:           secondVersion,
+			nodeInstaller: NodeInstaller{
+				logger:           b.Logger,
+				ExecutionManager: b.ExecutionManager,
+			},
+		}, nil
+	default:
+		return nil, fmt.Errorf("invalid version ( %d )  mentioned in yml file", version)
 	}
-	return &driverV2{
-		logger:               b.Logger,
-		TestExecutionService: b.TestExecutionService,
-		TestDiscoveryService: b.TestDiscoveryService,
-		AzureClient:          b.AzureClient,
-		BlockTestService:     b.BlockTestService,
-		ExecutionManager:     b.ExecutionManager,
-		TASConfigManager:     b.TASConfigManager,
-		CacheStore:           b.CacheStore,
-		DiffManager:          b.DiffManager,
-		ListSubModuleService: b.ListSubModuleService,
-		TASVersion:           2,
-		nodeInstaller: NodeInstaller{
-			logger:           b.Logger,
-			ExecutionManager: b.ExecutionManager,
-		},
-	}, nil
 }
 
 func (n *NodeInstaller) InstallNodeVersion(ctx context.Context, nodeVersion string) error {
