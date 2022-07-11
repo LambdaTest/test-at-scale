@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strings"
 	"sync"
 
 	"github.com/LambdaTest/test-at-scale/pkg/core"
@@ -416,7 +417,7 @@ func (d *driverV2) buildDiscoveryArgs(payload *core.Payload, tasConfig *core.TAS
 		TestConfigFile: subModule.ConfigFile,
 		FrameWork:      subModule.Framework,
 		SmartRun:       tasConfig.SmartRun,
-		Diff:           diff,
+		Diff:           GetSubmoduleBasedDiff(diff, subModule.Path),
 		DiffExists:     diffExists,
 		CWD:            modulePath,
 	}
@@ -494,4 +495,19 @@ func (d *driverV2) buildTestExecutionArgs(payload *core.Payload,
 		SecretData:        secretMap,
 		CWD:               modulePath,
 	}
+}
+
+func GetSubmoduleBasedDiff(diff map[string]int, subModulePath string) map[string]int {
+	newDiff := map[string]int{}
+	subModulePath = strings.TrimPrefix(subModulePath, "./")
+	if !strings.HasSuffix(subModulePath, "/") {
+		subModulePath += "/"
+	}
+
+	for file, value := range diff {
+		filePath := strings.TrimPrefix(file, subModulePath)
+
+		newDiff[filePath] = value
+	}
+	return newDiff
 }
