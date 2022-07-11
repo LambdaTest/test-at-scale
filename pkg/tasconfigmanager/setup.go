@@ -162,7 +162,7 @@ func (tc *tasConfigManager) validateYMLV2(ctx context.Context,
 		subModuleMap := map[string]bool{}
 
 		for i := 0; i < len(tasConfig.PostMerge.SubModules); i++ {
-			if global.FrameworkLanguageMap[tasConfig.PreMerge.SubModules[i].Framework] == languageJs {
+			if global.FrameworkLanguageMap[tasConfig.PostMerge.SubModules[i].Framework] == languageJs {
 				hasJsModule = true
 			}
 			if err := utils.ValidateSubModule(&tasConfig.PostMerge.SubModules[i]); err != nil {
