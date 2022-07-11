@@ -16,6 +16,7 @@ import (
 )
 
 const packageJSON = "package.json"
+const languageJs = "javascript"
 
 var tierEnumMapping = map[core.Tier]int{
 	core.XSmall: 1,
@@ -93,7 +94,7 @@ func (tc *tasConfigManager) validateYMLV1(ctx context.Context,
 	}
 
 	language := global.FrameworkLanguageMap[tasConfig.Framework]
-	if tasConfig.Cache == nil && language == "javascript" {
+	if tasConfig.Cache == nil && language == languageJs {
 		checksum, err := utils.ComputeChecksum(fmt.Sprintf("%s/%s", global.RepoDir, global.PackageJSON))
 		if err != nil {
 			tc.logger.Errorf("Error while computing checksum, error %v", err)
@@ -124,6 +125,8 @@ func (tc *tasConfigManager) validateYMLV2(ctx context.Context,
 	licenseTier core.Tier,
 	yamlFilePath string) (*core.TASConfigV2, error) {
 	tasConfig, err := utils.ValidateStructTASYmlV2(ctx, yamlFile, yamlFilePath)
+	hasJsModule := false
+
 	if err != nil {
 		return nil, err
 	}
@@ -139,6 +142,10 @@ func (tc *tasConfigManager) validateYMLV2(ctx context.Context,
 		}
 		subModuleMap := map[string]bool{}
 		for i := 0; i < len(tasConfig.PreMerge.SubModules); i++ {
+			if global.FrameworkLanguageMap[tasConfig.PreMerge.SubModules[i].Framework] == languageJs {
+				hasJsModule = true
+			}
+
 			if err := utils.ValidateSubModule(&tasConfig.PreMerge.SubModules[i]); err != nil {
 				return nil, err
 			}
@@ -155,6 +162,9 @@ func (tc *tasConfigManager) validateYMLV2(ctx context.Context,
 		subModuleMap := map[string]bool{}
 
 		for i := 0; i < len(tasConfig.PostMerge.SubModules); i++ {
+			if global.FrameworkLanguageMap[tasConfig.PreMerge.SubModules[i].Framework] == languageJs {
+				hasJsModule = true
+			}
 			if err := utils.ValidateSubModule(&tasConfig.PostMerge.SubModules[i]); err != nil {
 				return nil, err
 			}
@@ -168,7 +178,8 @@ func (tc *tasConfigManager) validateYMLV2(ctx context.Context,
 		tc.logger.Errorf("LicenseTier validation failed. error: %v", err)
 		return nil, err
 	}
-	if tasConfig.Cache == nil {
+	// caching only if language is js.
+	if tasConfig.Cache == nil && hasJsModule {
 		checksum, err := utils.ComputeChecksum(fmt.Sprintf("%s/%s", global.RepoDir, packageJSON))
 		if err != nil {
 			tc.logger.Errorf("Error while computing checksum, error %v", err)

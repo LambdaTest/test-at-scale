@@ -85,10 +85,15 @@ func (d *driverV2) RunDiscovery(ctx context.Context, payload *core.Payload,
 			return discoveryErr
 		}
 	}
-	if err = d.CacheStore.Upload(ctx, setUpResult.cacheKey, tasConfig.Cache.Paths...); err != nil {
-		// cache upload failure should not fail the task
-		d.logger.Errorf("Unable to upload cache: %v", err)
+
+	// if language is js
+	if tasConfig.Cache != nil && tasConfig.Cache.Key != "" {
+		if err = d.CacheStore.Upload(ctx, setUpResult.cacheKey, tasConfig.Cache.Paths...); err != nil {
+			// cache upload failure should not fail the task
+			d.logger.Errorf("Unable to upload cache: %v", err)
+		}
 	}
+
 	d.logger.Debugf("Cache uploaded successfully")
 
 	return nil
@@ -361,17 +366,22 @@ func (d *driverV2) setUpDiscovery(ctx context.Context,
 	payload *core.Payload,
 	tasConfig *core.TASConfigV2,
 	oauth *core.Oauth) (*setUpResultV2, error) {
-	cacheKey := fmt.Sprintf("%s/%s/%s/%s", tasConfig.Cache.Version, payload.OrgID, payload.RepoID, tasConfig.Cache.Key)
-
+	cacheKey := ""
 	g, errCtx := errgroup.WithContext(ctx)
-	g.Go(func() error {
-		if errG := d.CacheStore.Download(errCtx, cacheKey); errG != nil {
-			d.logger.Errorf("Unable to download cache: %v", errG)
-			errG = errs.New(errs.GenericErrRemark.Error())
-			return errG
-		}
-		return nil
-	})
+
+	d.logger.Debugf("------------tasconfig: %+v", tasConfig)
+	// cache key will be empty in case of golang and java.
+	if tasConfig.Cache != nil && tasConfig.Cache.Key != "" {
+		cacheKey = fmt.Sprintf("%s/%s/%s/%s", tasConfig.Cache.Version, payload.OrgID, payload.RepoID, tasConfig.Cache.Key)
+		g.Go(func() error {
+			if errG := d.CacheStore.Download(errCtx, cacheKey); errG != nil {
+				d.logger.Errorf("Unable to download cache: %v", errG)
+				errG = errs.New(errs.GenericErrRemark.Error())
+				return errG
+			}
+			return nil
+		})
+	}
 	diffExists := true
 	diff := map[string]int{}
 	g.Go(func() error {
