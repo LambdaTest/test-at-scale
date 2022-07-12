@@ -369,7 +369,6 @@ func (d *driverV2) setUpDiscovery(ctx context.Context,
 	cacheKey := ""
 	g, errCtx := errgroup.WithContext(ctx)
 
-	d.logger.Debugf("------------tasconfig: %+v", tasConfig)
 	// cache key will be empty in case of golang and java.
 	if tasConfig.Cache != nil && tasConfig.Cache.Key != "" {
 		cacheKey = fmt.Sprintf("%s/%s/%s/%s", tasConfig.Cache.Version, payload.OrgID, payload.RepoID, tasConfig.Cache.Key)
