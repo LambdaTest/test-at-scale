@@ -80,6 +80,13 @@ const (
 	EventPullRequest EventType = "pull-request"
 )
 
+const (
+	// RunningXTimes is a flaky algo
+	RunningXTimes = "running_x_times"
+	// RunningXTimes with random order
+	RunningXTimesShuffle = "running_x_times_shuffle"
+)
+
 // CommitChangeList defines  information related to commits
 type CommitChangeList struct {
 	Sha      string   `json:"Sha"`
@@ -454,4 +461,13 @@ type TestExecutionArgs struct {
 	SecretData        map[string]string
 	FrameWorkVersion  int
 	CWD               string
+}
+
+// unique string to identify location of test
+type LocatorConfig struct {
+	Locator string `json:"locator"`
+}
+
+type InputLocatorConfig struct {
+	Locators []LocatorConfig `json:"locators"`
 }
