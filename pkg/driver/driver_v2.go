@@ -86,7 +86,7 @@ func (d *driverV2) RunDiscovery(ctx context.Context, payload *core.Payload,
 		}
 	}
 
-	// if language is js
+	// cache key will be empty in case of golang and java.
 	if tasConfig.Cache != nil && tasConfig.Cache.Key != "" {
 		if err = d.CacheStore.Upload(ctx, setUpResult.cacheKey, tasConfig.Cache.Paths...); err != nil {
 			// cache upload failure should not fail the task
