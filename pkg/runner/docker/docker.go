@@ -25,10 +25,10 @@ import (
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
+	"github.com/docker/go-units"
 )
 
 const (
-	mb                             = 1048576
 	buildCacheExpiry time.Duration = 4 * time.Hour
 )
 
@@ -61,7 +61,7 @@ func newDockerClient(secretsManager core.SecretsManager) (*docker, error) {
 	return &docker{
 		client:         client,
 		cpu:            float32(dockerInfo.NCPU),
-		ram:            dockerInfo.MemTotal / mb,
+		ram:            dockerInfo.MemTotal / units.MiB,
 		secretsManager: secretsManager,
 	}, nil
 }
