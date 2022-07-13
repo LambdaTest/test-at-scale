@@ -67,15 +67,15 @@ func NewTestBlockTestService(cfg *config.NucleusConfig, requests core.Requests, 
 
 func (tbs *TestBlockTestService) fetchBlockListFromNeuron(ctx context.Context, branch string) error {
 	var inp []blocktestAPIResponse
-	params := utils.FetchQueryParams()
-	params["branch"] = branch
-	params["taskID"] = tbs.cfg.TaskID
+	query := utils.FetchQueryParams()
+	query["branch"] = branch
+	query["taskID"] = tbs.cfg.TaskID
 
 	headers := map[string]string{
 		"Authorization": fmt.Sprintf("%s %s", "Bearer", os.Getenv("TOKEN")),
 	}
 
-	rawBytes, statusCode, err := tbs.requests.MakeAPIRequest(ctx, http.MethodGet, tbs.endpoint, nil, params, headers)
+	rawBytes, statusCode, err := tbs.requests.MakeAPIRequest(ctx, http.MethodGet, tbs.endpoint, nil, query, headers)
 	if statusCode == http.StatusNotFound {
 		return nil
 	}

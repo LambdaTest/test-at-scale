@@ -8,11 +8,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 
 	"github.com/LambdaTest/test-at-scale/config"
 	"github.com/LambdaTest/test-at-scale/pkg/core"
@@ -151,11 +149,11 @@ func (tes *testExecutionService) SendResults(ctx context.Context,
 		tes.logger.Errorf("failed to marshal request body %v", err)
 		return nil, err
 	}
-	params := utils.FetchQueryParams()
+	query := utils.FetchQueryParams()
 	headers := map[string]string{
 		"Authorization": fmt.Sprintf("%s %s", "Bearer", os.Getenv("TOKEN")),
 	}
-	respBody, _, err := tes.requests.MakeAPIRequest(ctx, http.MethodPost, tes.serverEndpoint, reqBody, params, headers)
+	respBody, _, err := tes.requests.MakeAPIRequest(ctx, http.MethodPost, tes.serverEndpoint, reqBody, query, headers)
 	if err != nil {
 		tes.logger.Errorf("error while sending reports %v", err)
 		return nil, err
@@ -172,20 +170,9 @@ func (tes *testExecutionService) SendResults(ctx context.Context,
 }
 
 func (tes *testExecutionService) getLocatorsFile(ctx context.Context, locatorAddress string) (string, error) {
-	u, err := url.Parse(locatorAddress)
+	resp, err := tes.azureClient.FindUsingSASUrl(ctx, locatorAddress)
 	if err != nil {
-		return "", err
-	}
-	// string the container name to get blob path
-	blobPath := strings.Replace(u.Path, fmt.Sprintf("/%s/", core.PayloadContainer), "", -1)
-
-	sasURL, err := tes.azureClient.GetSASURL(ctx, blobPath, core.PayloadContainer)
-	if err != nil {
-		return "", err
-	}
-	resp, err := tes.azureClient.FindUsingSASUrl(ctx, sasURL)
-	if err != nil {
-		tes.logger.Errorf("Error while downloading cache for key: %s, error %v", u.Path, err)
+		tes.logger.Errorf("Error while downloading locatorFile, error %v", err)
 		return "", err
 	}
 	defer resp.Close()

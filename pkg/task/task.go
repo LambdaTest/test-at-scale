@@ -36,11 +36,11 @@ func (t *task) UpdateStatus(ctx context.Context, payload *core.TaskPayload) erro
 		t.logger.Errorf("error while json marshal %v", err)
 		return err
 	}
-	params := utils.FetchQueryParams()
+	query := utils.FetchQueryParams()
 	headers := map[string]string{
 		"Authorization": fmt.Sprintf("%s %s", "Bearer", os.Getenv("TOKEN")),
 	}
-	if _, _, err := t.requests.MakeAPIRequest(ctx, http.MethodPut, t.endpoint, reqBody, params, headers); err != nil {
+	if _, _, err := t.requests.MakeAPIRequest(ctx, http.MethodPut, t.endpoint, reqBody, query, headers); err != nil {
 		return err
 	}
 

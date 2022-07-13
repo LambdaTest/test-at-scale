@@ -3,12 +3,13 @@ package logwriter
 import (
 	"context"
 	"io"
+	"strings"
 	"testing"
 
+	"github.com/LambdaTest/test-at-scale/mocks"
 	"github.com/LambdaTest/test-at-scale/pkg/core"
 	"github.com/LambdaTest/test-at-scale/pkg/errs"
 	"github.com/LambdaTest/test-at-scale/testutils"
-	"github.com/LambdaTest/test-at-scale/testutils/mocks"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -57,7 +58,7 @@ func Test_azure_write_logger_strategy(t *testing.T) {
 			args{
 				ctx:      context.TODO(),
 				blobPath: "blobpath",
-				reader:   &mocks.Reader{},
+				reader:   &strings.Reader{},
 			},
 			errGetSASURL,
 			true,
@@ -69,7 +70,7 @@ func Test_azure_write_logger_strategy(t *testing.T) {
 			args{
 				ctx:      context.TODO(),
 				blobPath: "blobpath",
-				reader:   &mocks.Reader{},
+				reader:   &strings.Reader{},
 			},
 			errCreateUsingSASURL,
 			true,
@@ -81,7 +82,7 @@ func Test_azure_write_logger_strategy(t *testing.T) {
 			args{
 				ctx:      context.TODO(),
 				blobPath: "blobpath",
-				reader:   &mocks.Reader{},
+				reader:   &strings.Reader{},
 			},
 			errSuccess,
 			false,
@@ -94,7 +95,7 @@ func Test_azure_write_logger_strategy(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &AzureLogWriter{
 				logger:      logger,
-				blobPath:    tt.args.blobPath,
+				purpose:     core.PurposeCache,
 				azureClient: tt.fields.azureClient,
 			}
 			got := m.Write(tt.args.ctx, tt.args.reader)
@@ -114,12 +115,13 @@ func Test_azure_write_logger_strategy(t *testing.T) {
 }
 
 func mockUtil(azureClient *mocks.AzureClient, msgGet, msgCreate, errGet, errCreate string, wantErrGet, wantErrCreate bool) {
+	var x map[string]interface{}
 	azureClient.On("GetSASURL", mock.AnythingOfType("*context.emptyCtx"),
-		mock.AnythingOfType("string"), mock.AnythingOfType("core.ContainerType")).Return(
-		func(ctx context.Context, containerPath string, containerType core.ContainerType) string {
+		mock.AnythingOfType("core.SASURLPurpose"), x).Return(
+		func(ctx context.Context, purpose core.SASURLPurpose, data map[string]interface{}) string {
 			return msgGet
 		},
-		func(ctx context.Context, containerPath string, containerType core.ContainerType) error {
+		func(ctx context.Context, purpose core.SASURLPurpose, data map[string]interface{}) error {
 			if !wantErrGet {
 				return nil
 			}
@@ -127,7 +129,7 @@ func mockUtil(azureClient *mocks.AzureClient, msgGet, msgCreate, errGet, errCrea
 		})
 
 	azureClient.On("CreateUsingSASURL", mock.AnythingOfType("*context.emptyCtx"),
-		mock.AnythingOfType("string"), mock.AnythingOfType("*mocks.Reader"), "text/plain").Return(
+		mock.AnythingOfType("string"), mock.AnythingOfType("*strings.Reader"), "text/plain").Return(
 		func(ctx context.Context, sasURL string, reader io.Reader, mimeType string) string {
 			return msgCreate
 		},

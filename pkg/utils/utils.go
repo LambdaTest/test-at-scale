@@ -232,13 +232,13 @@ func ValidateSubModule(module *core.SubModule) error {
 }
 
 // FetchQueryParams returns the params which are required in API
-func FetchQueryParams() (params map[string]string) {
-	params = map[string]string{
+func FetchQueryParams() (params map[string]interface{}) {
+	return map[string]interface{}{
 		"repoID":  os.Getenv("REPO_ID"),
 		"buildID": os.Getenv("BUILD_ID"),
 		"orgID":   os.Getenv("ORG_ID"),
+		"taskID":  os.Getenv("TASK_ID"),
 	}
-	return params
 }
 
 func GetArgs(command string, frameWork string, frameworkVersion int,

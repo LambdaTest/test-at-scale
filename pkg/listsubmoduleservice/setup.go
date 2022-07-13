@@ -37,12 +37,12 @@ func (s *subModuleListService) Send(ctx context.Context, buildID string, totalSu
 		s.logger.Errorf("error while json marshal %v", err)
 		return err
 	}
-	params := utils.FetchQueryParams()
+	query := utils.FetchQueryParams()
 	headers := map[string]string{
 		"Authorization": fmt.Sprintf("%s %s", "Bearer", os.Getenv("TOKEN")),
 	}
 	if _, statusCode, err := s.requests.MakeAPIRequest(ctx, http.MethodPost, s.subModuleListEndpoint,
-		reqBody, params, headers); err != nil || statusCode != 200 {
+		reqBody, query, headers); err != nil || statusCode != 200 {
 		s.logger.Errorf("error while making submodule-list api call status code %d, err %v", statusCode, err)
 		return err
 	}

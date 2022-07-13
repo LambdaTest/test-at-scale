@@ -109,11 +109,11 @@ func (tds *testDiscoveryService) SendResult(ctx context.Context, testDiscoveryRe
 		tds.logger.Errorf("error while json marshal %v", err)
 		return err
 	}
-	params := utils.FetchQueryParams()
+	query := utils.FetchQueryParams()
 	headers := map[string]string{
 		"Authorization": fmt.Sprintf("%s %s", "Bearer", os.Getenv("TOKEN")),
 	}
-	if _, _, err := tds.requests.MakeAPIRequest(ctx, http.MethodPost, tds.discoveryEndpoint, reqBody, params, headers); err != nil {
+	if _, _, err := tds.requests.MakeAPIRequest(ctx, http.MethodPost, tds.discoveryEndpoint, reqBody, query, headers); err != nil {
 		return err
 	}
 
