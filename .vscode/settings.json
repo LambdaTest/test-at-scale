@@ -2,5 +2,6 @@
     "go.lintTool": "golangci-lint",
     "go.lintFlags": [
         "--fast"
-    ]
+    ],
+    "go.testTimeout": "90s"
 }

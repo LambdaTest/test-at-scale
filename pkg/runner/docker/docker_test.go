@@ -10,17 +10,22 @@ import (
 	"github.com/LambdaTest/test-at-scale/config"
 	"github.com/LambdaTest/test-at-scale/pkg/core"
 	"github.com/LambdaTest/test-at-scale/pkg/global"
+	"github.com/LambdaTest/test-at-scale/pkg/synapse"
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
 )
 
 func getRunnerOptions() *core.RunnerOptions {
 	os.Setenv(global.AutoRemoveEnv, strconv.FormatBool(true))
+
+	containerName := fmt.Sprintf("test-container-%s", uuid.NewString())
 	r := core.RunnerOptions{
-		ContainerName:  fmt.Sprintf("test-container-%s", uuid.NewString()),
+		ContainerName:  containerName,
 		ContainerArgs:  []string{"sleep", "10"},
-		DockerImage:    "ubuntu:latest",
+		DockerImage:    "alpine:latest",
 		HostVolumePath: "/tmp",
 		PodType:        core.NucleusPod,
+		Label:          map[string]string{synapse.BuildID: containerName},
 	}
 	return &r
 }
@@ -139,5 +144,47 @@ func TestDockerPullNever(t *testing.T) {
 		Image:      "dummy-image",
 	}, runnerOpts); err != nil {
 		t.Errorf("Error while pulling image %v", err)
+	}
+}
+
+func TestDockerVolumes(t *testing.T) {
+	ctx := context.Background()
+	runnerOpts := getRunnerOptions()
+
+	os.Setenv(global.AutoRemoveEnv, strconv.FormatBool(true))
+	statusCreate := runner.Create(ctx, runnerOpts)
+	if !statusCreate.Done {
+		t.Errorf("error creating container: %v", statusCreate.Error)
+	}
+
+	correctVolumeName := fmt.Sprintf("%s-%s", volumePrefix, runnerOpts.Label[synapse.BuildID])
+	incorrectVolumeName := fmt.Sprintf("incorrect-%s-%s", volumePrefix, runnerOpts.Label[synapse.BuildID])
+
+	exists, err := runner.FindVolumes(incorrectVolumeName)
+	if err != nil {
+		t.Errorf("error finding docker volume: %v", err)
+	}
+	assert.Equal(t, false, exists)
+
+	exists, err = runner.FindVolumes(correctVolumeName)
+	if err != nil {
+		t.Errorf("error finding docker volume: %v", err)
+	}
+	assert.Equal(t, true, exists)
+
+	if status := runner.Run(ctx, runnerOpts); !status.Done {
+		t.Errorf("error in running container : %v", status.Error)
+		return
+	}
+
+	expectedFileContent := `{"access_token":"dummytoken","expiry":"0001-01-01T00:00:00Z","refresh_token":"","token_type":"Bearer"}`
+	secretBytes, err := secretsManager.GetGitSecretBytes()
+	if err != nil {
+		t.Errorf("error retrieving secrets: %v", err)
+	}
+	assert.Equal(t, expectedFileContent, string(secretBytes))
+
+	if err = runner.Destroy(ctx, runnerOpts); err != nil {
+		t.Errorf("error destroying container: %v", err)
 	}
 }

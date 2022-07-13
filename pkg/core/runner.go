@@ -46,7 +46,7 @@ type DockerRunner interface {
 	// Run runs the execution engine
 	Run(context.Context, *RunnerOptions) ContainerStatus
 
-	//WaitForRunning waits for runner to get completed
+	// WaitForRunning waits for runner to get completed
 	WaitForCompletion(ctx context.Context, r *RunnerOptions) error
 
 	// Destroy the execution engine
@@ -71,6 +71,12 @@ type DockerRunner interface {
 
 	// CopyFileToContainer copies content to container in file
 	CopyFileToContainer(ctx context.Context, path, fileName, containerID string, content []byte) error
+
+	// FindVolumes checks if docker volume is available
+	FindVolumes(volumeName string) (bool, error)
+
+	// RemoveVolume removes volume
+	RemoveVolume(ctx context.Context, volumeName string) error
 }
 
 // VolumeDetails docker volume options

@@ -85,7 +85,7 @@ func New(secretsManager core.SecretsManager,
 
 func (d *docker) CreateVolume(ctx context.Context, r *core.RunnerOptions) error {
 	volumeOptions := d.getVolumeConfiguration(r)
-	isVolume, err := d.findVolumes(volumeOptions.Name)
+	isVolume, err := d.FindVolumes(volumeOptions.Name)
 	if err != nil {
 		return err
 	}
@@ -402,7 +402,7 @@ func (d *docker) writeLogs(ctx context.Context, r *core.RunnerOptions) error {
 	return nil
 }
 
-func (d *docker) findVolumes(volumeName string) (bool, error) {
+func (d *docker) FindVolumes(volumeName string) (bool, error) {
 	volumeFilter := filters.KeyValuePair{Key: "name", Value: volumeName}
 	volumes, err := d.client.VolumeList(context.Background(), filters.NewArgs(volumeFilter))
 	if err != nil {
@@ -414,6 +414,13 @@ func (d *docker) findVolumes(volumeName string) (bool, error) {
 		}
 	}
 	return false, nil
+}
+
+func (d *docker) RemoveVolume(ctx context.Context, volumeName string) error {
+	if err := d.client.VolumeRemove(ctx, volumeName, true); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (d *docker) RemoveOldVolumes(ctx context.Context) {
@@ -436,7 +443,7 @@ func (d *docker) RemoveOldVolumes(ctx context.Context) {
 				diff := now.Sub(volumeDetails.CreatedAt)
 				if diff > buildCacheExpiry {
 					d.logger.Debugf("Deleting volume: %s", v.Name)
-					if err = d.client.VolumeRemove(ctx, v.Name, true); err != nil {
+					if err = d.RemoveVolume(ctx, v.Name); err != nil {
 						d.logger.Errorf("Error deleting volume: %v", err.Error())
 					}
 				}
