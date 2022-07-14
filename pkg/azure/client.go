@@ -163,6 +163,9 @@ func (s *store) GetSASURL(ctx context.Context, purpose core.SASURLPurpose, query
 	}
 	defaultParams := utils.FetchQueryParams()
 	for key, val := range defaultParams {
+		if query == nil {
+			query = make(map[string]interface{})
+		}
 		query[key] = val
 	}
 	headers := map[string]string{
