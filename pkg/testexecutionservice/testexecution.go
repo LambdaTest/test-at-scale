@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -149,10 +148,7 @@ func (tes *testExecutionService) SendResults(ctx context.Context,
 		tes.logger.Errorf("failed to marshal request body %v", err)
 		return nil, err
 	}
-	query := utils.FetchQueryParams()
-	headers := map[string]string{
-		"Authorization": fmt.Sprintf("%s %s", "Bearer", os.Getenv("TOKEN")),
-	}
+	query, headers := utils.GetDefaultQueryAndHeaders()
 	respBody, _, err := tes.requests.MakeAPIRequest(ctx, http.MethodPost, tes.serverEndpoint, reqBody, query, headers)
 	if err != nil {
 		tes.logger.Errorf("error while sending reports %v", err)

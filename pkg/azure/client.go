@@ -8,7 +8,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
@@ -161,15 +160,12 @@ func (s *store) GetSASURL(ctx context.Context, purpose core.SASURLPurpose, query
 		s.logger.Errorf("failed to marshal request body %v", err)
 		return "", err
 	}
-	defaultParams := utils.FetchQueryParams()
-	for key, val := range defaultParams {
+	defaultQuery, headers := utils.GetDefaultQueryAndHeaders()
+	for key, val := range defaultQuery {
 		if query == nil {
 			query = make(map[string]interface{})
 		}
 		query[key] = val
-	}
-	headers := map[string]string{
-		"Authorization": fmt.Sprintf("%s %s", "Bearer", os.Getenv("TOKEN")),
 	}
 	rawBytes, _, err := s.requests.MakeAPIRequest(ctx, http.MethodPost, s.endpoint, reqBody, query, headers)
 	if err != nil {
