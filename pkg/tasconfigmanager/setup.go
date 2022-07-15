@@ -24,7 +24,6 @@ var tierEnumMapping = map[core.Tier]int{
 	core.Large:  4,
 	core.XLarge: 5,
 }
-var getTasFilePathFn = getTasFilePath
 
 // tasConfigManager represents an instance of TASConfigManager instance
 type tasConfigManager struct {
@@ -48,17 +47,13 @@ func (tc *tasConfigManager) LoadAndValidate(ctx context.Context,
 }
 
 func (tc *tasConfigManager) loadAndValidateV1(ctx context.Context,
-	path string,
+	filePath string,
 	eventType core.EventType,
 	licenseTier core.Tier) (*core.TASConfig, error) {
-	filePath, err := getTasFilePathFn(path)
-	if err != nil {
-		return nil, err
-	}
 	yamlFile, err := os.ReadFile(filePath)
 	if err != nil {
 		tc.logger.Errorf("Error while reading file %s, error %v", filePath, err)
-		return nil, errs.New(fmt.Sprintf("Error while reading configuration file at path: %s", path))
+		return nil, errs.New(fmt.Sprintf("Error while reading configuration file at path: %s", filePath))
 	}
 	return tc.validateYMLV1(ctx, yamlFile, eventType, licenseTier, filePath)
 }
@@ -183,7 +178,7 @@ func (tc *tasConfigManager) validateYMLV2(ctx context.Context,
 }
 
 func (tc *tasConfigManager) GetVersion(path string) (int, error) {
-	yamlFile, err := os.ReadFile(fmt.Sprintf("%s/%s", global.RepoDir, path))
+	yamlFile, err := os.ReadFile(path)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return 0, errs.New(fmt.Sprintf("Configuration file not found at path: %s", path))
@@ -200,29 +195,26 @@ func (tc *tasConfigManager) GetVersion(path string) (int, error) {
 }
 
 func (tc *tasConfigManager) loadAndValidateV2(ctx context.Context,
-	path string,
+	yamlFilePath string,
 	eventType core.EventType,
 	licenseTier core.Tier) (*core.TASConfigV2, error) {
-	yamlFilePath, err := getTasFilePathFn(path)
-	if err != nil {
-		return nil, err
-	}
 	yamlFile, err := os.ReadFile(yamlFilePath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return nil, errs.New(fmt.Sprintf("Configuration file not found at path: %s", path))
+			return nil, errs.New(fmt.Sprintf("Configuration file not found at path: %s", yamlFilePath))
 		}
 		tc.logger.Errorf("Error while reading file, error %v", err)
-		return nil, errs.New(fmt.Sprintf("Error while reading configuration file at path: %s", path))
+		return nil, errs.New(fmt.Sprintf("Error while reading configuration file at path: %s", yamlFilePath))
 	}
 	return tc.validateYMLV2(ctx, yamlFile, eventType, licenseTier, yamlFilePath)
 }
 
-func getTasFilePath(path string) (string, error) {
-	path, err := utils.GetConfigFileName(path)
+func (tc *tasConfigManager) GetTasConfigFilePath(payload *core.Payload) (string, error) {
+	// load tas yaml file
+	filePath, err := utils.GetTasFilePath(payload.TasFileName)
 	if err != nil {
+		tc.logger.Errorf("Unable to load tas yaml file, error: %v", err)
 		return "", err
 	}
-	filePath := fmt.Sprintf("%s/%s", global.RepoDir, path)
 	return filePath, nil
 }

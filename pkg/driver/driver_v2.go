@@ -37,6 +37,7 @@ type (
 		nodeInstaller        NodeInstaller
 		TestDiscoveryService core.TestDiscoveryService
 		TASVersion           int
+		TASFilePath          string
 	}
 
 	setUpResultV2 struct {
@@ -50,7 +51,7 @@ func (d *driverV2) RunDiscovery(ctx context.Context, payload *core.Payload,
 	taskPayload *core.TaskPayload, oauth *core.Oauth, coverageDir string, secretMap map[string]string) error {
 	// do something
 	d.logger.Debugf("Running in %d version", d.TASVersion)
-	tas, err := d.TASConfigManager.LoadAndValidate(ctx, d.TASVersion, payload.TasFileName, payload.EventType, payload.LicenseTier)
+	tas, err := d.TASConfigManager.LoadAndValidate(ctx, d.TASVersion, d.TASFilePath, payload.EventType, payload.LicenseTier)
 	if err != nil {
 		d.logger.Errorf("Unable to load tas yaml file, error: %v", err)
 		err = &errs.StatusFailed{Remark: err.Error()}
@@ -97,7 +98,7 @@ func (d *driverV2) RunDiscovery(ctx context.Context, payload *core.Payload,
 
 func (d *driverV2) RunExecution(ctx context.Context, payload *core.Payload,
 	taskPayload *core.TaskPayload, oauth *core.Oauth, coverageDir string, secretMap map[string]string) error {
-	tas, err := d.TASConfigManager.LoadAndValidate(ctx, d.TASVersion, payload.TasFileName, payload.EventType, payload.LicenseTier)
+	tas, err := d.TASConfigManager.LoadAndValidate(ctx, d.TASVersion, d.TASFilePath, payload.EventType, payload.LicenseTier)
 	if err != nil {
 		d.logger.Errorf("Unable to load tas yaml file, error: %v", err)
 		err = &errs.StatusFailed{Remark: err.Error()}

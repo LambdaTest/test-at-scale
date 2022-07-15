@@ -10,6 +10,8 @@ import (
 	"github.com/LambdaTest/test-at-scale/pkg/global"
 )
 
+const gitLabDownloadURL = "https://gitlab.com"
+
 // GetCloneURL returns repo clone url for given git provider
 func GetCloneURL(gitprovider, repoLink, repo, commitID, forkSlug, repoSlug string) (string, error) {
 	if global.TestEnv {
@@ -78,5 +80,23 @@ func GetPullRequestDiffURL(gitprovider, path string, prNumber int) (string, erro
 
 	default:
 		return "", errs.ErrUnsupportedGitProvider
+	}
+}
+
+// GetFileDownloadURL returns download URL for file in repo
+func GetFileDownloadURL(gitprovider, commitID, repoSlug, filePath string) (string, error) {
+	if global.TestEnv {
+		return global.TestServer, nil
+	}
+	switch gitprovider {
+	case core.GitHub:
+		return fmt.Sprintf("%s/%s/contents/%s?ref=%s", global.APIHostURLMap[gitprovider], repoSlug, filePath, commitID), nil
+	case core.GitLab:
+		return fmt.Sprintf("%s/%s/-/raw/%s/%s", gitLabDownloadURL, repoSlug, commitID, filePath), nil
+	case core.Bitbucket:
+		// TODO: check for fork PR
+		return fmt.Sprintf("%s/repositories/%s/src/%s/%s/", global.APIHostURLMap[gitprovider], repoSlug, commitID, filePath), nil
+	default:
+		return "", nil
 	}
 }

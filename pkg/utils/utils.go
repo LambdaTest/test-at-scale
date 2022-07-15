@@ -19,6 +19,7 @@ import (
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
 	en_translations "github.com/go-playground/validator/v10/translations/en"
+	"github.com/google/uuid"
 	"gopkg.in/yaml.v3"
 )
 
@@ -264,4 +265,24 @@ func GetArgs(command string, frameWork string, frameworkVersion int,
 	}
 
 	return args
+}
+
+func GetTasFilePath(path string) (string, error) {
+	path, err := GetConfigFileName(path)
+	if err != nil {
+		return "", err
+	}
+	filePath := fmt.Sprintf("%s/%s", global.RepoDir, path)
+	return filePath, nil
+}
+
+// GenerateUUID generates uuid v4
+func GenerateUUID() string {
+	uuidV4 := uuid.New() // panics on error
+	return strings.Map(func(r rune) rune {
+		if r == '-' {
+			return -1
+		}
+		return r
+	}, uuidV4.String())
 }
