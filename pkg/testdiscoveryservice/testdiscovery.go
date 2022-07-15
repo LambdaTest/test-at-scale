@@ -4,9 +4,7 @@ package testdiscoveryservice
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
-	"os"
 	"os/exec"
 	"strings"
 
@@ -109,11 +107,8 @@ func (tds *testDiscoveryService) SendResult(ctx context.Context, testDiscoveryRe
 		tds.logger.Errorf("error while json marshal %v", err)
 		return err
 	}
-	params := utils.FetchQueryParams()
-	headers := map[string]string{
-		"Authorization": fmt.Sprintf("%s %s", "Bearer", os.Getenv("TOKEN")),
-	}
-	if _, _, err := tds.requests.MakeAPIRequest(ctx, http.MethodPost, tds.discoveryEndpoint, reqBody, params, headers); err != nil {
+	query, headers := utils.GetDefaultQueryAndHeaders()
+	if _, _, err := tds.requests.MakeAPIRequest(ctx, http.MethodPost, tds.discoveryEndpoint, reqBody, query, headers); err != nil {
 		return err
 	}
 

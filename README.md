@@ -102,7 +102,7 @@ curl https://raw.githubusercontent.com/LambdaTest/test-at-scale/main/.sample.syn
   docker info --format "CPU: {{.NCPU}}, RAM: {{.MemTotal}}"
   ```
 - Execute the above command to ensure that resources usable by Docker are atleast `CPU: 2, RAM: 4294967296`.
-  > **NOTE:** In order to run test-at-scale you require a minimum configuration of 2 CPU cores and 4 GBs of RAM.
+  > **NOTE:** In order to run test-at-scale you require a minimum configuration of 2 CPU cores and 4 GiBs of RAM.
 
 - The `.synapse.json` configuration file made in [Step 2](#step-2---creating-a-configuration-file-for-self-hosted-setup) will be required before executing the next command.
 - Download and run the docker compose file using the following command.

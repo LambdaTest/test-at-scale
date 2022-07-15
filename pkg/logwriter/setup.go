@@ -19,17 +19,17 @@ type (
 
 	AzureLogWriter struct {
 		azureClient core.AzureClient
-		blobPath    string
+		purpose     core.SASURLPurpose
 		logger      lumber.Logger
 	}
 )
 
 func NewAzureLogWriter(azureClient core.AzureClient,
-	blobPath string,
+	purpose core.SASURLPurpose,
 	logger lumber.Logger) core.LogWriterStrategy {
 	return &AzureLogWriter{
 		azureClient: azureClient,
-		blobPath:    blobPath,
+		purpose:     purpose,
 		logger:      logger,
 	}
 }
@@ -66,9 +66,9 @@ func (b *BufferLogWriter) Write(ctx context.Context, reader io.Reader) <-chan er
 func (a *AzureLogWriter) Write(ctx context.Context, reader io.Reader) <-chan error {
 	errChan := make(chan error, 1)
 	go func() {
-		sasURL, err := a.azureClient.GetSASURL(ctx, a.blobPath, core.LogsContainer)
+		sasURL, err := a.azureClient.GetSASURL(ctx, a.purpose, nil)
 		if err != nil {
-			a.logger.Errorf("failed to genereate SAS URL for path %s, error: %v", a.blobPath, err)
+			a.logger.Errorf("failed to genereate SAS URL for purpose %s, error: %v", a.purpose, err)
 			errChan <- err
 			return
 		}

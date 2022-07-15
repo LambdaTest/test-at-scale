@@ -6,7 +6,6 @@ package driver
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
 
 	"github.com/LambdaTest/test-at-scale/pkg/core"
@@ -64,8 +63,7 @@ func (d *driverV1) RunDiscovery(ctx context.Context, payload *core.Payload,
 
 	if tasConfig.Prerun != nil {
 		d.logger.Infof("Running pre-run steps for top module")
-		blobPath := fmt.Sprintf("%s/%s/%s/%s.log", payload.OrgID, payload.BuildID, os.Getenv("TASK_ID"), core.PreRun)
-		azureLogWriter := logwriter.NewAzureLogWriter(d.AzureClient, blobPath, d.logger)
+		azureLogWriter := logwriter.NewAzureLogWriter(d.AzureClient, core.PurposePreRunLogs, d.logger)
 		err = d.ExecutionManager.ExecuteUserCommands(ctx, core.PreRun, payload, tasConfig.Prerun, secretMap, azureLogWriter, global.RepoDir)
 		if err != nil {
 			d.logger.Errorf("Unable to run pre-run steps %v", err)
@@ -149,8 +147,7 @@ func (d *driverV1) RunExecution(ctx context.Context, payload *core.Payload,
 	}
 
 	taskPayload.Status = resp.TaskStatus
-	blobPath := fmt.Sprintf("%s/%s/%s/%s.log", payload.OrgID, payload.BuildID, os.Getenv("TASK_ID"), core.PostRun)
-	logWriter := logwriter.NewAzureLogWriter(d.AzureClient, blobPath, d.logger)
+	logWriter := logwriter.NewAzureLogWriter(d.AzureClient, core.PurposePostRunLogs, d.logger)
 
 	if tasConfig.Postrun != nil {
 		d.logger.Infof("Running post-run steps")
@@ -170,7 +167,7 @@ func (d *driverV1) setUp(ctx context.Context, payload *core.Payload,
 
 	cacheKey := ""
 	if language == languageJs {
-		cacheKey = fmt.Sprintf("%s/%s/%s/%s", tasConfig.Cache.Version, payload.OrgID, payload.RepoID, tasConfig.Cache.Key)
+		cacheKey = tasConfig.Cache.Key
 	}
 
 	os.Setenv("REPO_CACHE_DIR", global.RepoCacheDir)
@@ -251,8 +248,7 @@ func (d *driverV1) buildTestExecutionArgs(payload *core.Payload, tasConfig *core
 	secretMap map[string]string,
 	coverageDir string) core.TestExecutionArgs {
 	testPattern, envMap := d.getEnvAndPattern(payload, tasConfig)
-	blobPath := fmt.Sprintf("%s/%s/%s/%s.log", payload.OrgID, payload.BuildID, payload.TaskID, core.Execution)
-	logWriter := logwriter.NewAzureLogWriter(d.AzureClient, blobPath, d.logger)
+	logWriter := logwriter.NewAzureLogWriter(d.AzureClient, core.PurposeExecutionLogs, d.logger)
 	return core.TestExecutionArgs{
 		Payload:           payload,
 		CoverageDir:       coverageDir,
