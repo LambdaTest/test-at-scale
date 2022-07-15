@@ -14,24 +14,36 @@ type TASConfigDownloaderOutput struct {
 	TasConfig interface{}
 }
 
-func GetTasConfig(ctx context.Context, logger lumber.Logger, gitProvider, commitID, repoSlug,
-	filePath string, oauth *core.Oauth, eventType core.EventType, licenseTier core.Tier) (*TASConfigDownloaderOutput, error) {
-	gm := gitmanager.NewGitManager(logger, nil)
-	ymlPath, err := gm.DownloadFileByCommit(ctx, gitProvider, repoSlug, commitID, filePath, oauth)
-	if err != nil {
-		logger.Errorf("error occurred while downloading file %s from %s for commitID %s, error %v", filePath, repoSlug, commitID, err)
-		return nil, err
-	}
-	tcm := tasconfigmanager.NewTASConfigManager(logger)
+type TASConfigDownloader struct {
+	logger           lumber.Logger
+	gitmanager       core.GitManager
+	tasconfigmanager core.TASConfigManager
+}
 
-	version, err := tcm.GetVersion(ymlPath)
+func New(logger lumber.Logger) *TASConfigDownloader {
+	return &TASConfigDownloader{
+		logger:           logger,
+		gitmanager:       gitmanager.NewGitManager(logger, nil),
+		tasconfigmanager: tasconfigmanager.NewTASConfigManager(logger),
+	}
+}
+
+func (t *TASConfigDownloader) GetTasConfig(ctx context.Context, gitProvider, commitID, repoSlug,
+	filePath string, oauth *core.Oauth, eventType core.EventType, licenseTier core.Tier) (*TASConfigDownloaderOutput, error) {
+	ymlPath, err := t.gitmanager.DownloadFileByCommit(ctx, gitProvider, repoSlug, commitID, filePath, oauth)
 	if err != nil {
-		logger.Errorf("error reading version for tas config file %s, error %v", ymlPath, err)
+		t.logger.Errorf("error occurred while downloading file %s from %s for commitID %s, error %v", filePath, repoSlug, commitID, err)
 		return nil, err
 	}
-	tasConfig, err := tcm.LoadAndValidate(ctx, version, ymlPath, eventType, licenseTier)
+
+	version, err := t.tasconfigmanager.GetVersion(ymlPath)
 	if err != nil {
-		logger.Errorf("error while parsing yml , error %v", err)
+		t.logger.Errorf("error reading version for tas config file %s, error %v", ymlPath, err)
+		return nil, err
+	}
+	tasConfig, err := t.tasconfigmanager.LoadAndValidate(ctx, version, ymlPath, eventType, licenseTier)
+	if err != nil {
+		t.logger.Errorf("error while parsing yml , error %v", err)
 		return nil, err
 	}
 	return &TASConfigDownloaderOutput{Version: version, TasConfig: tasConfig}, nil
