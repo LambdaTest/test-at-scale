@@ -1,12 +1,16 @@
 package docker
 
 import (
+	"archive/tar"
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/LambdaTest/test-at-scale/config"
@@ -18,9 +22,14 @@ import (
 	"github.com/LambdaTest/test-at-scale/pkg/utils"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/docker/go-units"
+)
+
+const (
+	buildCacheExpiry time.Duration = 4 * time.Hour
 )
 
 var gracefulyContainerStopDuration = time.Second * 10
@@ -74,6 +83,48 @@ func New(secretsManager core.SecretsManager,
 	return dockerConfig, nil
 }
 
+func (d *docker) CreateVolume(ctx context.Context, r *core.RunnerOptions) error {
+	volumeOptions := d.getVolumeConfiguration(r)
+	isVolume, err := d.FindVolumes(volumeOptions.Name)
+	if err != nil {
+		return err
+	}
+	if !isVolume {
+		if _, err := d.client.VolumeCreate(ctx, *volumeOptions); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (d *docker) CopyFileToContainer(ctx context.Context, path, fileName, containerID string, content []byte) error {
+	var buf bytes.Buffer
+	tw := tar.NewWriter(&buf)
+	defer tw.Close()
+
+	if err := tw.WriteHeader(&tar.Header{
+		Name: fileName,
+		Mode: 0777,
+		Size: int64(len(content)),
+	}); err != nil {
+		return err
+	}
+	if _, err := tw.Write(content); err != nil {
+		return err
+	}
+
+	if err := d.client.CopyToContainer(
+		ctx,
+		containerID,
+		global.VaultSecretDir,
+		&buf,
+		types.CopyToContainerOptions{AllowOverwriteDirWithFile: true},
+	); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (d *docker) Create(ctx context.Context, r *core.RunnerOptions) core.ContainerStatus {
 	containerStatus := core.ContainerStatus{Done: true}
 	containerImageConfig, err := d.secretsManager.GetDockerSecrets(r)
@@ -84,23 +135,30 @@ func (d *docker) Create(ctx context.Context, r *core.RunnerOptions) core.Contain
 		return containerStatus
 	}
 
+	if err = d.CreateVolume(ctx, r); err != nil {
+		d.logger.Errorf("Error in creating docker volume: %+v", err)
+		containerStatus.Done = false
+		containerStatus.Error = errs.ErrDockerVolCrt(err.Error())
+		return containerStatus
+	}
+
 	if errP := d.PullImage(&containerImageConfig, r); errP != nil {
 		d.logger.Errorf("Something went wrong while pulling container image %+v", errP)
 		containerStatus.Done = false
 		containerStatus.Error = errs.ERR_DOCKER_CRT(errP.Error())
 		return containerStatus
 	}
-	container := d.getContainerConfiguration(r)
+	containerConfig := d.getContainerConfiguration(r)
 	hostConfig := d.getContainerHostConfiguration(r)
 	networkConfig, err := d.getContainerNetworkConfiguration()
 	if err != nil {
-		d.logger.Errorf("error retreiving network: %v", err)
+		d.logger.Errorf("error retrieving network: %v", err)
 		containerStatus.Done = false
 		containerStatus.Error = errs.ERR_DOCKER_CRT(err.Error())
 		return containerStatus
 	}
-
-	resp, err := d.client.ContainerCreate(ctx, container, hostConfig, networkConfig, nil, fmt.Sprintf("%s-%s", r.ContainerName, r.PodType))
+	containerName := fmt.Sprintf("%s-%s", r.ContainerName, r.PodType)
+	resp, err := d.client.ContainerCreate(ctx, containerConfig, hostConfig, networkConfig, nil, containerName)
 	r.ContainerID = resp.ID
 	if err != nil {
 		d.logger.Errorf("error creating container: %v", err)
@@ -110,6 +168,43 @@ func (d *docker) Create(ctx context.Context, r *core.RunnerOptions) core.Contain
 	}
 	d.logger.Debugf("container created with name: %s, updating status %+v",
 		fmt.Sprintf("%s-%s", r.ContainerName, r.PodType), containerStatus)
+
+	gitSecretBytes, err := d.secretsManager.GetGitSecretBytes()
+	if err != nil {
+		d.logger.Errorf("Error in loading git secrets: %s", err.Error())
+		containerStatus.Done = false
+		containerStatus.Error = errs.ErrSecretLoad(err.Error())
+		return containerStatus
+	}
+	if err = d.CopyFileToContainer(
+		ctx,
+		global.VaultSecretDir,
+		global.GitConfigFileName,
+		r.ContainerID,
+		gitSecretBytes,
+	); err != nil {
+		containerStatus.Done = false
+		containerStatus.Error = errs.ErrDockerCP(err.Error())
+		return containerStatus
+	}
+
+	// copies repo secrets to container
+	repoSecretBytes, err := d.secretsManager.GetRepoSecretBytes(r.Label["repo"])
+	if err != nil {
+		d.logger.Debugf("Error in loading repo secrets: %s", err.Error())
+	} else {
+		if err := d.CopyFileToContainer(
+			ctx,
+			global.VaultSecretDir,
+			global.RepoSecretsFileName,
+			r.ContainerID,
+			repoSecretBytes,
+		); err != nil {
+			containerStatus.Done = false
+			containerStatus.Error = errs.ErrDockerCP(err.Error())
+			return containerStatus
+		}
+	}
 	return containerStatus
 }
 
@@ -185,7 +280,6 @@ func (d *docker) WaitForCompletion(ctx context.Context, r *core.RunnerOptions) e
 	case err := <-errCh:
 		if err != nil {
 			d.logger.Debugf("%s container terminated with exit code: %d, reason %s", r.ContainerID, err)
-
 			return err
 		}
 	case status := <-statusCh:
@@ -305,4 +399,56 @@ func (d *docker) writeLogs(ctx context.Context, r *core.RunnerOptions) error {
 	}
 
 	return nil
+}
+
+func (d *docker) FindVolumes(volumeName string) (bool, error) {
+	volumeFilter := filters.KeyValuePair{Key: "name", Value: volumeName}
+	volumes, err := d.client.VolumeList(context.Background(), filters.NewArgs(volumeFilter))
+	if err != nil {
+		return false, err
+	}
+	for _, v := range volumes.Volumes {
+		if v.Name == volumeName {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func (d *docker) RemoveVolume(ctx context.Context, volumeName string) error {
+	if err := d.client.VolumeRemove(ctx, volumeName, true); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (d *docker) RemoveOldVolumes(ctx context.Context) {
+	volumes, err := d.client.VolumeList(context.Background(), filters.NewArgs())
+	if err != nil {
+		d.logger.Errorf("error fetching volume lists: %v", err.Error())
+	}
+	for _, v := range volumes.Volumes {
+		if strings.HasPrefix(v.Name, volumePrefix) {
+			_, data, err := d.client.VolumeInspectWithRaw(context.Background(), v.Name)
+			if err == nil {
+				var volumeDetails core.VolumeDetails
+				err = json.Unmarshal(data, &volumeDetails)
+				if err != nil {
+					d.logger.Errorf("error in unmarshaling volume details: %v", err.Error())
+					continue
+				}
+
+				now := time.Now()
+				diff := now.Sub(volumeDetails.CreatedAt)
+				if diff > buildCacheExpiry {
+					d.logger.Debugf("Deleting volume: %s", v.Name)
+					if err = d.RemoveVolume(ctx, v.Name); err != nil {
+						d.logger.Errorf("Error deleting volume: %v", err.Error())
+					}
+				}
+			} else {
+				d.logger.Errorf("error in fetching volume details: %v", err.Error())
+			}
+		}
+	}
 }
