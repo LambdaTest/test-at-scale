@@ -271,9 +271,8 @@ func TestValidateStructv2(t *testing.T) {
 							Patterns: []string{
 								"./x/y/z",
 							},
-							Framework:   "mocha",
-							NodeVersion: "17.0.1",
-							ConfigFile:  "x/y/z",
+							Framework:  "mocha",
+							ConfigFile: "x/y/z",
 						},
 					},
 				},
@@ -285,9 +284,8 @@ func TestValidateStructv2(t *testing.T) {
 							Patterns: []string{
 								"./x/y/z",
 							},
-							Framework:   "jasmine",
-							NodeVersion: "17.0.1",
-							ConfigFile:  "/x/y/z",
+							Framework:  "jasmine",
+							ConfigFile: "/x/y/z",
 						},
 					},
 				},

@@ -5,7 +5,6 @@ postMerge:
       pattern:
         - "./x/y/z"
       framework: mocha
-      nodeVersion: 17.0.1
       configFile: "x/y/z"
 
 preMerge:
@@ -15,7 +14,6 @@ preMerge:
       framework: jasmine
       pattern:
         - "./x/y/z"
-      nodeVersion: 17.0.1
       configFile: "/x/y/z"
 
 parallelism : 1

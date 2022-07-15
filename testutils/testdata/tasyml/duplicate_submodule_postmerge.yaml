@@ -1,0 +1,28 @@
+postMerge:
+  subModules:
+    - name: some-module-1
+      path: "./somepath"
+      pattern:
+        - "./x/y/z"
+      framework: mocha
+      configFile: "x/y/z"
+
+    - name: some-module-1
+      path: "./somepath"
+      pattern:
+        - "./x/y/z"
+      framework: jasmine
+      configFile: "x/y/z"
+
+preMerge:
+  subModules:
+    - name: some-module-1
+      path: "./somepath"
+      framework: jasmine
+      pattern:
+        - "./x/y/z"
+      configFile: "/x/y/z"
+
+
+parallelism : 1
+version: 2.0.1

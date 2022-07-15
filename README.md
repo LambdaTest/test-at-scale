@@ -102,7 +102,7 @@ curl https://raw.githubusercontent.com/LambdaTest/test-at-scale/main/.sample.syn
   docker info --format "CPU: {{.NCPU}}, RAM: {{.MemTotal}}"
   ```
 - Execute the above command to ensure that resources usable by Docker are atleast `CPU: 2, RAM: 4294967296`.
-  > **NOTE:** In order to run test-at-scale you require a minimum configuration of 2 CPU cores and 4 GBs of RAM.
+  > **NOTE:** In order to run test-at-scale you require a minimum configuration of 2 CPU cores and 4 GiBs of RAM.
 
 - The `.synapse.json` configuration file made in [Step 2](#step-2---creating-a-configuration-file-for-self-hosted-setup) will be required before executing the next command.
 - Download and run the docker compose file using the following command.
@@ -189,8 +189,8 @@ Currently we support Mocha, Jest and Jasmine for testing Javascript codebases.
 ## **Contribute**
 We love our contributors! If you'd like to contribute anything from a bug fix to a feature update, start here:
 
-- 📕 Read our Code of Conduct [Code of Conduct](/CODE_OF_CONDUCT.md).
-- 📖 Know more about [test-at-scale](/CONTRIBUTING.md#repo-overview) and contributing from our [Contribution Guide](/CONTRIBUTING.md).
+- 📕 Read our Code of Conduct [Code of Conduct](https://github.com/LambdaTest/test-at-scale/blob/main/CODE_OF_CONDUCT.md).
+- 📖 Know more about [test-at-scale](https://github.com/LambdaTest/test-at-scale/blob/main/CONTRIBUTING.md#repo-overview) and contributing from our [Contribution Guide](https://github.com/LambdaTest/test-at-scale/blob/main/CONTRIBUTING.md).
 - 👾 Explore some good first issues [good first issues](https://github.com/LambdaTest/test-at-scale/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22).
 
 ### **Join our community**
@@ -201,7 +201,7 @@ Join the Test-at-scale Community on [Discord](https://discord.gg/Wyf8srhf6K). Cl
 
 ### **Support & Troubleshooting** 
 The documentation and community will help you troubleshoot most issues. If you have encountered a bug, you can contact us using one of the following channels:
-- Help yourself with our [Documentation](https://www.lambdatest.com/support/docs/tas-overview)📚, and [FAQs](https://www.lambdatest.com/support/docs/tas-faq/).
+- Help yourself with our [Documentation](https://www.lambdatest.com/support/docs/tas-overview)📚, and [FAQs](https://www.lambdatest.com/support/docs/tas-faq-and-troubleshooting/).
 - In case of Issue & bugs go to [GitHub issues](https://github.com/LambdaTest/test-at-scale/issues)🐛.
 - For support & feedback join our [Discord](https://discord.gg/Wyf8srhf6K) or reach out to us on our [email](mailto:hello.tas@lambdatest.com)💬.
 

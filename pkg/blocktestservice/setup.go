@@ -4,10 +4,8 @@ package blocktestservice
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"strings"
 	"sync"
 
@@ -67,15 +65,10 @@ func NewTestBlockTestService(cfg *config.NucleusConfig, requests core.Requests, 
 
 func (tbs *TestBlockTestService) fetchBlockListFromNeuron(ctx context.Context, branch string) error {
 	var inp []blocktestAPIResponse
-	params := utils.FetchQueryParams()
-	params["branch"] = branch
-	params["taskID"] = tbs.cfg.TaskID
+	query, headers := utils.GetDefaultQueryAndHeaders()
+	query["branch"] = branch
 
-	headers := map[string]string{
-		"Authorization": fmt.Sprintf("%s %s", "Bearer", os.Getenv("TOKEN")),
-	}
-
-	rawBytes, statusCode, err := tbs.requests.MakeAPIRequest(ctx, http.MethodGet, tbs.endpoint, nil, params, headers)
+	rawBytes, statusCode, err := tbs.requests.MakeAPIRequest(ctx, http.MethodGet, tbs.endpoint, nil, query, headers)
 	if statusCode == http.StatusNotFound {
 		return nil
 	}
@@ -162,12 +155,4 @@ func (tbs *TestBlockTestService) populateBlockList(blocktestSource string, block
 				blocktest{Source: blocktestSource, Locator: test.Locator, Status: test.Status})
 		}
 	}
-}
-
-func (tbs *TestBlockTestService) GetBlocklistYMLV1(tasConfig *core.TASConfig) []string {
-	return tasConfig.Blocklist
-}
-
-func (tbs *TestBlockTestService) GetBlocklistYMLV2(subModule *core.SubModule) []string {
-	return subModule.Blocklist
 }

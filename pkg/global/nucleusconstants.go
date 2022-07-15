@@ -29,8 +29,15 @@ const (
 	ExpiryDelta              = 15 * time.Minute
 	NewTASVersion            = 2
 	ModulePath               = "MODULE_PATH"
-	CacheVersion             = "v1"
 	PackageJSON              = "package.json"
+	SubModuleName            = "SUBMODULE_NAME"
+	ArgPattern               = "--pattern"
+	ArgConfig                = "--config"
+	ArgDiff                  = "--diff"
+	ArgCommand               = "--command"
+	ArgLocator               = "--locator-file"
+	ArgFrameworVersion       = "--frameworkVersion"
+	DefaultTASVersion        = "1.0.0"
 )
 
 // FrameworkRunnerMap is map of framework with there respective runner location
@@ -38,6 +45,8 @@ var FrameworkRunnerMap = map[string]string{
 	"jasmine": "./node_modules/.bin/jasmine-runner",
 	"mocha":   "./node_modules/.bin/mocha-runner",
 	"jest":    "./node_modules/.bin/jest-runner",
+	"golang":  "/home/nucleus/server",
+	"junit":   "java",
 }
 
 // APIHostURLMap is map of git provider with there api url
@@ -56,4 +65,12 @@ var NeuronHost string
 // SetNeuronHost is setter for NeuronHost
 func SetNeuronHost(host string) {
 	NeuronHost = host
+}
+
+var FrameworkLanguageMap = map[string]string{
+	"jasmine": "javascript",
+	"mocha":   "javascript",
+	"jest":    "javascript",
+	"golang":  "golang",
+	"junit":   "java",
 }

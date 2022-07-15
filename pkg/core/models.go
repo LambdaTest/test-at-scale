@@ -13,14 +13,20 @@ import (
 // ExecutionID type
 type ExecutionID string
 
+// SASURLPurpose defines reasons for which SAS Url is required
+type SASURLPurpose string
+
+// SASURLPurpose values
+const (
+	PurposeCache          SASURLPurpose = "cache"
+	PurposeWorkspaceCache SASURLPurpose = "workspace_cache"
+	PurposePreRunLogs     SASURLPurpose = "pre_run_logs"
+	PurposePostRunLogs    SASURLPurpose = "post_run_logs"
+	PurposeExecutionLogs  SASURLPurpose = "execution_logs"
+)
+
 // Tier type of synapse
 type Tier string
-
-// CommandType defines type of command
-type CommandType string
-
-// ContainerType defines types of container
-type ContainerType string
 
 // TaskTier values.
 const (
@@ -49,6 +55,9 @@ const (
 	TestSplit SplitMode = "test"
 )
 
+// CommandType defines type of command
+type CommandType string
+
 // Types of Command string
 const (
 	PreRun          CommandType = "prerun"
@@ -61,13 +70,6 @@ const (
 	InstallNodeVer  CommandType = "installnodeversion"
 	InitGit         CommandType = "initgit"
 	RenameCloneFile CommandType = "renameclonefile"
-)
-
-// Types of containers
-const (
-	CacheContainer   ContainerType = "cache"
-	LogsContainer    ContainerType = "logs"
-	PayloadContainer ContainerType = "container-payload"
 )
 
 // EventType represents the webhook event
@@ -135,8 +137,8 @@ type Pipeline struct {
 	TestStats            TestStats
 	Task                 Task
 	SecretParser         SecretParser
+	Builder              Builder
 }
-
 type DiscoveryResult struct {
 	Tests           []TestPayload      `json:"tests"`
 	ImpactedTests   []string           `json:"impactedTests"`
@@ -302,7 +304,7 @@ type Oauth struct {
 // TASConfig represents the .tas.yml file
 type TASConfig struct {
 	SmartRun          bool               `yaml:"smartRun"`
-	Framework         string             `yaml:"framework" validate:"required,oneof=jest mocha jasmine"`
+	Framework         string             `yaml:"framework" validate:"required,oneof=jest mocha jasmine golang junit"`
 	Blocklist         []string           `yaml:"blocklist"`
 	Postmerge         *Merge             `yaml:"postMerge" validate:"omitempty"`
 	Premerge          *Merge             `yaml:"preMerge" validate:"omitempty"`
@@ -317,6 +319,7 @@ type TASConfig struct {
 	Tier              Tier               `yaml:"tier" validate:"oneof=xsmall small medium large xlarge"`
 	NodeVersion       string             `yaml:"nodeVersion" validate:"omitempty,semver"`
 	ContainerImage    string             `yaml:"containerImage"`
+	FrameworkVersion  int                `yaml:"frameworkVersion" validate:"omitempty"`
 	Version           string             `yaml:"version" validate:"required"`
 }
 
@@ -331,9 +334,8 @@ type CoverageThreshold struct {
 
 // Cache represents the user's cached directories
 type Cache struct {
-	Key     string   `yaml:"key" validate:"required"`
-	Paths   []string `yaml:"paths" validate:"required"`
-	Version string
+	Key   string   `yaml:"key" validate:"required"`
+	Paths []string `yaml:"paths" validate:"required"`
 }
 
 // Modifier defines struct for modifier
@@ -411,7 +413,6 @@ type SubModule struct {
 	Prerun             *Run     `yaml:"preRun" validate:"omitempty"`
 	Postrun            *Run     `yaml:"postRun" validate:"omitempty"`
 	RunPrerunEveryTime bool     `yaml:"runPreRunEveryTime"`
-	NodeVersion        string   `yaml:"nodeVersion" validate:"omitempty,semver"`
 	Parallelism        int      `yaml:"parallelism"` // TODO: will be supported later
 	ConfigFile         string   `yaml:"configFile" validate:"omitempty"`
 }
@@ -425,4 +426,33 @@ type TasVersion struct {
 type SubModuleList struct {
 	BuildID        string `json:"buildID"`
 	TotalSubModule int    `json:"totalSubModule"`
+}
+
+// DiscoveyArgs specify the arguments for discovery
+type DiscoveyArgs struct {
+	TestPattern      []string
+	Payload          *Payload
+	EnvMap           map[string]string
+	SecretData       map[string]string
+	TestConfigFile   string
+	FrameWork        string
+	SmartRun         bool
+	Diff             map[string]int
+	DiffExists       bool
+	FrameWorkVersion int
+	CWD              string
+}
+
+// TestExecutionArgs specify the argument for test discovery
+type TestExecutionArgs struct {
+	Payload           *Payload
+	CoverageDir       string
+	LogWriterStrategy LogWriterStrategy
+	TestPattern       []string
+	EnvMap            map[string]string
+	TestConfigFile    string
+	FrameWork         string
+	SecretData        map[string]string
+	FrameWorkVersion  int
+	CWD               string
 }

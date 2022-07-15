@@ -160,10 +160,11 @@ func TestLoadAndValidateV1(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tasConfig, err := tasConfigManager.LoadAndValidateV1(ctx, tt.FilePath, tt.EventType, core.Small)
+		tas, err := tasConfigManager.LoadAndValidate(ctx, 1, tt.FilePath, tt.EventType, core.Small)
 		if err != nil {
 			assert.Equal(t, err.Error(), tt.wantErr.Error(), "error mismatch")
 		} else {
+			tasConfig := tas.(*core.TASConfig)
 			err = assertTasConfigV1(tasConfig, tt.want)
 			if err != nil {
 				t.Errorf(err.Error())
@@ -222,6 +223,24 @@ func TestLoadAndValidateV2(t *testing.T) {
 				"../../testutils/testdata/tasyml/postmerge_emptyv2.yaml"),
 		},
 		{
+			"Duplicate submodule name in preMerge",
+			path.Join("../../", "testutils/testdata/tasyml/duplicate_submodule_premerge.yaml"),
+			core.EventPullRequest,
+			core.Small,
+			nil,
+			fmt.Errorf("duplicate subModule name found in `preMerge` in tas configuration file %s",
+				"../../testutils/testdata/tasyml/duplicate_submodule_premerge.yaml"),
+		},
+		{
+			"Duplicate submodule name in postMerge",
+			path.Join("../../", "testutils/testdata/tasyml/duplicate_submodule_postmerge.yaml"),
+			core.EventPush,
+			core.Small,
+			nil,
+			fmt.Errorf("duplicate subModule name found in `postMerge` in tas configuration file %s",
+				"../../testutils/testdata/tasyml/duplicate_submodule_postmerge.yaml"),
+		},
+		{
 			"Valid Config",
 			"../../testutils/testdata/tasyml/valid_with_cachekeyV2.yml",
 			core.EventPush,
@@ -238,9 +257,8 @@ func TestLoadAndValidateV2(t *testing.T) {
 							Patterns: []string{
 								"./x/y/z",
 							},
-							Framework:   "mocha",
-							NodeVersion: "17.0.1",
-							ConfigFile:  "x/y/z",
+							Framework:  "mocha",
+							ConfigFile: "x/y/z",
 						},
 					},
 				},
@@ -252,9 +270,8 @@ func TestLoadAndValidateV2(t *testing.T) {
 							Patterns: []string{
 								"./x/y/z",
 							},
-							Framework:   "jasmine",
-							NodeVersion: "17.0.1",
-							ConfigFile:  "/x/y/z",
+							Framework:  "jasmine",
+							ConfigFile: "/x/y/z",
 						},
 					},
 				},
@@ -269,10 +286,11 @@ func TestLoadAndValidateV2(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tasConfig, err := tasConfigManager.LoadAndValidateV2(ctx, tt.FilePath, tt.EventType, core.Small)
+		tas, err := tasConfigManager.LoadAndValidate(ctx, 2, tt.FilePath, tt.EventType, core.Small)
 		if err != nil {
 			assert.Equal(t, err.Error(), tt.wantErr.Error(), "error mismatch")
 		} else {
+			tasConfig := tas.(*core.TASConfigV2)
 			err = assertTasConfigV2(tasConfig, tt.want)
 			if err != nil {
 				t.Errorf(err.Error())

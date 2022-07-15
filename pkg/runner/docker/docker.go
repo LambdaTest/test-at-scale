@@ -142,10 +142,10 @@ func (d *docker) Create(ctx context.Context, r *core.RunnerOptions) core.Contain
 		return containerStatus
 	}
 
-	if err = d.PullImage(&containerImageConfig, r); err != nil {
-		d.logger.Errorf("Something went wrong while pulling container image %+v", err)
+	if errP := d.PullImage(&containerImageConfig, r); errP != nil {
+		d.logger.Errorf("Something went wrong while pulling container image %+v", errP)
 		containerStatus.Done = false
-		containerStatus.Error = errs.ERR_DOCKER_CRT(err.Error())
+		containerStatus.Error = errs.ERR_DOCKER_CRT(errP.Error())
 		return containerStatus
 	}
 	containerConfig := d.getContainerConfiguration(r)
@@ -216,7 +216,7 @@ func (d *docker) Destroy(ctx context.Context, r *core.RunnerOptions) error {
 	autoRemove, err := strconv.ParseBool(os.Getenv(global.AutoRemoveEnv))
 	if err != nil {
 		d.logger.Errorf("Error reading AutoRemove os env error: %v", err)
-		return errors.New("Error reading AutoRemove os env error")
+		return errors.New("error reading AutoRemove os env error")
 	}
 	if autoRemove {
 		// if autoRemove is set then it docker container will be removed once it stopped or exited
@@ -293,14 +293,13 @@ func (d *docker) WaitForCompletion(ctx context.Context, r *core.RunnerOptions) e
 	return nil
 }
 
-func (d *docker) GetInfo(ctx context.Context) (float32, int64) {
+func (d *docker) GetInfo(ctx context.Context) (cpu float32, ram int64) {
 	return d.cpu, d.ram
 }
 
 func (d *docker) Initiate(ctx context.Context, r *core.RunnerOptions, statusChan chan core.ContainerStatus) {
 	// creating the docker contaienr
-	r.ContainerArgs = append(r.ContainerArgs, "--local", os.Getenv(global.LocalEnv))
-	r.ContainerArgs = append(r.ContainerArgs, "--synapsehost", os.Getenv(global.SynapseHostEnv))
+	r.ContainerArgs = append(r.ContainerArgs, "--local", os.Getenv(global.LocalEnv), "--synapsehost", os.Getenv(global.SynapseHostEnv))
 	if status := d.Create(ctx, r); !status.Done {
 		d.logger.Errorf("error creating container: %v", status.Error)
 		d.logger.Infof("Update error status after creation")
@@ -355,8 +354,8 @@ func (d *docker) PullImage(containerImageConfig *core.ContainerImageConfig, r *c
 			d.logger.Errorf("Reader returned by docker pull is null")
 			return
 		}
-		if err := reader.Close(); err != nil {
-			d.logger.Errorf(err.Error())
+		if errC := reader.Close(); errC != nil {
+			d.logger.Errorf(errC.Error())
 		}
 	}()
 

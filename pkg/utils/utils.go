@@ -124,7 +124,7 @@ func ValidateStructTASYmlV1(ctx context.Context, ymlContent []byte, ymlFilename 
 	if err != nil {
 		return nil, err
 	}
-	tasConfig := &core.TASConfig{SmartRun: true, Tier: core.Small, SplitMode: core.TestSplit}
+	tasConfig := &core.TASConfig{SmartRun: true, Tier: core.Small, SplitMode: core.TestSplit, Version: global.DefaultTASVersion}
 	if err := yaml.Unmarshal(ymlContent, tasConfig); err != nil {
 		return nil, fmt.Errorf("`%s` configuration file contains invalid format. Please correct the `%s` file", ymlFilename, ymlFilename)
 	}
@@ -157,7 +157,7 @@ func configureValidator(validate *validator.Validate, trans ut.Translator) {
 
 // GetVersion returns version of tas yml file
 func GetVersion(ymlContent []byte) (int, error) {
-	tasVersion := &core.TasVersion{}
+	tasVersion := &core.TasVersion{Version: global.DefaultTASVersion}
 	if err := yaml.Unmarshal(ymlContent, tasVersion); err != nil {
 		return 0, fmt.Errorf("error in unmarshling tas yml file")
 	}
@@ -231,12 +231,41 @@ func ValidateSubModule(module *core.SubModule) error {
 	return nil
 }
 
-// FetchQueryParams returns the params which are required in API
-func FetchQueryParams() (params map[string]string) {
-	params = map[string]string{
+// GetDefaultQueryAndHeaders returns the query and headers that should be supplied with each request made to TAS Server
+func GetDefaultQueryAndHeaders() (query map[string]interface{}, headers map[string]string) {
+	query = map[string]interface{}{
 		"repoID":  os.Getenv("REPO_ID"),
 		"buildID": os.Getenv("BUILD_ID"),
 		"orgID":   os.Getenv("ORG_ID"),
+		"taskID":  os.Getenv("TASK_ID"),
 	}
-	return params
+	headers = map[string]string{
+		"Authorization": fmt.Sprintf("Bearer %s", os.Getenv("TOKEN")),
+	}
+	return query, headers
+}
+
+func GetArgs(command string, frameWork string, frameworkVersion int,
+	configFile string,
+	target []string) []string {
+	language := global.FrameworkLanguageMap[frameWork]
+
+	args := []string{}
+	if language == "java" {
+		args = append(args, "-jar", "/test-at-scale-java.jar",
+			global.ArgCommand, command, global.ArgFrameworVersion,
+			strconv.Itoa(frameworkVersion))
+	} else {
+		args = append(args, global.ArgCommand, command)
+	}
+
+	if configFile != "" {
+		args = append(args, global.ArgConfig, configFile)
+	}
+
+	for _, pattern := range target {
+		args = append(args, global.ArgPattern, pattern)
+	}
+
+	return args
 }

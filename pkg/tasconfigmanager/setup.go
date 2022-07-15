@@ -36,7 +36,18 @@ func NewTASConfigManager(logger lumber.Logger) core.TASConfigManager {
 	return &tasConfigManager{logger: logger}
 }
 
-func (tc *tasConfigManager) LoadAndValidateV1(ctx context.Context,
+func (tc *tasConfigManager) LoadAndValidate(ctx context.Context,
+	version int,
+	path string,
+	eventType core.EventType,
+	licenseTier core.Tier) (interface{}, error) {
+	if version < global.NewTASVersion {
+		return tc.loadAndValidateV1(ctx, path, eventType, licenseTier)
+	}
+	return tc.loadAndValidateV2(ctx, path, eventType, licenseTier)
+}
+
+func (tc *tasConfigManager) loadAndValidateV1(ctx context.Context,
 	path string,
 	eventType core.EventType,
 	licenseTier core.Tier) (*core.TASConfig, error) {
@@ -81,16 +92,16 @@ func (tc *tasConfigManager) validateYMLV1(ctx context.Context,
 		return nil, err
 	}
 
-	if tasConfig.Cache == nil {
+	language := global.FrameworkLanguageMap[tasConfig.Framework]
+	if tasConfig.Cache == nil && language == "javascript" {
 		checksum, err := utils.ComputeChecksum(fmt.Sprintf("%s/%s", global.RepoDir, global.PackageJSON))
 		if err != nil {
 			tc.logger.Errorf("Error while computing checksum, error %v", err)
 			return nil, err
 		}
 		tasConfig.Cache = &core.Cache{
-			Key:     checksum,
-			Paths:   []string{},
-			Version: global.CacheVersion,
+			Key:   checksum,
+			Paths: []string{},
 		}
 	}
 	return tasConfig, nil
@@ -125,20 +136,31 @@ func (tc *tasConfigManager) validateYMLV2(ctx context.Context,
 		if tasConfig.PreMerge == nil {
 			return nil, fmt.Errorf("`preMerge` is missing in tas configuration file %s", yamlFilePath)
 		}
+		subModuleMap := map[string]bool{}
 		for i := 0; i < len(tasConfig.PreMerge.SubModules); i++ {
 			if err := utils.ValidateSubModule(&tasConfig.PreMerge.SubModules[i]); err != nil {
 				return nil, err
 			}
+			if _, ok := subModuleMap[tasConfig.PreMerge.SubModules[i].Name]; ok {
+				return nil, fmt.Errorf("duplicate subModule name found in `preMerge` in tas configuration file %s", yamlFilePath)
+			}
+			subModuleMap[tasConfig.PreMerge.SubModules[i].Name] = true
 		}
 
 	case core.EventPush:
 		if tasConfig.PostMerge == nil {
 			return nil, fmt.Errorf("`postMerge` is missing in tas configuration file %s", yamlFilePath)
 		}
+		subModuleMap := map[string]bool{}
+
 		for i := 0; i < len(tasConfig.PostMerge.SubModules); i++ {
 			if err := utils.ValidateSubModule(&tasConfig.PostMerge.SubModules[i]); err != nil {
 				return nil, err
 			}
+			if _, ok := subModuleMap[tasConfig.PostMerge.SubModules[i].Name]; ok {
+				return nil, fmt.Errorf("duplicate subModule name found in `postMerge` in tas configuration file %s", yamlFilePath)
+			}
+			subModuleMap[tasConfig.PostMerge.SubModules[i].Name] = true
 		}
 	}
 	if err := isValidLicenseTier(tasConfig.Tier, licenseTier); err != nil {
@@ -176,7 +198,7 @@ func (tc *tasConfigManager) GetVersion(path string) (int, error) {
 	return versionYml, nil
 }
 
-func (tc *tasConfigManager) LoadAndValidateV2(ctx context.Context,
+func (tc *tasConfigManager) loadAndValidateV2(ctx context.Context,
 	path string,
 	eventType core.EventType,
 	licenseTier core.Tier) (*core.TASConfigV2, error) {

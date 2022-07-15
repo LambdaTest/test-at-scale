@@ -54,16 +54,16 @@ func New(z core.ZstdCompressor, azureClient core.AzureClient, logger lumber.Logg
 	}, nil
 }
 
-func (c *cache) getCacheSASURL(ctx context.Context, containerPath string) (string, error) {
+func (c *cache) getCacheSASURL(ctx context.Context, cacheKey string) (string, error) {
 	c.once.Do(func() {
-		cacheBlobURL, apiErr = c.azureClient.GetSASURL(ctx, containerPath, core.CacheContainer)
+		query := map[string]interface{}{"key": cacheKey}
+		cacheBlobURL, apiErr = c.azureClient.GetSASURL(ctx, core.PurposeCache, query)
 	})
 	return cacheBlobURL, apiErr
 }
 
 func (c *cache) Download(ctx context.Context, cacheKey string) error {
-	containerPath := fmt.Sprintf("%s/%s", cacheKey, defaultCompressedFileName)
-	sasURL, err := c.getCacheSASURL(ctx, containerPath)
+	sasURL, err := c.getCacheSASURL(ctx, cacheKey)
 	if err != nil {
 		c.logger.Errorf("Error while generating SAS Token, error %v", err)
 		return err
@@ -139,8 +139,7 @@ func (c *cache) Upload(ctx context.Context, cacheKey string, itemsToCompress ...
 	}
 
 	defer f.Close()
-	containerPath := fmt.Sprintf("%s/%s", cacheKey, defaultCompressedFileName)
-	sasURL, err := c.getCacheSASURL(ctx, containerPath)
+	sasURL, err := c.getCacheSASURL(ctx, cacheKey)
 	if err != nil {
 		c.logger.Errorf("Error while generating SAS Token, error %v", err)
 		return err
@@ -213,7 +212,7 @@ func (c *cache) getDefaultDirs() ([]string, error) {
 		}
 		// if pnmpm-lock.yaml is present, cache .pnpm-store cache
 		if d.Name() == pnpmLock {
-			defaultDirs = append(defaultDirs, filepath.Join(c.homeDir, ".pnpm-store"))
+			defaultDirs = append(defaultDirs, filepath.Join(c.homeDir, ".local", "share", "pnpm", "store"))
 			return defaultDirs, nil
 		}
 	}
