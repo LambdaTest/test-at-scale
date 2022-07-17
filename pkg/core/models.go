@@ -455,3 +455,12 @@ type TestExecutionArgs struct {
 	FrameWorkVersion  int
 	CWD               string
 }
+
+type YMLParsingMessage struct {
+	GitProvider string    `json:"gitProvider"`
+	CommitID    string    `json:"commitID"`
+	Event       EventType `json:"eventType"`
+	RepoSlug    string    `json:"repoSlug"`
+	TasFileName string    `json:"tasFilePath"`
+	LicenseTier Tier      `json:"license_tier"`
+}
