@@ -463,4 +463,6 @@ type YMLParsingMessage struct {
 	RepoSlug    string    `json:"repoSlug"`
 	TasFileName string    `json:"tasFilePath"`
 	LicenseTier Tier      `json:"license_tier"`
+	OrgID       string    `json:"orgID"`
+	BuildID     string    `json:"buildID"`
 }
