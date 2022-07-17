@@ -463,11 +463,12 @@ type TestExecutionArgs struct {
 	CWD               string
 }
 
-// unique string to identify location of test
+// LocatorConfig has string to identify location of test uniquely
 type LocatorConfig struct {
 	Locator string `json:"locator"`
 }
 
+// InputLocatorConfig has array of Locators
 type InputLocatorConfig struct {
 	Locators []LocatorConfig `json:"locators"`
 }

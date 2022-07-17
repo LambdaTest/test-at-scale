@@ -3,17 +3,21 @@ package utils
 import (
 	"context"
 	"crypto/md5"
+	"encoding/json"
 	"fmt"
 	"io"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/LambdaTest/test-at-scale/pkg/core"
 	"github.com/LambdaTest/test-at-scale/pkg/errs"
 	"github.com/LambdaTest/test-at-scale/pkg/global"
+	"github.com/LambdaTest/test-at-scale/pkg/lumber"
 	"github.com/bmatcuk/doublestar/v4"
 	"github.com/go-playground/locales/en"
 	ut "github.com/go-playground/universal-translator"
@@ -23,10 +27,11 @@ import (
 )
 
 const (
-	namespaceSeparator = "."
-	emptyTagName       = "-"
-	yamlTagName        = "yaml"
-	requiredTagName    = "required"
+	namespaceSeparator      = "."
+	emptyTagName            = "-"
+	yamlTagName             = "yaml"
+	requiredTagName         = "required"
+	locatorSizeEdgeCase int = 10
 )
 
 // Min returns the smaller of x or y.
@@ -264,4 +269,59 @@ func GetArgs(command string, frameWork string, frameworkVersion int,
 	}
 
 	return args
+}
+
+// Read locators from the file and convert it into array of locator config
+func ExtractLocators(locatorFilePath, flakyTestAlgo string, logger lumber.Logger) ([]core.LocatorConfig, error) {
+	locatorArrTemp := []core.LocatorConfig{}
+	inputLocatorConfigTemp := &core.InputLocatorConfig{}
+
+	if flakyTestAlgo == core.RunningXTimesShuffle {
+		content, err := os.ReadFile(locatorFilePath)
+		if err != nil {
+			logger.Errorf("Error when opening file: ", err)
+			return nil, err
+		}
+
+		err = json.Unmarshal(content, &inputLocatorConfigTemp)
+		if err != nil {
+			logger.Errorf("Error during Unmarshal(): ", err)
+			return nil, err
+		}
+		locatorArrTemp = inputLocatorConfigTemp.Locators
+	}
+
+	return locatorArrTemp, nil
+}
+
+// ShuffleLocators shuffles order of elements in locator array
+func ShuffleLocators(locatorArr []core.LocatorConfig, locatorFilePath string, logger lumber.Logger) error {
+	locatorArrOrig := make([]core.LocatorConfig, len(locatorArr))
+	locatorArrSize := len(locatorArr)
+
+	if locatorArrSize < locatorSizeEdgeCase {
+		copy(locatorArrOrig, locatorArr)
+	}
+
+	rand.Seed(time.Now().UnixNano())
+	rand.Shuffle(locatorArrSize, func(i, j int) { locatorArr[i], locatorArr[j] = locatorArr[j], locatorArr[i] })
+
+	// For a smaller number, probability that random order becomes same as the original order is high, to handle those edge cases
+	// we reverse the array if the shuffled order is same as original. For larger size this probability is negligible.
+	if locatorArrSize < locatorSizeEdgeCase {
+		if reflect.DeepEqual(locatorArrOrig, locatorArr) {
+			for i, j := 0, len(locatorArr)-1; i < j; i, j = i+1, j-1 {
+				locatorArr[i], locatorArr[j] = locatorArr[j], locatorArr[i]
+			}
+		}
+	}
+	inputLocatorConfigTemp := &core.InputLocatorConfig{}
+	inputLocatorConfigTemp.Locators = locatorArr
+	file, _ := json.Marshal(inputLocatorConfigTemp)
+	err := os.WriteFile(locatorFilePath, file, global.FilePermissionWrite)
+	if err != nil {
+		logger.Errorf("Error While Writing Locators To File ", err)
+		return err
+	}
+	return nil
 }

@@ -2,13 +2,17 @@ package utils
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 
 	"github.com/LambdaTest/test-at-scale/pkg/core"
 	"github.com/LambdaTest/test-at-scale/pkg/errs"
+	"github.com/LambdaTest/test-at-scale/pkg/global"
+	"github.com/LambdaTest/test-at-scale/pkg/lumber"
 	"github.com/LambdaTest/test-at-scale/testutils"
 	"github.com/stretchr/testify/assert"
 )
@@ -393,6 +397,105 @@ func TestValidateSubModule(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			gotErr := ValidateSubModule(&tt.subModule)
 			assert.Equal(t, tt.wantErr, gotErr, "Error mismatch")
+		})
+	}
+}
+
+func Test_ShuffleLocators(t *testing.T) {
+	logger, err := testutils.GetLogger()
+	if err != nil {
+		t.Errorf("Couldn't initialize logger, error: %v", err)
+	}
+	locatorArrValue := []core.LocatorConfig{{
+		Locator: "Locator_A"},
+		{
+			Locator: "Locator_B"},
+		{
+			Locator: "Locator_C"}}
+
+	type args struct {
+		locatorArr      []core.LocatorConfig
+		locatorFilePath string
+	}
+
+	tests := []struct {
+		name string
+		args args
+	}{
+		{"Test_shuffleLocators",
+			args{locatorArrValue, "/tmp/locators"}}}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := ShuffleLocators(tt.args.locatorArr, tt.args.locatorFilePath, logger); err != nil {
+				t.Errorf("shuffleLocators() throws error %v", err)
+			}
+
+			content, err := os.ReadFile(tt.args.locatorFilePath)
+			if err != nil {
+				t.Errorf("In test_shuffleLocators error in opening file = %v", err)
+				return
+			}
+			t.Logf(string(content))
+			// Now let's unmarshall the data into `payload`
+			var payload core.InputLocatorConfig
+			err = json.Unmarshal(content, &payload)
+			if err != nil {
+				t.Errorf("Error in unmarshlling = %v", err)
+				return
+			}
+			if payload.Locators[0].Locator == "Locator_A" &&
+				payload.Locators[1].Locator == "Locator_B" &&
+				payload.Locators[2].Locator == "Locator_C" {
+				t.Errorf("Shuffling could not be done, order is same as original")
+			}
+		})
+	}
+}
+
+func Test_ExtractLocators(t *testing.T) {
+	logger, err := testutils.GetLogger()
+	if err != nil {
+		t.Errorf("Couldn't initialize logger, error: %v", err)
+	}
+	locatorArrValue := []core.LocatorConfig{{
+		Locator: "Locator_A"},
+		{
+			Locator: "Locator_B"},
+		{
+			Locator: "Locator_C"}}
+	type args struct {
+		locatorFilePath string
+		flakyTestAlgo   string
+		logger          lumber.Logger
+	}
+	tests := []struct {
+		name string
+		args args
+		want []core.LocatorConfig
+	}{
+		{"Test_extractLocators",
+			args{"/tmp/locators", core.RunningXTimesShuffle, logger},
+			locatorArrValue}}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var payload core.InputLocatorConfig
+			payload.Locators = locatorArrValue
+			file, _ := json.Marshal(payload)
+			_ = os.WriteFile(tt.args.locatorFilePath, file, global.FilePermissionWrite)
+			if err != nil {
+				t.Errorf("In test_extractLocators error in writing to file = %v", err)
+				return
+			}
+			locatorArr, err := ExtractLocators(tt.args.locatorFilePath, tt.args.flakyTestAlgo, tt.args.logger)
+			if err != nil {
+				t.Errorf("extractLocators() throws error %v", err)
+			}
+
+			if !reflect.DeepEqual(locatorArrValue, locatorArr) {
+				t.Errorf("extractLocators(), array got %s, want %s", locatorArr, locatorArrValue)
+			}
 		})
 	}
 }
