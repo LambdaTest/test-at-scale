@@ -456,7 +456,7 @@ type TestExecutionArgs struct {
 	CWD               string
 }
 
-type YMLParsingMessage struct {
+type YMLParsingRequestMessage struct {
 	GitProvider string    `json:"gitProvider"`
 	CommitID    string    `json:"commitID"`
 	Event       EventType `json:"eventType"`
@@ -465,4 +465,15 @@ type YMLParsingMessage struct {
 	LicenseTier Tier      `json:"license_tier"`
 	OrgID       string    `json:"orgID"`
 	BuildID     string    `json:"buildID"`
+}
+
+type TASConfigDownloaderOutput struct {
+	Version   int         `json:"version"`
+	TasConfig interface{} `json:"tasConfig"`
+}
+
+type YMLParsingResultMessage struct {
+	OrgID     string                    `json:"orgID"`
+	BuildID   string                    `json:"buildID"`
+	YMLOutput TASConfigDownloaderOutput `json:"ymlOutput"`
 }

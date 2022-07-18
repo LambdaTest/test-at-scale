@@ -9,11 +9,6 @@ import (
 	"github.com/LambdaTest/test-at-scale/pkg/tasconfigmanager"
 )
 
-type TASConfigDownloaderOutput struct {
-	Version   int
-	TasConfig interface{}
-}
-
 type TASConfigDownloader struct {
 	logger           lumber.Logger
 	gitmanager       core.GitManager
@@ -29,7 +24,7 @@ func New(logger lumber.Logger) *TASConfigDownloader {
 }
 
 func (t *TASConfigDownloader) GetTasConfig(ctx context.Context, gitProvider, commitID, repoSlug,
-	filePath string, oauth *core.Oauth, eventType core.EventType, licenseTier core.Tier) (*TASConfigDownloaderOutput, error) {
+	filePath string, oauth *core.Oauth, eventType core.EventType, licenseTier core.Tier) (*core.TASConfigDownloaderOutput, error) {
 	ymlPath, err := t.gitmanager.DownloadFileByCommit(ctx, gitProvider, repoSlug, commitID, filePath, oauth)
 	if err != nil {
 		t.logger.Errorf("error occurred while downloading file %s from %s for commitID %s, error %v", filePath, repoSlug, commitID, err)
@@ -46,6 +41,6 @@ func (t *TASConfigDownloader) GetTasConfig(ctx context.Context, gitProvider, com
 		t.logger.Errorf("error while parsing yml , error %v", err)
 		return nil, err
 	}
-	return &TASConfigDownloaderOutput{Version: version, TasConfig: tasConfig}, nil
+	return &core.TASConfigDownloaderOutput{Version: version, TasConfig: tasConfig}, nil
 
 }
