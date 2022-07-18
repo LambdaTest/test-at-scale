@@ -11,13 +11,15 @@ type StatType string
 
 // types of messages
 const (
-	MsgLogin         MessageType = "login"
-	MsgLogout        MessageType = "logout"
-	MsgTask          MessageType = "task"
-	MsgInfo          MessageType = "info"
-	MsgError         MessageType = "error"
-	MsgResourceStats MessageType = "resourcestats"
-	MsgJobInfo       MessageType = "jobinfo"
+	MsgLogin             MessageType = "login"
+	MsgLogout            MessageType = "logout"
+	MsgTask              MessageType = "task"
+	MsgInfo              MessageType = "info"
+	MsgError             MessageType = "error"
+	MsgResourceStats     MessageType = "resourcestats"
+	MsgJobInfo           MessageType = "jobinfo"
+	MsgYMLParsingRequest MessageType = "yml_parsing_request"
+	MsgYMLParsingResult  MessageType = "yml_parsing_result"
 )
 
 // JobInfo types
