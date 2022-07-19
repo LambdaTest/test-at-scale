@@ -325,3 +325,14 @@ func ShuffleLocators(locatorArr []core.LocatorConfig, locatorFilePath string, lo
 	}
 	return nil
 }
+
+func UpdateLocatorBasedOnAlgo(flakyAlgo, locatorFilePath string, locatorArr []core.LocatorConfig, logger lumber.Logger) error {
+	if flakyAlgo == core.RunningXTimesShuffle {
+		err := ShuffleLocators(locatorArr, locatorFilePath, logger)
+		if err != nil {
+			logger.Errorf("Error in shuffling locator file %v", err)
+		}
+		return err
+	}
+	return nil
+}

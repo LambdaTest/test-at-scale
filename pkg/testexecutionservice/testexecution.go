@@ -94,12 +94,11 @@ func (tes *testExecutionService) Run(ctx context.Context,
 		TaskType: payload.TaskType,
 	}
 	for i := 1; i <= tes.cfg.ConsecutiveRuns; i++ {
-		if tes.cfg.FlakyTestAlgo == core.RunningXTimesShuffle {
-			err := utils.ShuffleLocators(locatorArr, locatorFilePath, tes.logger)
-			if err != nil {
-				tes.logger.Errorf("Error in shuffling locator file %v", err)
-			}
+		err := utils.UpdateLocatorBasedOnAlgo(tes.cfg.FlakyTestAlgo, locatorFilePath, locatorArr, tes.logger)
+		if err != nil {
+			return nil, err
 		}
+
 		var cmd *exec.Cmd
 		if testExecutionArgs.FrameWork == "jasmine" || testExecutionArgs.FrameWork == "mocha" {
 			if collectCoverage {
@@ -129,7 +128,7 @@ func (tes *testExecutionService) Run(ctx context.Context,
 			tes.logger.Errorf("failed to find process for command %s with pid %d %v", cmd.String(), pid, err)
 			return nil, err
 		}
-		err := cmd.Wait()
+		err = cmd.Wait()
 		result := <-tes.ts.ExecutionResultOutputChannel
 		if err != nil {
 			tes.logger.Errorf("error in test execution: %+v", err)
