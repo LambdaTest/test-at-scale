@@ -95,7 +95,7 @@ func GetFileDownloadURL(gitprovider, commitID, repoSlug, filePath string) (strin
 		return fmt.Sprintf("%s/%s/-/raw/%s/%s", gitLabDownloadURL, repoSlug, commitID, filePath), nil
 	case core.Bitbucket:
 		// TODO: check for fork PR
-		return fmt.Sprintf("%s/repositories/%s/src/%s/%s/", global.APIHostURLMap[gitprovider], repoSlug, commitID, filePath), nil
+		return fmt.Sprintf("%s/repositories/%s/src/%s/%s", global.APIHostURLMap[gitprovider], repoSlug, commitID, filePath), nil
 	default:
 		return "", nil
 	}

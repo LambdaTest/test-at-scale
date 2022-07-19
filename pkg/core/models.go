@@ -474,6 +474,7 @@ type TASConfigDownloaderOutput struct {
 }
 
 type YMLParsingResultMessage struct {
+	ErrorMsg  string                    `json:"ErrorMsg"`
 	OrgID     string                    `json:"orgID"`
 	BuildID   string                    `json:"buildID"`
 	YMLOutput TASConfigDownloaderOutput `json:"ymlOutput"`

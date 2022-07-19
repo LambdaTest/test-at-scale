@@ -371,6 +371,8 @@ func (s *synapse) processYMLParsingRequest(message core.Message) {
 		return
 	}
 	oauth := s.secretsManager.GetOauthToken()
+	var writeMsg core.Message
+	defer s.writeMessageToBuffer(&writeMsg)
 
 	tasOutput, err := s.tasConfigDownloader.GetTasConfig(context.TODO(), parsingReqMsg.GitProvider,
 		parsingReqMsg.CommitID,
@@ -379,12 +381,18 @@ func (s *synapse) processYMLParsingRequest(message core.Message) {
 	if err != nil {
 		s.logger.Errorf("error occurred while fetching tas config file for buildID %s orgID %s, error %v",
 			parsingReqMsg.BuildID, parsingReqMsg.OrgID, err)
+		writeMsg = CreateYMlParsingResultMessage(core.YMLParsingResultMessage{
+			OrgID:     parsingReqMsg.OrgID,
+			BuildID:   parsingReqMsg.BuildID,
+			YMLOutput: core.TASConfigDownloaderOutput{},
+			ErrorMsg:  err.Error(),
+		})
+		return
 	}
-	writeMsg := CreateYMlParsingResultMessage(core.YMLParsingResultMessage{
+	writeMsg = CreateYMlParsingResultMessage(core.YMLParsingResultMessage{
 		OrgID:     parsingReqMsg.OrgID,
 		BuildID:   parsingReqMsg.BuildID,
 		YMLOutput: *tasOutput,
 	})
-	s.writeMessageToBuffer(&writeMsg)
 
 }

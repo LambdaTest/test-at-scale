@@ -2,6 +2,7 @@ package tasconfigdownloader
 
 import (
 	"context"
+	"os"
 
 	"github.com/LambdaTest/test-at-scale/pkg/core"
 	"github.com/LambdaTest/test-at-scale/pkg/gitmanager"
@@ -40,6 +41,10 @@ func (t *TASConfigDownloader) GetTasConfig(ctx context.Context, gitProvider, com
 	tasConfig, err := t.tasconfigmanager.LoadAndValidate(ctx, version, ymlPath, eventType, licenseTier)
 	if err != nil {
 		t.logger.Errorf("error while parsing yml , error %v", err)
+		return nil, err
+	}
+	if err := os.Remove(ymlPath); err != nil {
+		t.logger.Errorf("failed to delete file %s , error %v", ymlPath, err)
 		return nil, err
 	}
 	return &core.TASConfigDownloaderOutput{Version: version, TasConfig: tasConfig}, nil

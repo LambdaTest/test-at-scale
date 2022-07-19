@@ -163,7 +163,8 @@ func (gm *gitManager) initGit(ctx context.Context, payload *core.Payload, oauth 
 	return nil
 }
 
-func (gm *gitManager) makeDownloadRequest(ctx context.Context, downloadURL string, oauth *core.Oauth) (*http.Response, error) {
+func (gm *gitManager) makeDownloadRequest(ctx context.Context, downloadURL string,
+	oauth *core.Oauth) (*http.Response, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, downloadURL, nil)
 	if err != nil {
 		return nil, err
@@ -185,7 +186,8 @@ func (gm *gitManager) makeDownloadRequest(ctx context.Context, downloadURL strin
 	return resp, nil
 }
 
-func (gm *gitManager) DownloadFileByCommit(ctx context.Context, gitProvider, repoSlug, commitID, filePath string, oauth *core.Oauth) (string, error) {
+func (gm *gitManager) DownloadFileByCommit(ctx context.Context, gitProvider, repoSlug,
+	commitID, filePath string, oauth *core.Oauth) (string, error) {
 	downloadURL, err := urlmanager.GetFileDownloadURL(gitProvider, commitID, repoSlug, filePath)
 	if err != nil {
 		return "", err

@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"path"
 	"strings"
@@ -17,6 +18,7 @@ import (
 	"github.com/LambdaTest/test-at-scale/pkg/global"
 	"github.com/LambdaTest/test-at-scale/pkg/logwriter"
 	"github.com/LambdaTest/test-at-scale/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/pkg/utils"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -101,8 +103,12 @@ func (d *driverV2) RunExecution(ctx context.Context, payload *core.Payload,
 		err = &errs.StatusFailed{Remark: err.Error()}
 		return err
 	}
+
 	subModuleName := os.Getenv(global.SubModuleName)
 	tasConfig := tas.(*core.TASConfigV2)
+	if cachErr := d.setCache(tasConfig); cachErr != nil {
+		return cachErr
+	}
 	subModule, err := d.findSubmodule(tasConfig, payload, subModuleName)
 	if err != nil {
 		d.logger.Errorf("Error finding sub module %s in tas config file", subModuleName)
@@ -356,6 +362,9 @@ func (d *driverV2) setUpDiscovery(ctx context.Context,
 	payload *core.Payload,
 	tasConfig *core.TASConfigV2,
 	oauth *core.Oauth) (*setUpResultV2, error) {
+	if err := d.setCache(tasConfig); err != nil {
+		return nil, err
+	}
 	cacheKey := tasConfig.Cache.Key
 
 	g, errCtx := errgroup.WithContext(ctx)
@@ -503,4 +512,19 @@ func GetSubmoduleBasedDiff(diff map[string]int, subModulePath string) map[string
 		newDiff[filePath] = value
 	}
 	return newDiff
+}
+
+func (d *driverV2) setCache(tasConfig *core.TASConfigV2) error {
+	if tasConfig.Cache == nil {
+		checksum, err := utils.ComputeChecksum(fmt.Sprintf("%s/%s", global.RepoDir, global.PackageJSON))
+		if err != nil {
+			d.logger.Errorf("Error while computing checksum, error %v", err)
+			return err
+		}
+		tasConfig.Cache = &core.Cache{
+			Key:   checksum,
+			Paths: []string{},
+		}
+	}
+	return nil
 }

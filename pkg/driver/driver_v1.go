@@ -6,6 +6,7 @@ package driver
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 
 	"github.com/LambdaTest/test-at-scale/pkg/core"
@@ -126,6 +127,9 @@ func (d *driverV1) RunExecution(ctx context.Context, payload *core.Payload,
 		return err
 	}
 	tasConfig := tas.(*core.TASConfig)
+	if cachErr := d.setCache(tasConfig); cachErr != nil {
+		return cachErr
+	}
 	if errG := d.BlockTestService.GetBlockTests(ctx, tasConfig.Blocklist, payload.BranchName); errG != nil {
 		d.logger.Errorf("Unable to fetch blocklisted tests: %v", errG)
 		errG = errs.New(errs.GenericErrRemark.Error())
@@ -290,9 +294,8 @@ func (d *driverV1) setCache(tasConfig *core.TASConfig) error {
 			return err
 		}
 		tasConfig.Cache = &core.Cache{
-			Key:     checksum,
-			Paths:   []string{},
-			Version: global.CacheVersion,
+			Key:   checksum,
+			Paths: []string{},
 		}
 	}
 	return nil
