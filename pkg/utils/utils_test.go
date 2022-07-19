@@ -431,24 +431,7 @@ func Test_ShuffleLocators(t *testing.T) {
 				t.Errorf("shuffleLocators() throws error %v", err)
 			}
 
-			content, err := os.ReadFile(tt.args.locatorFilePath)
-			if err != nil {
-				t.Errorf("In test_shuffleLocators error in opening file = %v", err)
-				return
-			}
-			t.Logf(string(content))
-			// Now let's unmarshall the data into `payload`
-			var payload core.InputLocatorConfig
-			err = json.Unmarshal(content, &payload)
-			if err != nil {
-				t.Errorf("Error in unmarshlling = %v", err)
-				return
-			}
-			if payload.Locators[0].Locator == "Locator_A" &&
-				payload.Locators[1].Locator == "Locator_B" &&
-				payload.Locators[2].Locator == "Locator_C" {
-				t.Errorf("Shuffling could not be done, order is same as original")
-			}
+			VerifyLocators(tt.args.locatorFilePath, t)
 		})
 	}
 }
@@ -497,5 +480,61 @@ func Test_ExtractLocators(t *testing.T) {
 				t.Errorf("extractLocators(), array got %s, want %s", locatorArr, locatorArrValue)
 			}
 		})
+	}
+}
+
+func Test_UpdateLocatorBasedOnAlgo(t *testing.T) {
+	logger, err := testutils.GetLogger()
+	if err != nil {
+		t.Errorf("Couldn't initialize logger, error: %v", err)
+	}
+	locatorArrValue := []core.LocatorConfig{{
+		Locator: "Locator_A"},
+		{
+			Locator: "Locator_B"},
+		{
+			Locator: "Locator_C"}}
+
+	type args struct {
+		locatorArr      []core.LocatorConfig
+		locatorFilePath string
+		flakyAlgo       string
+	}
+
+	tests := []struct {
+		name string
+		args args
+	}{
+		{"Test_shuffleLocators",
+			args{locatorArrValue, "/tmp/locators", core.RunningXTimesShuffle}}}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := UpdateLocatorBasedOnAlgo(tt.args.flakyAlgo, tt.args.locatorFilePath, tt.args.locatorArr, logger); err != nil {
+				t.Errorf("shuffleLocators() throws error %v", err)
+			}
+
+			VerifyLocators(tt.args.locatorFilePath, t)
+		})
+	}
+}
+
+func VerifyLocators(locatorFilePath string, t *testing.T) {
+	content, err := os.ReadFile(locatorFilePath)
+	if err != nil {
+		t.Errorf("In test_shuffleLocators error in opening file = %v", err)
+		return
+	}
+	// Now let's unmarshall the data into `payload`
+	var payload core.InputLocatorConfig
+	err = json.Unmarshal(content, &payload)
+	if err != nil {
+		t.Errorf("Error in unmarshlling = %v", err)
+		return
+	}
+	if payload.Locators[0].Locator == "Locator_A" &&
+		payload.Locators[1].Locator == "Locator_B" &&
+		payload.Locators[2].Locator == "Locator_C" {
+		t.Errorf("Shuffling could not be done, order is same as original")
 	}
 }
