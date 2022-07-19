@@ -64,8 +64,8 @@ type DockerRunner interface {
 	// KillRunningDocker kills  container spawn by synapse
 	KillRunningDocker(ctx context.Context)
 
-	// KillContianerForBuildID kills synapse container which is running build for given buildID
-	KillContianerForBuildID(buildID string) error
+	// KillContainerForBuildID kills synapse container which is running build for given buildID
+	KillContainerForBuildID(buildID string) error
 
 	CreateVolume(ctx context.Context, r *RunnerOptions) error
 

@@ -241,7 +241,7 @@ func (s *synapse) processAbortBuild(message core.Message) {
 	buildID := string(message.Content)
 	buildAbortMap[buildID] = true
 	s.logger.Debugf("message received to abort build %s", buildID)
-	if err := s.runner.KillContianerForBuildID(buildID); err != nil {
+	if err := s.runner.KillContainerForBuildID(buildID); err != nil {
 		s.logger.Errorf("error while terminating container for buildID: %s, error: %v", buildID, err)
 		return
 	}

@@ -338,7 +338,7 @@ func (d *docker) KillRunningDocker(ctx context.Context) {
 	}
 }
 
-func (d *docker) KillContianerForBuildID(buildID string) error {
+func (d *docker) KillContainerForBuildID(buildID string) error {
 	for _, r := range d.RunningContainers {
 		if r.Label[BuildID] == buildID {
 			if err := d.Destroy(context.Background(), r); err != nil {
