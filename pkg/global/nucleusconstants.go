@@ -29,7 +29,6 @@ const (
 	ExpiryDelta              = 15 * time.Minute
 	NewTASVersion            = 2
 	ModulePath               = "MODULE_PATH"
-	CacheVersion             = "v1"
 	PackageJSON              = "package.json"
 	SubModuleName            = "SUBMODULE_NAME"
 	ArgPattern               = "--pattern"

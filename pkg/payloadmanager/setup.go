@@ -4,11 +4,7 @@ package payloadmanager
 import (
 	"context"
 	"encoding/json"
-	"errors"
-	"fmt"
 	"net/http"
-	"net/url"
-	"strings"
 
 	"github.com/LambdaTest/test-at-scale/config"
 	"github.com/LambdaTest/test-at-scale/pkg/core"
@@ -36,23 +32,7 @@ func NewPayloadManger(azureClient core.AzureClient,
 }
 
 func (pm *payloadManager) FetchPayload(ctx context.Context, payloadAddress string) (*core.Payload, error) {
-	if payloadAddress == "" {
-		return nil, errors.New("invalid payload address")
-	}
-
-	u, err := url.Parse(payloadAddress)
-	if err != nil {
-		return nil, err
-	}
-	// string the container name to get blob path
-	blobPath := strings.Replace(u.Path, fmt.Sprintf("/%s/", core.PayloadContainer), "", -1)
-
-	sasURL, err := pm.azureClient.GetSASURL(ctx, blobPath, core.PayloadContainer)
-	if err != nil {
-		return nil, err
-	}
-
-	rawBytes, _, err := pm.requests.MakeAPIRequest(ctx, http.MethodGet, sasURL, nil, nil, nil)
+	rawBytes, _, err := pm.requests.MakeAPIRequest(ctx, http.MethodGet, payloadAddress, nil, nil, nil)
 	if err != nil {
 		return nil, err
 	}

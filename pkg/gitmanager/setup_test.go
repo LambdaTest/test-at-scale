@@ -12,12 +12,12 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/LambdaTest/test-at-scale/mocks"
 	"github.com/LambdaTest/test-at-scale/pkg/command"
 	"github.com/LambdaTest/test-at-scale/pkg/core"
 	"github.com/LambdaTest/test-at-scale/pkg/global"
 	"github.com/LambdaTest/test-at-scale/pkg/lumber"
 	"github.com/LambdaTest/test-at-scale/testutils"
-	"github.com/LambdaTest/test-at-scale/testutils/mocks"
 	"github.com/stretchr/testify/mock"
 )
 

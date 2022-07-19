@@ -180,7 +180,7 @@ func ERR_FIL_CRT(err string) Err {
 		Message: fmt.Sprintf("Unable to create file :  \n%s", err)}
 }
 
-//ERR_API_WEB_HOK function returns error with code ERR::API::WEB::HOK
+// ERR_API_WEB_HOK function returns error with code ERR::API::WEB::HOK
 func ERR_API_WEB_HOK(err string) Err {
 	return Err{
 		Code:    "ERR::API::WEB::HOK",
@@ -206,6 +206,27 @@ func ERR_DOCKER_STRT(err string) Err {
 	return Err{
 		Code:    "ERR::DOCKER::STRT",
 		Message: fmt.Sprintf("Docker start failed with error:  \n%s", err)}
+}
+
+// ErrDockerVolCrt function returns error with code "ERR::DOCKER::VOL::CRT"
+func ErrDockerVolCrt(err string) Err {
+	return Err{
+		Code:    "ERR::DOCKER::VOL::CRT",
+		Message: fmt.Sprintf("Docker volume create failed with error:  \n%s", err)}
+}
+
+// ErrDockerCP function returns error with code "ERR::DOCKER::CP"
+func ErrDockerCP(err string) Err {
+	return Err{
+		Code:    "ERR::DOCKER::CP",
+		Message: fmt.Sprintf("Error copying file to docker:  \n%s", err)}
+}
+
+// ErrSecretLoad function returns error with code "ERR::SECRET::LOAD"
+func ErrSecretLoad(err string) Err {
+	return Err{
+		Code:    "ERR::SECRET::LOAD",
+		Message: fmt.Sprintf("Error in loading secrets:  \n%s", err)}
 }
 
 // ERR_JSON_MAR function returns error with code "ERR::JSON::MAR"

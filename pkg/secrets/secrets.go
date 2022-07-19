@@ -8,9 +8,7 @@ import (
 	"github.com/LambdaTest/test-at-scale/config"
 	"github.com/LambdaTest/test-at-scale/pkg/core"
 	errs "github.com/LambdaTest/test-at-scale/pkg/errs"
-	"github.com/LambdaTest/test-at-scale/pkg/global"
 	"github.com/LambdaTest/test-at-scale/pkg/lumber"
-	"github.com/LambdaTest/test-at-scale/pkg/utils"
 )
 
 type secertManager struct {
@@ -35,7 +33,7 @@ func (s *secertManager) GetSynapseName() string {
 	return s.cfg.Name
 }
 
-func (s *secertManager) WriteGitSecrets(path string) error {
+func (s *secertManager) GetGitSecretBytes() ([]byte, error) {
 	gitSecrets := core.Secret{
 		"access_token":  s.cfg.Git.Token,
 		"expiry":        "0001-01-01T00:00:00Z",
@@ -44,40 +42,22 @@ func (s *secertManager) WriteGitSecrets(path string) error {
 	}
 	gitSecretsJSON, err := json.Marshal(gitSecrets)
 	if err != nil {
-		return errs.ERR_JSON_MAR(err.Error())
+		return []byte{}, errs.ERR_JSON_MAR(err.Error())
 	}
-
-	if err := utils.CreateDirectory(path); err != nil {
-		return err
-	}
-
-	if err := utils.WriteFileToDirectory(path, global.GitConfigFileName, gitSecretsJSON); err != nil {
-		return err
-	}
-
-	return nil
+	return gitSecretsJSON, nil
 }
 
-func (s *secertManager) WriteRepoSecrets(repo string, path string) error {
+func (s *secertManager) GetRepoSecretBytes(repo string) ([]byte, error) {
 	val, ok := s.cfg.RepoSecrets[repo]
 	if !ok {
-		return errors.New("no secrets found in configuration file")
+		return []byte{}, errors.New("no secrets found in configuration file")
 	}
 
 	repoSecretsJSON, err := json.Marshal(val)
 	if err != nil {
-		return errs.ERR_JSON_MAR(err.Error())
+		return []byte{}, errs.ERR_JSON_MAR(err.Error())
 	}
-
-	if err := utils.CreateDirectory(path); err != nil {
-		return err
-	}
-
-	if err := utils.WriteFileToDirectory(path, global.RepoSecretsFileName, repoSecretsJSON); err != nil {
-		return err
-	}
-
-	return nil
+	return repoSecretsJSON, nil
 }
 
 func (s *secertManager) GetDockerSecrets(r *core.RunnerOptions) (core.ContainerImageConfig, error) {

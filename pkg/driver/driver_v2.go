@@ -7,7 +7,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"os"
 	"path"
 	"strings"
@@ -18,7 +17,6 @@ import (
 	"github.com/LambdaTest/test-at-scale/pkg/global"
 	"github.com/LambdaTest/test-at-scale/pkg/logwriter"
 	"github.com/LambdaTest/test-at-scale/pkg/lumber"
-	"github.com/LambdaTest/test-at-scale/pkg/utils"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -65,11 +63,9 @@ func (d *driverV2) RunDiscovery(ctx context.Context, payload *core.Payload,
 		return err
 	}
 	mainBuffer := new(bytes.Buffer)
-	blobPath := fmt.Sprintf("%s/%s/%s/%s.log", payload.OrgID, payload.BuildID, os.Getenv("TASK_ID"), core.PreRun)
-	azureLogWriter := logwriter.NewAzureLogWriter(d.AzureClient, blobPath, d.logger)
+	azureLogWriter := logwriter.NewAzureLogWriter(d.AzureClient, core.PurposePreRunLogs, d.logger)
 
 	defer func() {
-		d.logger.Debugf("Writing the preRUN logs to path %s", blobPath)
 		if writeErr := <-azureLogWriter.Write(ctx, mainBuffer); writeErr != nil {
 			// error in writing log should not fail the build
 			d.logger.Errorf("error in writing pre run log, error %v", writeErr)
@@ -142,9 +138,7 @@ func (d *driverV2) RunExecution(ctx context.Context, payload *core.Payload,
 
 	if subModule.Postrun != nil {
 		d.logger.Infof("Running post-run steps")
-		blobPath := fmt.Sprintf("%s/%s/%s/%s.log", payload.OrgID, payload.BuildID, os.Getenv("TASK_ID"), core.PostRun)
-
-		azureLogwriter := logwriter.NewAzureLogWriter(d.AzureClient, blobPath, d.logger)
+		azureLogwriter := logwriter.NewAzureLogWriter(d.AzureClient, core.PurposePostRunLogs, d.logger)
 
 		err = d.ExecutionManager.ExecuteUserCommands(ctx, core.PostRun, payload, subModule.Postrun, secretMap, azureLogwriter, modulePath)
 		if err != nil {
@@ -171,9 +165,7 @@ func (d *driverV2) runPreRunBeforeTestExecution(ctx context.Context,
 	}
 
 	d.logger.Infof("Running pre-run steps for submodule %s", subModule.Name)
-	blobPath := fmt.Sprintf("%s/%s/%s/%s.log", payload.OrgID, payload.BuildID, os.Getenv("TASK_ID"), core.PreRun)
-
-	azureLogwriter := logwriter.NewAzureLogWriter(d.AzureClient, blobPath, d.logger)
+	azureLogwriter := logwriter.NewAzureLogWriter(d.AzureClient, core.PurposePreRunLogs, d.logger)
 	err := d.ExecutionManager.ExecuteUserCommands(ctx, core.PreRun, payload, subModule.Prerun, secretMap, azureLogwriter, modulePath)
 	if err != nil {
 		d.logger.Errorf("Unable to run pre-run steps %v", err)
@@ -364,18 +356,7 @@ func (d *driverV2) setUpDiscovery(ctx context.Context,
 	payload *core.Payload,
 	tasConfig *core.TASConfigV2,
 	oauth *core.Oauth) (*setUpResultV2, error) {
-	if tasConfig.Cache == nil {
-		checksum, err := utils.ComputeChecksum(fmt.Sprintf("%s/%s", global.RepoDir, global.PackageJSON))
-		if err != nil {
-			d.logger.Errorf("Error while computing checksum, error %v", err)
-			return nil, err
-		}
-		tasConfig.Cache = &core.Cache{
-			Key:   checksum,
-			Paths: []string{},
-		}
-	}
-	cacheKey := fmt.Sprintf("%s/%s/%s/%s", tasConfig.Cache.Version, payload.OrgID, payload.RepoID, tasConfig.Cache.Key)
+	cacheKey := tasConfig.Cache.Key
 
 	g, errCtx := errgroup.WithContext(ctx)
 	g.Go(func() error {
@@ -492,11 +473,10 @@ func (d *driverV2) buildTestExecutionArgs(payload *core.Payload,
 	secretMap map[string]string,
 	coverageDir string) core.TestExecutionArgs {
 	target := subModule.Patterns
-	blobPath := fmt.Sprintf("%s/%s/%s/%s.log", payload.OrgID, payload.BuildID, os.Getenv("TASK_ID"), core.Execution)
 	envMap := getEnv(payload, tasConfig, subModule)
 	modulePath := path.Join(global.RepoDir, subModule.Path)
 
-	azureLogWriter := logwriter.NewAzureLogWriter(d.AzureClient, blobPath, d.logger)
+	azureLogWriter := logwriter.NewAzureLogWriter(d.AzureClient, core.PurposeExecutionLogs, d.logger)
 	return core.TestExecutionArgs{
 		Payload:           payload,
 		CoverageDir:       coverageDir,

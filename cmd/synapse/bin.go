@@ -99,7 +99,7 @@ func run(cmd *cobra.Command, args []string) {
 
 	// setting up cron handler
 	wg.Add(1)
-	go cron.Setup(ctx, &wg, logger)
+	go cron.Setup(ctx, &wg, logger, runner)
 
 	// All attempts to connect to lambdatest server failed
 	connectionFailed := make(chan struct{})

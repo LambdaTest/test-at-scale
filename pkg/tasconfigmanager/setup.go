@@ -86,7 +86,6 @@ func (tc *tasConfigManager) validateYMLV1(ctx context.Context,
 		tc.logger.Errorf("LicenseTier validation failed. error: %v", err)
 		return nil, err
 	}
-
 	return tasConfig, nil
 }
 

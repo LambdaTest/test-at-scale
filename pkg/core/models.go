@@ -13,14 +13,20 @@ import (
 // ExecutionID type
 type ExecutionID string
 
+// SASURLPurpose defines reasons for which SAS Url is required
+type SASURLPurpose string
+
+// SASURLPurpose values
+const (
+	PurposeCache          SASURLPurpose = "cache"
+	PurposeWorkspaceCache SASURLPurpose = "workspace_cache"
+	PurposePreRunLogs     SASURLPurpose = "pre_run_logs"
+	PurposePostRunLogs    SASURLPurpose = "post_run_logs"
+	PurposeExecutionLogs  SASURLPurpose = "execution_logs"
+)
+
 // Tier type of synapse
 type Tier string
-
-// CommandType defines type of command
-type CommandType string
-
-// ContainerType defines types of container
-type ContainerType string
 
 // TaskTier values.
 const (
@@ -49,6 +55,9 @@ const (
 	TestSplit SplitMode = "test"
 )
 
+// CommandType defines type of command
+type CommandType string
+
 // Types of Command string
 const (
 	PreRun          CommandType = "prerun"
@@ -61,13 +70,6 @@ const (
 	InstallNodeVer  CommandType = "installnodeversion"
 	InitGit         CommandType = "initgit"
 	RenameCloneFile CommandType = "renameclonefile"
-)
-
-// Types of containers
-const (
-	CacheContainer   ContainerType = "cache"
-	LogsContainer    ContainerType = "logs"
-	PayloadContainer ContainerType = "container-payload"
 )
 
 // EventType represents the webhook event
@@ -332,9 +334,8 @@ type CoverageThreshold struct {
 
 // Cache represents the user's cached directories
 type Cache struct {
-	Key     string   `yaml:"key" validate:"required"`
-	Paths   []string `yaml:"paths" validate:"required"`
-	Version string
+	Key   string   `yaml:"key" validate:"required"`
+	Paths []string `yaml:"paths" validate:"required"`
 }
 
 // Modifier defines struct for modifier

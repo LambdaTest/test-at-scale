@@ -15,16 +15,17 @@ type SecretsManager interface {
 	// GetLambdatestSecrets returns lambdatest config
 	GetLambdatestSecrets() *config.LambdatestConfig
 
-	// WriteGitSecrets writes git secrets to file
-	WriteGitSecrets(path string) error
-
-	// WriteRepoSecrets writes repo secrets to file
-	WriteRepoSecrets(repo string, path string) error
-
 	// GetDockerSecrets returns Mode , RegistryAuth, and URL for pulling remote docker image
 	GetDockerSecrets(r *RunnerOptions) (ContainerImageConfig, error)
+
 	// GetSynapseName returns synapse name mentioned in config
 	GetSynapseName() string
 	// GetOauthToken returns oauth token
 	GetOauthToken() *Oauth
+
+	// GetGitSecretBytes get git secrets in bytes
+	GetGitSecretBytes() ([]byte, error)
+
+	// GetRepoSecretBytes get repo secrets in bytes
+	GetRepoSecretBytes(repo string) ([]byte, error)
 }
