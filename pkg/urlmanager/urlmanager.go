@@ -90,7 +90,7 @@ func GetFileDownloadURL(gitprovider, commitID, repoSlug, filePath string) (strin
 	}
 	switch gitprovider {
 	case core.GitHub:
-		return fmt.Sprintf("%s/%s/contents/%s?ref=%s", global.APIHostURLMap[gitprovider], repoSlug, filePath, commitID), nil
+		return fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/%s", repoSlug, commitID, filePath), nil
 	case core.GitLab:
 		return fmt.Sprintf("%s/%s/-/raw/%s/%s", gitLabDownloadURL, repoSlug, commitID, filePath), nil
 	case core.Bitbucket:

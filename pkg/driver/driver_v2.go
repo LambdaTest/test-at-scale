@@ -18,6 +18,7 @@ import (
 	"github.com/LambdaTest/test-at-scale/pkg/global"
 	"github.com/LambdaTest/test-at-scale/pkg/logwriter"
 	"github.com/LambdaTest/test-at-scale/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/pkg/utils"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -363,6 +364,17 @@ func (d *driverV2) setUpDiscovery(ctx context.Context,
 	payload *core.Payload,
 	tasConfig *core.TASConfigV2,
 	oauth *core.Oauth) (*setUpResultV2, error) {
+	if tasConfig.Cache == nil {
+		checksum, err := utils.ComputeChecksum(fmt.Sprintf("%s/%s", global.RepoDir, global.PackageJSON))
+		if err != nil {
+			d.logger.Errorf("Error while computing checksum, error %v", err)
+			return nil, err
+		}
+		tasConfig.Cache = &core.Cache{
+			Key:   checksum,
+			Paths: []string{},
+		}
+	}
 	cacheKey := fmt.Sprintf("%s/%s/%s/%s", tasConfig.Cache.Version, payload.OrgID, payload.RepoID, tasConfig.Cache.Key)
 
 	g, errCtx := errgroup.WithContext(ctx)

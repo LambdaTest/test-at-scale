@@ -14,6 +14,7 @@ import (
 	"github.com/LambdaTest/test-at-scale/pkg/global"
 	"github.com/LambdaTest/test-at-scale/pkg/logwriter"
 	"github.com/LambdaTest/test-at-scale/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/pkg/utils"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -168,7 +169,9 @@ func (d *driverV1) RunExecution(ctx context.Context, payload *core.Payload,
 func (d *driverV1) setUp(ctx context.Context, payload *core.Payload,
 	tasConfig *core.TASConfig, oauth *core.Oauth, language string) (*setUpResultV1, error) {
 	d.logger.Infof("Tas yaml: %+v", tasConfig)
-
+	if err := d.setCache(tasConfig); err != nil {
+		return nil, err
+	}
 	cacheKey := ""
 	if language == languageJs {
 		cacheKey = fmt.Sprintf("%s/%s/%s/%s", tasConfig.Cache.Version, payload.OrgID, payload.RepoID, tasConfig.Cache.Key)
@@ -280,4 +283,21 @@ func populateDiscovery(testDiscoveryResult *core.DiscoveryResult, tasConfig *cor
 	testDiscoveryResult.SplitMode = tasConfig.SplitMode
 	testDiscoveryResult.ContainerImage = tasConfig.ContainerImage
 	testDiscoveryResult.Tier = tasConfig.Tier
+}
+
+func (d *driverV1) setCache(tasConfig *core.TASConfig) error {
+	language := global.FrameworkLanguageMap[tasConfig.Framework]
+	if tasConfig.Cache == nil && language == "javascript" {
+		checksum, err := utils.ComputeChecksum(fmt.Sprintf("%s/%s", global.RepoDir, global.PackageJSON))
+		if err != nil {
+			d.logger.Errorf("Error while computing checksum, error %v", err)
+			return err
+		}
+		tasConfig.Cache = &core.Cache{
+			Key:     checksum,
+			Paths:   []string{},
+			Version: global.CacheVersion,
+		}
+	}
+	return nil
 }

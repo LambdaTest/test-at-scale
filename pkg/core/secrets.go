@@ -25,4 +25,6 @@ type SecretsManager interface {
 	GetDockerSecrets(r *RunnerOptions) (ContainerImageConfig, error)
 	// GetSynapseName returns synapse name mentioned in config
 	GetSynapseName() string
+	// GetOauthToken returns oauth token
+	GetOauthToken() *Oauth
 }

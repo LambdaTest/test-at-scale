@@ -87,19 +87,6 @@ func (tc *tasConfigManager) validateYMLV1(ctx context.Context,
 		return nil, err
 	}
 
-	language := global.FrameworkLanguageMap[tasConfig.Framework]
-	if tasConfig.Cache == nil && language == "javascript" {
-		checksum, err := utils.ComputeChecksum(fmt.Sprintf("%s/%s", global.RepoDir, global.PackageJSON))
-		if err != nil {
-			tc.logger.Errorf("Error while computing checksum, error %v", err)
-			return nil, err
-		}
-		tasConfig.Cache = &core.Cache{
-			Key:     checksum,
-			Paths:   []string{},
-			Version: global.CacheVersion,
-		}
-	}
 	return tasConfig, nil
 }
 
@@ -163,17 +150,7 @@ func (tc *tasConfigManager) validateYMLV2(ctx context.Context,
 		tc.logger.Errorf("LicenseTier validation failed. error: %v", err)
 		return nil, err
 	}
-	if tasConfig.Cache == nil {
-		checksum, err := utils.ComputeChecksum(fmt.Sprintf("%s/%s", global.RepoDir, packageJSON))
-		if err != nil {
-			tc.logger.Errorf("Error while computing checksum, error %v", err)
-			return nil, err
-		}
-		tasConfig.Cache = &core.Cache{
-			Key:   checksum,
-			Paths: []string{},
-		}
-	}
+
 	return tasConfig, nil
 }
 

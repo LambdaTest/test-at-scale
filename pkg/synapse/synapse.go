@@ -10,6 +10,7 @@ import (
 	"github.com/LambdaTest/test-at-scale/pkg/core"
 	"github.com/LambdaTest/test-at-scale/pkg/global"
 	"github.com/LambdaTest/test-at-scale/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/pkg/tasconfigdownloader"
 	"github.com/LambdaTest/test-at-scale/pkg/utils"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/denisbrodbeck/machineid"
@@ -39,6 +40,7 @@ type synapse struct {
 	ConnectionAborted        chan struct{}
 	InvalidConnectionRequest chan struct{}
 	LogoutRequired           bool
+	tasConfigDownloader      *tasconfigdownloader.TASConfigDownloader
 }
 
 // New returns new instance of synapse
@@ -46,8 +48,8 @@ func New(
 	runner core.DockerRunner,
 	logger lumber.Logger,
 	secretsManager core.SecretsManager,
+	tasConfigDownloader *tasconfigdownloader.TASConfigDownloader,
 ) core.SynapseManager {
-
 	return &synapse{
 		runner:                   runner,
 		logger:                   logger,
@@ -57,6 +59,7 @@ func New(
 		MsgChan:                  make(chan []byte, 1024),
 		ConnectionAborted:        make(chan struct{}, 10),
 		LogoutRequired:           true,
+		tasConfigDownloader:      tasConfigDownloader,
 	}
 }
 
@@ -216,6 +219,8 @@ func (s *synapse) processMessage(msg []byte, duplicateConnectionChan chan struct
 	case core.MsgTask:
 		s.logger.Debugf("task message received from server")
 		go s.processTask(message)
+	case core.MsgYMLParsingRequest:
+		go s.processYMLParsingRequest(message)
 	default:
 		s.logger.Errorf("message type not found")
 	}
@@ -369,4 +374,29 @@ func (s *synapse) messageWriter(conn *websocket.Conn) {
 			}
 		}
 	}
+}
+
+func (s *synapse) processYMLParsingRequest(message core.Message) {
+	var parsingReqMsg *core.YMLParsingRequestMessage
+	if err := json.Unmarshal(message.Content, &parsingReqMsg); err != nil {
+		s.logger.Errorf("error in unmarshaling message for yml parsing request, error %v ", err)
+		return
+	}
+	oauth := s.secretsManager.GetOauthToken()
+
+	tasOutput, err := s.tasConfigDownloader.GetTasConfig(context.TODO(), parsingReqMsg.GitProvider,
+		parsingReqMsg.CommitID,
+		parsingReqMsg.RepoSlug, parsingReqMsg.TasFileName, oauth,
+		parsingReqMsg.Event, parsingReqMsg.LicenseTier)
+	if err != nil {
+		s.logger.Errorf("error occurred while fetching tas config file for buildID %s orgID %s, error %v",
+			parsingReqMsg.BuildID, parsingReqMsg.OrgID, err)
+	}
+	writeMsg := CreateYMlParsingResultMessage(core.YMLParsingResultMessage{
+		OrgID:     parsingReqMsg.OrgID,
+		BuildID:   parsingReqMsg.BuildID,
+		YMLOutput: *tasOutput,
+	})
+	s.writeMessageToBuffer(&writeMsg)
+
 }
