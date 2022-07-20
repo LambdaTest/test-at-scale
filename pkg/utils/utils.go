@@ -279,13 +279,13 @@ func ExtractLocators(locatorFilePath, flakyTestAlgo string, logger lumber.Logger
 	if flakyTestAlgo == core.RunningXTimesShuffle {
 		content, err := os.ReadFile(locatorFilePath)
 		if err != nil {
-			logger.Errorf("Error when opening file: ", err)
+			logger.Errorf("error when opening file %v", err)
 			return nil, err
 		}
 
 		err = json.Unmarshal(content, &inputLocatorConfigTemp)
 		if err != nil {
-			logger.Errorf("Error during Unmarshal(): ", err)
+			logger.Errorf("error during Unmarshal() %v", err)
 			return nil, err
 		}
 		locatorArrTemp = inputLocatorConfigTemp.Locators
@@ -320,7 +320,7 @@ func ShuffleLocators(locatorArr []core.LocatorConfig, locatorFilePath string, lo
 	file, _ := json.Marshal(inputLocatorConfigTemp)
 	err := os.WriteFile(locatorFilePath, file, global.FilePermissionWrite)
 	if err != nil {
-		logger.Errorf("Error While Writing Locators To File ", err)
+		logger.Errorf("error While Writing Locators To File %v", err)
 		return err
 	}
 	return nil
@@ -330,7 +330,7 @@ func UpdateLocatorBasedOnAlgo(flakyAlgo, locatorFilePath string, locatorArr []co
 	if flakyAlgo == core.RunningXTimesShuffle {
 		err := ShuffleLocators(locatorArr, locatorFilePath, logger)
 		if err != nil {
-			logger.Errorf("Error in shuffling locator file %v", err)
+			logger.Errorf("error in shuffling locator file %v", err)
 		}
 		return err
 	}

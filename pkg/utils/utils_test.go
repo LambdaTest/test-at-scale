@@ -522,19 +522,19 @@ func Test_UpdateLocatorBasedOnAlgo(t *testing.T) {
 func VerifyLocators(locatorFilePath string, t *testing.T) {
 	content, err := os.ReadFile(locatorFilePath)
 	if err != nil {
-		t.Errorf("In test_shuffleLocators error in opening file = %v", err)
+		t.Errorf("in test_shuffleLocators error in opening file = %v", err)
 		return
 	}
 	// Now let's unmarshall the data into `payload`
 	var payload core.InputLocatorConfig
 	err = json.Unmarshal(content, &payload)
 	if err != nil {
-		t.Errorf("Error in unmarshlling = %v", err)
+		t.Errorf("error in unmarshlling = %v", err)
 		return
 	}
 	if payload.Locators[0].Locator == "Locator_A" &&
 		payload.Locators[1].Locator == "Locator_B" &&
 		payload.Locators[2].Locator == "Locator_C" {
-		t.Errorf("Shuffling could not be done, order is same as original")
+		t.Errorf("shuffling could not be done, order is same as original")
 	}
 }

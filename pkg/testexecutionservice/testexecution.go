@@ -81,7 +81,7 @@ func (tes *testExecutionService) Run(ctx context.Context,
 
 	locatorArr, err := utils.ExtractLocators(locatorFilePath, tes.cfg.FlakyTestAlgo, tes.logger)
 	if err != nil {
-		tes.logger.Errorf("Error in extracting locators from file: %v", err)
+		tes.logger.Errorf("error in extracting locators from file: %v", err)
 		return nil, err
 	}
 
