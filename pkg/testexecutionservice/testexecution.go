@@ -61,7 +61,7 @@ func (tes *testExecutionService) Run(ctx context.Context,
 	multiWriter := io.MultiWriter(logWriter, azureWriter)
 	maskWriter := logstream.NewMasker(multiWriter, testExecutionArgs.SecretData)
 
-	args, err := tes.buildCmdArgs(ctx, testExecutionArgs.TestConfigFile,
+	args, locatorFilePath, err := tes.buildCmdArgs(ctx, testExecutionArgs.TestConfigFile,
 		testExecutionArgs.FrameWork, testExecutionArgs.FrameWorkVersion, testExecutionArgs.Payload, testExecutionArgs.TestPattern)
 	if err != nil {
 		return nil, err
@@ -76,6 +76,12 @@ func (tes *testExecutionService) Run(ctx context.Context,
 		return nil, err
 	}
 
+	locatorArr, err := utils.ExtractLocators(locatorFilePath, tes.cfg.FlakyTestAlgo, tes.logger)
+	if err != nil {
+		tes.logger.Errorf("error in extracting locators from file at location %s, %v", locatorFilePath, err)
+		return nil, err
+	}
+
 	executionResults := &core.ExecutionResults{
 		TaskID:   payload.TaskID,
 		BuildID:  payload.BuildID,
@@ -85,6 +91,11 @@ func (tes *testExecutionService) Run(ctx context.Context,
 		TaskType: payload.TaskType,
 	}
 	for i := 1; i <= tes.cfg.ConsecutiveRuns; i++ {
+		err := utils.UpdateLocatorBasedOnAlgo(tes.cfg.FlakyTestAlgo, locatorFilePath, locatorArr, tes.logger)
+		if err != nil {
+			return nil, err
+		}
+
 		var cmd *exec.Cmd
 		if testExecutionArgs.FrameWork == "jasmine" || testExecutionArgs.FrameWork == "mocha" {
 			if collectCoverage {
@@ -114,7 +125,7 @@ func (tes *testExecutionService) Run(ctx context.Context,
 			tes.logger.Errorf("failed to find process for command %s with pid %d %v", cmd.String(), pid, err)
 			return nil, err
 		}
-		err := cmd.Wait()
+		err = cmd.Wait()
 		result := <-tes.ts.ExecutionResultOutputChannel
 		if err != nil {
 			tes.logger.Errorf("error in test execution: %+v", err)
@@ -198,21 +209,23 @@ func (tes *testExecutionService) buildCmdArgs(ctx context.Context,
 	frameWork string,
 	frameworkVersion int,
 	payload *core.Payload,
-	target []string) ([]string, error) {
+	target []string) ([]string, string, error) {
 	args := []string{global.FrameworkRunnerMap[frameWork]}
 
 	args = append(args, utils.GetArgs("execute", frameWork, frameworkVersion, testConfigFile, target)...)
 
+	locatorFilePath := ""
 	if payload.LocatorAddress != "" {
 		locatorFile, err := tes.getLocatorsFile(ctx, payload.LocatorAddress)
 		tes.logger.Debugf("locators : %v\n", locatorFile)
 		if err != nil {
 			tes.logger.Errorf("failed to get locator file, error: %v", err)
-			return nil, err
+			return nil, "", err
 		}
 
 		args = append(args, global.ArgLocator, locatorFile)
+		locatorFilePath = locatorFile
 	}
 
-	return args, nil
+	return args, locatorFilePath, nil
 }
