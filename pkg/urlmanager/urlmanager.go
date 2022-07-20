@@ -92,7 +92,9 @@ func GetFileDownloadURL(gitprovider, commitID, repoSlug, filePath string) (strin
 	case core.GitHub:
 		return fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/%s", repoSlug, commitID, filePath), nil
 	case core.GitLab:
-		return fmt.Sprintf("%s/%s/-/raw/%s/%s", gitLabDownloadURL, repoSlug, commitID, filePath), nil
+		repoSlug = url.PathEscape(repoSlug)
+		filePath = url.PathEscape(filePath)
+		return fmt.Sprintf("%s/%s/repository/files/%s/raw?ref=%s", global.APIHostURLMap[gitprovider], repoSlug, filePath, commitID), nil
 	case core.Bitbucket:
 		// TODO: check for fork PR
 		return fmt.Sprintf("%s/repositories/%s/src/%s/%s", global.APIHostURLMap[gitprovider], repoSlug, commitID, filePath), nil
