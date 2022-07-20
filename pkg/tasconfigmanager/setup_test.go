@@ -86,9 +86,6 @@ func TestLoadAndValidateV1(t *testing.T) {
 	if err != nil {
 		t.Errorf("Couldn't initialize logger, error: %v", err)
 	}
-	getTasFilePathFn = func(path string) (string, error) {
-		return path, nil
-	}
 
 	tasConfigManager := NewTASConfigManager(logger)
 	ctx := context.TODO()
@@ -179,9 +176,6 @@ func TestLoadAndValidateV2(t *testing.T) {
 	logger, err := testutils.GetLogger()
 	if err != nil {
 		t.Errorf("Couldn't initialize logger, error: %v", err)
-	}
-	getTasFilePathFn = func(path string) (string, error) {
-		return path, nil
 	}
 
 	tasConfigManager := NewTASConfigManager(logger)

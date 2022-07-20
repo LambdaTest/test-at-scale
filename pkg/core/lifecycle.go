@@ -136,8 +136,11 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 			return err
 		}
 	}
-	// load tas yaml file
-	version, err := pl.TASConfigManager.GetVersion(payload.TasFileName)
+	filePath, err := pl.TASConfigManager.GetTasConfigFilePath(pl.Payload)
+	if err != nil {
+		return err
+	}
+	version, err := pl.TASConfigManager.GetVersion(filePath)
 	if err != nil {
 		pl.Logger.Errorf("Unable to load tas yaml file, error: %v", err)
 		err = &errs.StatusFailed{Remark: err.Error()}
@@ -145,7 +148,7 @@ func (pl *Pipeline) Start(ctx context.Context) (err error) {
 	}
 	pl.Logger.Infof("TAS Version %f", version)
 	pl.setEnv(payload, coverageDir)
-	newDriver, err := pl.Builder.GetDriver(version)
+	newDriver, err := pl.Builder.GetDriver(version, filePath)
 	if err != nil {
 		pl.Logger.Errorf("error crearing driver, error %v", err)
 		return err

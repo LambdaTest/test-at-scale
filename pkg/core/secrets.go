@@ -20,6 +20,8 @@ type SecretsManager interface {
 
 	// GetSynapseName returns synapse name mentioned in config
 	GetSynapseName() string
+	// GetOauthToken returns oauth token
+	GetOauthToken() *Oauth
 
 	// GetGitSecretBytes get git secrets in bytes
 	GetGitSecretBytes() ([]byte, error)
