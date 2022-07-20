@@ -18,6 +18,7 @@ const (
 	MsgError         MessageType = "error"
 	MsgResourceStats MessageType = "resourcestats"
 	MsgJobInfo       MessageType = "jobinfo"
+	MsgBuildAbort    MessageType = "build_abort"
 )
 
 // JobInfo types
@@ -25,6 +26,7 @@ const (
 	JobCompleted StatusType = "complete"
 	JobStarted   StatusType = "started"
 	JobFailed    StatusType = "failed"
+	JobAborted   StatusType = "aborted"
 )
 
 // ResourceStats types
@@ -65,4 +67,9 @@ type JobInfo struct {
 	Mode    string     `json:"mode"`
 	BuildID string     `json:"build_id"`
 	Message string     `json:"message"`
+}
+
+// BuildAbortMsg struct defines message for aborting a build
+type BuildAbortMsg struct {
+	BuildID string `json:"build_id"`
 }

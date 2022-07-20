@@ -30,6 +30,7 @@ import (
 
 const (
 	buildCacheExpiry time.Duration = 4 * time.Hour
+	BuildID                        = "build-id"
 )
 
 var gracefulyContainerStopDuration = time.Second * 10
@@ -335,6 +336,19 @@ func (d *docker) KillRunningDocker(ctx context.Context) {
 			d.logger.Errorf("Error occur while destroying container ID %s , err %+v", r.ContainerID, err)
 		}
 	}
+}
+
+func (d *docker) KillContainerForBuildID(buildID string) error {
+	for _, r := range d.RunningContainers {
+		if r.Label[BuildID] == buildID {
+			if err := d.Destroy(context.Background(), r); err != nil {
+				d.logger.Errorf("error while destroying container: %v", err)
+				return err
+			}
+			return nil
+		}
+	}
+	return nil
 }
 
 func (d *docker) PullImage(containerImageConfig *core.ContainerImageConfig, r *core.RunnerOptions) error {
