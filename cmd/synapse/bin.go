@@ -20,7 +20,7 @@ import (
 	"github.com/LambdaTest/test-at-scale/pkg/proxyserver"
 	"github.com/LambdaTest/test-at-scale/pkg/runner/docker"
 	"github.com/LambdaTest/test-at-scale/pkg/secrets"
-	"github.com/LambdaTest/test-at-scale/pkg/synapse"
+	synapsepkg "github.com/LambdaTest/test-at-scale/pkg/synapse"
 	"github.com/LambdaTest/test-at-scale/pkg/tasconfigdownloader"
 	"github.com/LambdaTest/test-at-scale/pkg/utils"
 	"github.com/joho/godotenv"
@@ -90,7 +90,7 @@ func run(cmd *cobra.Command, args []string) {
 		logger.Fatalf("could not instantiate k8s runner %v", err)
 	}
 	tasConfigDownloader := tasconfigdownloader.New(logger)
-	synapse := synapse.New(runner, logger, secretsManager, tasConfigDownloader)
+	synapse := synapsepkg.New(runner, logger, secretsManager, tasConfigDownloader)
 
 	proxyHandler, err := proxyserver.NewProxyHandler(logger)
 	if err != nil {

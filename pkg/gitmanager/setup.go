@@ -21,6 +21,10 @@ import (
 	"github.com/mholt/archiver/v3"
 )
 
+type GitLabSingleFileResponse struct {
+	Content string `json:"content"`
+}
+
 type gitManager struct {
 	logger      lumber.Logger
 	httpClient  http.Client
@@ -165,7 +169,7 @@ func (gm *gitManager) initGit(ctx context.Context, payload *core.Payload, oauth 
 
 func (gm *gitManager) makeDownloadRequest(ctx context.Context, downloadURL string,
 	oauth *core.Oauth) (*http.Response, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, downloadURL, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, downloadURL, http.NoBody)
 	if err != nil {
 		return nil, err
 	}

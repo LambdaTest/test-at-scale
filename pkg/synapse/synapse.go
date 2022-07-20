@@ -219,6 +219,7 @@ func (s *synapse) processMessage(msg []byte, duplicateConnectionChan chan struct
 		s.logger.Debugf("task message received from server")
 		go s.processTask(message)
 	case core.MsgYMLParsingRequest:
+		s.logger.Debugf("yml parsing request received from server")
 		go s.processYMLParsingRequest(message)
 	default:
 		s.logger.Errorf("message type not found")
@@ -366,13 +367,20 @@ func (s *synapse) messageWriter(conn *websocket.Conn) {
 
 func (s *synapse) processYMLParsingRequest(message core.Message) {
 	var parsingReqMsg *core.YMLParsingRequestMessage
+	var writeMsg core.Message
+	defer s.writeMessageToBuffer(&writeMsg)
 	if err := json.Unmarshal(message.Content, &parsingReqMsg); err != nil {
 		s.logger.Errorf("error in unmarshaling message for yml parsing request, error %v ", err)
+
+		writeMsg = CreateYMlParsingResultMessage(core.YMLParsingResultMessage{
+			OrgID:     parsingReqMsg.OrgID,
+			BuildID:   parsingReqMsg.BuildID,
+			YMLOutput: core.TASConfigDownloaderOutput{},
+			ErrorMsg:  err.Error(),
+		})
 		return
 	}
 	oauth := s.secretsManager.GetOauthToken()
-	var writeMsg core.Message
-	defer s.writeMessageToBuffer(&writeMsg)
 
 	tasOutput, err := s.tasConfigDownloader.GetTasConfig(context.TODO(), parsingReqMsg.GitProvider,
 		parsingReqMsg.CommitID,
@@ -394,5 +402,4 @@ func (s *synapse) processYMLParsingRequest(message core.Message) {
 		BuildID:   parsingReqMsg.BuildID,
 		YMLOutput: *tasOutput,
 	})
-
 }

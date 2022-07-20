@@ -281,8 +281,6 @@ func (d *driverV1) getEnvAndPattern(payload *core.Payload, tasConfig *core.TASCo
 func populateDiscovery(testDiscoveryResult *core.DiscoveryResult, tasConfig *core.TASConfig) {
 	testDiscoveryResult.Parallelism = tasConfig.Parallelism
 	testDiscoveryResult.SplitMode = tasConfig.SplitMode
-	testDiscoveryResult.ContainerImage = tasConfig.ContainerImage
-	testDiscoveryResult.Tier = tasConfig.Tier
 }
 
 func (d *driverV1) setCache(tasConfig *core.TASConfig) error {

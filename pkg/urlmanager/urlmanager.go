@@ -10,8 +10,6 @@ import (
 	"github.com/LambdaTest/test-at-scale/pkg/global"
 )
 
-const gitLabDownloadURL = "https://gitlab.com"
-
 // GetCloneURL returns repo clone url for given git provider
 func GetCloneURL(gitprovider, repoLink, repo, commitID, forkSlug, repoSlug string) (string, error) {
 	if global.TestEnv {

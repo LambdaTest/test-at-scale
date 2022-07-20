@@ -455,8 +455,6 @@ func populateTestDiscoveryV2(testDiscoveryResult *core.DiscoveryResult, subModul
 	testDiscoveryResult.Parallelism = subModule.Parallelism
 	testDiscoveryResult.SplitMode = tasConfig.SplitMode
 	testDiscoveryResult.SubModule = subModule.Name
-	testDiscoveryResult.Tier = tasConfig.Tier
-	testDiscoveryResult.ContainerImage = tasConfig.ContainerImage
 }
 
 func (d *driverV2) findSubmodule(tasConfig *core.TASConfigV2, payload *core.Payload, subModuleName string) (*core.SubModule, error) {

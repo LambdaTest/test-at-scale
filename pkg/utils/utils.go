@@ -271,6 +271,7 @@ func GetArgs(command string, frameWork string, frameworkVersion int,
 	return args
 }
 
+// GetTasFilePath returns tas file path
 func GetTasFilePath(path string) (string, error) {
 	path, err := GetConfigFileName(path)
 	if err != nil {

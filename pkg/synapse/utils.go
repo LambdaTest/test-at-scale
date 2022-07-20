@@ -78,13 +78,13 @@ func GetResources(tierOpts core.Tier) core.Specs {
 
 // CreateYMlParsingResultMessage creates message for YML parsing result
 func CreateYMlParsingResultMessage(ymlParsingOutput core.YMLParsingResultMessage) core.Message {
-	ymlParsingOutputJson, err := json.Marshal(ymlParsingOutput)
+	ymlParsingOutputJSON, err := json.Marshal(ymlParsingOutput)
 	if err != nil {
 		return core.Message{}
 	}
 	return core.Message{
 		Type:    core.MsgYMLParsingResult,
-		Content: ymlParsingOutputJson,
+		Content: ymlParsingOutputJSON,
 		Success: true,
 	}
 }

@@ -40,7 +40,7 @@ func (t *TASConfigDownloader) GetTasConfig(ctx context.Context, gitProvider, com
 
 	tasConfig, err := t.tasconfigmanager.LoadAndValidate(ctx, version, ymlPath, eventType, licenseTier)
 	if err != nil {
-		t.logger.Errorf("error while parsing yml , error %v", err)
+		t.logger.Errorf("error while parsing yml for commitID %s error %v", commitID, err)
 		return nil, err
 	}
 	if err := os.Remove(ymlPath); err != nil {
@@ -48,5 +48,4 @@ func (t *TASConfigDownloader) GetTasConfig(ctx context.Context, gitProvider, com
 		return nil, err
 	}
 	return &core.TASConfigDownloaderOutput{Version: version, TasConfig: tasConfig}, nil
-
 }
