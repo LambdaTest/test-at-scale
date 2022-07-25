@@ -205,6 +205,9 @@ func (d *driverV2) runDiscoveryHelper(ctx context.Context,
 	if err := d.runPreRunCommand(ctx, topPreRun, mainBuffer, payload, secretMap, taskPayload, subModuleList); err != nil {
 		return err
 	}
+	if err := d.installRunners(ctx, subModuleList); err != nil {
+		return err
+	}
 	d.logger.Debugf("Caching workspace")
 	// TODO: this will be change after we move to parallel pod executuon
 	if err := d.CacheStore.CacheWorkspace(ctx, ""); err != nil {
@@ -228,6 +231,25 @@ func (d *driverV2) runDiscoveryHelper(ctx context.Context,
 		e := <-errChannelDiscovery
 		if e != nil {
 			return e
+		}
+	}
+	return nil
+}
+
+func (d *driverV2) installRunners(ctx context.Context, subModuleList []core.SubModule) error {
+	installationMap := map[string]bool{}
+	totalSubmoduleCount := len(subModuleList)
+	for i := 0; i < totalSubmoduleCount; i++ {
+		modulePath := path.Join(global.RepoDir, subModuleList[i].Path)
+		installationMap[modulePath] = true
+	}
+	for modulePath, _ := range installationMap {
+		d.logger.Debugf("installing runner on path %s", modulePath)
+		err := d.ExecutionManager.ExecuteInternalCommands(ctx, core.InstallRunners, global.InstallRunnerCmds, modulePath, nil, nil)
+		if err != nil {
+			d.logger.Errorf("Unable to install custom runners on path %s %v", modulePath, err)
+			err = errs.New(errs.GenericErrRemark.Error())
+			return err
 		}
 	}
 	return nil
@@ -340,12 +362,6 @@ func (d *driverV2) runPreRunForEachSubModule(ctx context.Context,
 			return err
 		}
 		d.logger.Debugf("error checks end")
-	}
-	err := d.ExecutionManager.ExecuteInternalCommands(ctx, core.InstallRunners, global.InstallRunnerCmds, modulePath, nil, nil)
-	if err != nil {
-		d.logger.Errorf("Unable to install custom runners %v", err)
-		err = errs.New(errs.GenericErrRemark.Error())
-		return err
 	}
 
 	return nil
