@@ -243,7 +243,7 @@ func (d *driverV2) installRunners(ctx context.Context, subModuleList []core.SubM
 		modulePath := path.Join(global.RepoDir, subModuleList[i].Path)
 		installationMap[modulePath] = true
 	}
-	for modulePath, _ := range installationMap {
+	for modulePath := range installationMap {
 		d.logger.Debugf("installing runner on path %s", modulePath)
 		err := d.ExecutionManager.ExecuteInternalCommands(ctx, core.InstallRunners, global.InstallRunnerCmds, modulePath, nil, nil)
 		if err != nil {
