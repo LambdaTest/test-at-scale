@@ -361,7 +361,7 @@ func (s *synapse) messageWriter(conn *websocket.Conn) {
 			return
 		case messageJson := <-s.MsgChan:
 			if err := conn.WriteMessage(websocket.TextMessage, messageJson); err != nil {
-				s.logger.Errorf("error sending message to the server error %v", err)
+				s.logger.Errorf("error sending message to the server, error %v", err)
 				s.MsgChan <- messageJson
 				s.MsgErrChan <- struct{}{}
 				close(s.MsgErrChan)
