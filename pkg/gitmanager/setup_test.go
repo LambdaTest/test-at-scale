@@ -17,7 +17,9 @@ import (
 	"github.com/LambdaTest/test-at-scale/pkg/core"
 	"github.com/LambdaTest/test-at-scale/pkg/global"
 	"github.com/LambdaTest/test-at-scale/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/pkg/requestutils"
 	"github.com/LambdaTest/test-at-scale/testutils"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -60,6 +62,7 @@ func Test_downloadFile(t *testing.T) {
 		logger:      logger,
 		httpClient:  httpClient,
 		execManager: execManager,
+		request:     requestutils.New(logger, global.DefaultAPITimeout, &backoff.StopBackOff{}),
 	}
 	archiveURL := server.URL + "/archive/zipfile.zip"
 	fileName := "copyAndExtracted"
@@ -93,6 +96,7 @@ func Test_copyAndExtractFile(t *testing.T) {
 		logger:      logger,
 		httpClient:  httpClient,
 		execManager: execManager,
+		request:     requestutils.New(logger, global.DefaultAPITimeout, &backoff.StopBackOff{}),
 	}
 	fileBody := "Hello World!"
 	resp := http.Response{
