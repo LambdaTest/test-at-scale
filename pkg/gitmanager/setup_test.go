@@ -100,7 +100,13 @@ func Test_copyAndExtractFile(t *testing.T) {
 	}
 	path := "newFile"
 	defer removeFile(path)
-	err2 := gm.copyAndExtractFile(context.TODO(), &resp, path)
+	respBodyBuffer := bytes.Buffer{}
+	_, err = io.Copy(&respBodyBuffer, resp.Body)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+		return
+	}
+	err2 := gm.copyAndExtractFile(context.TODO(), respBodyBuffer.Bytes(), path)
 	if err2 != nil {
 		t.Errorf("Error: %v", err2)
 		return

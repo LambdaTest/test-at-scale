@@ -467,10 +467,10 @@ type YMLParsingRequestMessage struct {
 	BuildID     string    `json:"buildID"`
 }
 
-// TASConfigDownloaderOutput repersent output return by by tasconfig downloader
+// TASConfigDownloaderOutput repersent output return by tasconfig downloader
 type TASConfigDownloaderOutput struct {
 	Version   int         `json:"version"`
-	TasConfig interface{} `json:"tasConfig"`
+	TASConfig interface{} `json:"tasConfig"`
 }
 
 // YMLParsingResultMessage repersent message sent to TAS server in response of yml parsing request

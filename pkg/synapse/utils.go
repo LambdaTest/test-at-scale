@@ -76,8 +76,8 @@ func GetResources(tierOpts core.Tier) core.Specs {
 	return core.Specs{CPU: 0, RAM: 0}
 }
 
-// CreateYMlParsingResultMessage creates message for YML parsing result
-func CreateYMlParsingResultMessage(ymlParsingOutput core.YMLParsingResultMessage) core.Message {
+// createYMlParsingResultMessage creates message for YML parsing result
+func createYMlParsingResultMessage(ymlParsingOutput core.YMLParsingResultMessage) core.Message {
 	ymlParsingOutputJSON, err := json.Marshal(ymlParsingOutput)
 	if err != nil {
 		return core.Message{}

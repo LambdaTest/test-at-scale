@@ -187,7 +187,7 @@ func (tc *tasConfigManager) loadAndValidateV2(ctx context.Context,
 
 func (tc *tasConfigManager) GetTasConfigFilePath(payload *core.Payload) (string, error) {
 	// load tas yaml file
-	filePath, err := utils.GetTasFilePath(payload.TasFileName)
+	filePath, err := utils.GetTASFilePath(payload.TasFileName)
 	if err != nil {
 		tc.logger.Errorf("Unable to load tas yaml file, error: %v", err)
 		return "", err

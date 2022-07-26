@@ -28,6 +28,8 @@ const (
 	emptyTagName       = "-"
 	yamlTagName        = "yaml"
 	requiredTagName    = "required"
+	v1                 = 1
+	v2                 = 2
 )
 
 // Min returns the smaller of x or y.
@@ -271,8 +273,8 @@ func GetArgs(command string, frameWork string, frameworkVersion int,
 	return args
 }
 
-// GetTasFilePath returns tas file path
-func GetTasFilePath(path string) (string, error) {
+// GetTASFilePath returns tas file path
+func GetTASFilePath(path string) (string, error) {
 	path, err := GetConfigFileName(path)
 	if err != nil {
 		return "", err
@@ -290,4 +292,20 @@ func GenerateUUID() string {
 		}
 		return r
 	}, uuidV4.String())
+}
+
+// ValidateStructTASYml validates the TAS config for all supported version
+func ValidateStructTASYml(ctx context.Context, ymlContent []byte, ymlFilename string) (interface{}, error) {
+	version, err := GetVersion(ymlContent)
+	if err != nil {
+		return nil, err
+	}
+	switch version {
+	case v1:
+		return ValidateStructTASYmlV1(ctx, ymlContent, ymlFilename)
+	case v2:
+		return ValidateStructTASYmlV2(ctx, ymlContent, ymlFilename)
+	default:
+		return nil, fmt.Errorf("")
+	}
 }

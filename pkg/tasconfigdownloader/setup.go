@@ -24,7 +24,7 @@ func New(logger lumber.Logger) *TASConfigDownloader {
 	}
 }
 
-func (t *TASConfigDownloader) GetTasConfig(ctx context.Context, gitProvider, commitID, repoSlug,
+func (t *TASConfigDownloader) GetTASConfig(ctx context.Context, gitProvider, commitID, repoSlug,
 	filePath string, oauth *core.Oauth, eventType core.EventType, licenseTier core.Tier) (*core.TASConfigDownloaderOutput, error) {
 	ymlPath, err := t.gitmanager.DownloadFileByCommit(ctx, gitProvider, repoSlug, commitID, filePath, oauth)
 	if err != nil {
@@ -47,5 +47,5 @@ func (t *TASConfigDownloader) GetTasConfig(ctx context.Context, gitProvider, com
 		t.logger.Errorf("failed to delete file %s , error %v", ymlPath, err)
 		return nil, err
 	}
-	return &core.TASConfigDownloaderOutput{Version: version, TasConfig: tasConfig}, nil
+	return &core.TASConfigDownloaderOutput{Version: version, TASConfig: tasConfig}, nil
 }

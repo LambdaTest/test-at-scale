@@ -391,32 +391,30 @@ func (s *synapse) processYMLParsingRequest(message core.Message) {
 	if err := json.Unmarshal(message.Content, &parsingReqMsg); err != nil {
 		s.logger.Errorf("error in unmarshaling message for yml parsing request, error %v ", err)
 
-		writeMsg = CreateYMlParsingResultMessage(core.YMLParsingResultMessage{
-			OrgID:     parsingReqMsg.OrgID,
-			BuildID:   parsingReqMsg.BuildID,
-			YMLOutput: core.TASConfigDownloaderOutput{},
-			ErrorMsg:  err.Error(),
+		writeMsg = createYMlParsingResultMessage(core.YMLParsingResultMessage{
+			OrgID:    parsingReqMsg.OrgID,
+			BuildID:  parsingReqMsg.BuildID,
+			ErrorMsg: err.Error(),
 		})
 		return
 	}
 	oauth := s.secretsManager.GetOauthToken()
 
-	tasOutput, err := s.tasConfigDownloader.GetTasConfig(context.TODO(), parsingReqMsg.GitProvider,
+	tasOutput, err := s.tasConfigDownloader.GetTASConfig(context.TODO(), parsingReqMsg.GitProvider,
 		parsingReqMsg.CommitID,
 		parsingReqMsg.RepoSlug, parsingReqMsg.TasFileName, oauth,
 		parsingReqMsg.Event, parsingReqMsg.LicenseTier)
 	if err != nil {
 		s.logger.Errorf("error occurred while fetching tas config file for buildID %s orgID %s, error %v",
 			parsingReqMsg.BuildID, parsingReqMsg.OrgID, err)
-		writeMsg = CreateYMlParsingResultMessage(core.YMLParsingResultMessage{
-			OrgID:     parsingReqMsg.OrgID,
-			BuildID:   parsingReqMsg.BuildID,
-			YMLOutput: core.TASConfigDownloaderOutput{},
-			ErrorMsg:  err.Error(),
+		writeMsg = createYMlParsingResultMessage(core.YMLParsingResultMessage{
+			OrgID:    parsingReqMsg.OrgID,
+			BuildID:  parsingReqMsg.BuildID,
+			ErrorMsg: err.Error(),
 		})
 		return
 	}
-	writeMsg = CreateYMlParsingResultMessage(core.YMLParsingResultMessage{
+	writeMsg = createYMlParsingResultMessage(core.YMLParsingResultMessage{
 		OrgID:     parsingReqMsg.OrgID,
 		BuildID:   parsingReqMsg.BuildID,
 		YMLOutput: *tasOutput,
