@@ -243,14 +243,25 @@ func (d *driverV2) installRunners(ctx context.Context, subModuleList []core.SubM
 		modulePath := path.Join(global.RepoDir, subModuleList[i].Path)
 		installationMap[modulePath] = true
 	}
+	g, errCtx := errgroup.WithContext(ctx)
+
 	for modulePath := range installationMap {
-		d.logger.Debugf("installing runner on path %s", modulePath)
-		err := d.ExecutionManager.ExecuteInternalCommands(ctx, core.InstallRunners, global.InstallRunnerCmds, modulePath, nil, nil)
-		if err != nil {
-			d.logger.Errorf("Unable to install custom runners on path %s %v", modulePath, err)
-			err = errs.New(errs.GenericErrRemark.Error())
-			return err
-		}
+		// Taken from https://stackoverflow.com/questions/60115658/golang-error-group-over-function-with-custom-signature
+		func(installationPath string) {
+			g.Go(func() error {
+				d.logger.Debugf("installing runner on path %s", installationPath)
+				if err := d.ExecutionManager.ExecuteInternalCommands(errCtx, core.InstallRunners, global.InstallRunnerCmds,
+					installationPath, nil, nil); err != nil {
+					d.logger.Errorf("Unable to install custom runners on path %s %v", installationPath, err)
+					err = errs.New(errs.GenericErrRemark.Error())
+					return err
+				}
+				return nil
+			})
+		}(modulePath)
+	}
+	if err := g.Wait(); err != nil {
+		return err
 	}
 	return nil
 }
