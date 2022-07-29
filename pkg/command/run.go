@@ -116,10 +116,11 @@ func (m *manager) ExecuteOutputCommand(ctx context.Context,
 	// cmd.Stdout = logWriter
 	m.logger.Debugf("Executing command of type %s", commandType)
 	if out, err := cmd.Output(); err != nil {
+
 		m.logger.Errorf("command of type %s failed with error: %v", commandType, err)
 		return "", err
 	} else {
-		return string(out), nil
+		return strings.TrimSpace(string(out)), nil
 	}
 
 }

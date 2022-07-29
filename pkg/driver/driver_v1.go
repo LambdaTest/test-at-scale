@@ -203,13 +203,7 @@ func (d *driverV1) setUp(ctx context.Context, payload *core.Payload,
 
 		//check if surefire present directly under build plugins
 		surefireVersion, err := d.ExecutionManager.ExecuteOutputCommand(ctx, core.JavaRunnerConfiguration, global.MavenSurefireVersionPluginGetCmds, global.RepoDir, nil, nil)
-		if err != nil {
-			d.logger.Errorf("Unable to get Surefire version %v", err)
-			err = errs.New(errs.GenericErrRemark.Error())
-			return nil, err
-		}
-
-		if surefireVersion == "" {
+		if surefireVersion == "" || err != nil {
 
 			//check if surefire prensent under pluginmanagement
 			surefireVersion, err = d.ExecutionManager.ExecuteOutputCommand(ctx, core.JavaRunnerConfiguration, global.MavenSurefireVersionPluginManagementGetCmds, global.RepoDir, nil, nil)
