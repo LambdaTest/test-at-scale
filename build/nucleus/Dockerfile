@@ -98,6 +98,11 @@ RUN mkdir -p /home/nucleus/.m2
 RUN xmlstarlet ed -O --inplace -N a='http://maven.apache.org/SETTINGS/1.0.0' -s /a:settings --type elem --name "localRepository" -v /home/nucleus/.m2/repository /usr/share/maven/conf/settings.xml
 
 COPY ./build/nucleus/java/test-at-scale-java.jar /
+COPY ./build/nucleus/java/test-at-scale-java-runner.tar.gz /home/nucleus/
+RUN tar -xvzf /home/nucleus/test-at-scale-java-runner.tar.gz
+WORKDIR "/home/nucleus/test-at-scale-java-runner"
+RUN mvn clean install
+
 RUN curl -o /home/nucleus/junit-platform-console-standalone-1.8.2.jar https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/1.8.2/junit-platform-console-standalone-1.8.2.jar
 COPY ./build/nucleus/entrypoint.sh /
 ENTRYPOINT  ["/bin/sh", "/entrypoint.sh"]

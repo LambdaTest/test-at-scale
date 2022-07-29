@@ -46,7 +46,7 @@ var FrameworkRunnerMap = map[string]string{
 	"mocha":   "./node_modules/.bin/mocha-runner",
 	"jest":    "./node_modules/.bin/jest-runner",
 	"golang":  "/home/nucleus/server",
-	"junit":   "java",
+	"junit":   "mvn",
 }
 
 // APIHostURLMap is map of git provider with there api url
@@ -58,6 +58,11 @@ var APIHostURLMap = map[string]string{
 
 // InstallRunnerCmds  are list of command used to install custom runner
 var InstallRunnerCmds = []string{"tar -xzf /custom-runners/custom-runners.tgz"}
+
+var MavenSurefireVersionPluginGetCmds = []string{"xmlstarlet sel -t -v \"_:project/_:build/_:plugins/_:plugin[_:artifactId='maven-surefire-plugin']/_:version\" pom.xml"}
+var MavenSurefireVersionPluginManagementGetCmds = []string{"xmlstarlet sel -t -v \"_:project/_:build/_:pluginManagement/_:plugins/_:plugin[_:artifactId='maven-surefire-plugin']/_:version\" pom.xml"}
+var MavenSurefirePluginDependencyUpdateCmds = "xmlstarlet ed -O --inplace -a  \"/_:project/_:build/_:plugins/_:plugin[_:artifactId='maven-surefire-plugin']/_:artifactId\" --type elem --name \"dependencies\" -s //dependencies -t elem -n \"dependency\" -s //dependency -t elem -n \"groupId\" -v \"%s\" -s //dependency -t elem -n \"artifactId\" -v \"%s\" -s //dependency -t elem -n \"version\" -v \"1.0-SNAPSHOT\" pom.xml"
+var MavenSurefirePluginManagementDependencyUpdateCmds = "xmlstarlet ed -O --inplace -a  \"/_:project/_:build/_:pluginManagement/_:plugins/_:plugin[_:artifactId='maven-surefire-plugin']/_:artifactId\" --type elem --name \"dependencies\" -s //dependencies -t elem -n \"dependency\" -s //dependency -t elem -n \"groupId\" -v \"%s\" -s //dependency -t elem -n \"artifactId\" -v \"%s\" -s //dependency -t elem -n \"version\" -v \"1.0-SNAPSHOT\" pom.xml"
 
 // NeuronHost is neuron host end point
 var NeuronHost string
@@ -73,4 +78,16 @@ var FrameworkLanguageMap = map[string]string{
 	"jest":    "javascript",
 	"golang":  "golang",
 	"junit":   "java",
+}
+
+var SurefireVersionMap = map[string]string{
+	"2.19":     "com.lambdatest.surefire-2.19",
+	"2.22":     "com.lambdatest.surefire-2.22",
+	"3.0.0-M1": "com.lambdatest.surefire-3.0.0-M2",
+	"3.0.0-M2": "com.lambdatest.surefire-3.0.0-M2",
+	"3.0.0-M3": "com.lambdatest.surefire-3.0.0-M4",
+	"3.0.0-M4": "com.lambdatest.surefire-3.0.0-M4",
+	"3.0.0-M5": "com.lambdatest.surefire-3.0.0-M5",
+	"3.0.0-M6": "com.lambdatest.surefire-3.0.0-M7",
+	"3.0.0-M7": "com.lambdatest.surefire-3.0.0-M7",
 }

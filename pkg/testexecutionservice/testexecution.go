@@ -199,9 +199,15 @@ func (tes *testExecutionService) buildCmdArgs(ctx context.Context,
 	frameworkVersion int,
 	payload *core.Payload,
 	target []string) ([]string, error) {
+
+	language := global.FrameworkLanguageMap[frameWork]
 	args := []string{global.FrameworkRunnerMap[frameWork]}
 
 	args = append(args, utils.GetArgs("execute", frameWork, frameworkVersion, testConfigFile, target)...)
+
+	if language == "java" {
+		return args, nil
+	}
 
 	if payload.LocatorAddress != "" {
 		locatorFile, err := tes.getLocatorsFile(ctx, payload.LocatorAddress)

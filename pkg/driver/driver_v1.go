@@ -13,6 +13,7 @@ import (
 	"github.com/LambdaTest/test-at-scale/pkg/global"
 	"github.com/LambdaTest/test-at-scale/pkg/logwriter"
 	"github.com/LambdaTest/test-at-scale/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/pkg/utils"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -194,6 +195,46 @@ func (d *driverV1) setUp(ctx context.Context, payload *core.Payload,
 			}
 			return nil
 		})
+	}
+
+	//java setup
+	if language == "java" {
+		isPluginManagementTagPresent := false
+
+		//check if surefire present directly under build plugins
+		surefireVersion, err := d.ExecutionManager.ExecuteOutputCommand(ctx, core.JavaRunnerConfiguration, global.MavenSurefireVersionPluginGetCmds, global.RepoDir, nil, nil)
+		if err != nil {
+			d.logger.Errorf("Unable to get Surefire version %v", err)
+			err = errs.New(errs.GenericErrRemark.Error())
+			return nil, err
+		}
+
+		if surefireVersion == "" {
+
+			//check if surefire prensent under pluginmanagement
+			surefireVersion, err = d.ExecutionManager.ExecuteOutputCommand(ctx, core.JavaRunnerConfiguration, global.MavenSurefireVersionPluginManagementGetCmds, global.RepoDir, nil, nil)
+			if err != nil {
+				d.logger.Errorf("Unable to get Surefire version %v", err)
+				err = errs.New(errs.GenericErrRemark.Error())
+				return nil, err
+			}
+			if surefireVersion != "" {
+				isPluginManagementTagPresent = true
+			} else {
+				d.logger.Errorf("Unable to get Surefire version in both under <plugin> and <pluginmanagement>")
+				err = errs.New(errs.GenericErrRemark.Error())
+				return nil, err
+			}
+		}
+
+		d.logger.Debugf("Surefire version found %s", surefireVersion)
+		xmlUpdateCommand := utils.GetXMLUpdateCommand(surefireVersion, isPluginManagementTagPresent, tasConfig.FrameworkVersion, tasConfig.Framework)
+		err = d.ExecutionManager.ExecuteInternalCommands(ctx, core.JavaRunnerConfiguration, xmlUpdateCommand, global.RepoDir, nil, nil)
+		if err != nil {
+			d.logger.Errorf("update pom.xml %v", err)
+			err = errs.New(errs.GenericErrRemark.Error())
+			return nil, err
+		}
 	}
 
 	d.logger.Infof("Identifying changed files ...")

@@ -99,6 +99,31 @@ func (m *manager) ExecuteInternalCommands(ctx context.Context,
 	return nil
 }
 
+func (m *manager) ExecuteOutputCommand(ctx context.Context,
+	commandType core.CommandType,
+	commands []string,
+	cwd string,
+	envMap, secretData map[string]string) (string, error) {
+	bashCommands := strings.Join(commands, " && ")
+	cmd := exec.CommandContext(ctx, "/bin/bash", "-c", bashCommands)
+	if cwd != "" {
+		cmd.Dir = cwd
+	}
+
+	logWriter := lumber.NewWriter(m.logger)
+	defer logWriter.Close()
+	cmd.Stderr = logWriter
+	// cmd.Stdout = logWriter
+	m.logger.Debugf("Executing command of type %s", commandType)
+	if out, err := cmd.Output(); err != nil {
+		m.logger.Errorf("command of type %s failed with error: %v", commandType, err)
+		return "", err
+	} else {
+		return string(out), nil
+	}
+
+}
+
 // GetEnvVariables gives set environment variable
 func (m *manager) GetEnvVariables(envMap, secretData map[string]string) ([]string, error) {
 	envVars := os.Environ()

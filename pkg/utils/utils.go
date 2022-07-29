@@ -252,9 +252,13 @@ func GetArgs(command string, frameWork string, frameworkVersion int,
 
 	args := []string{}
 	if language == "java" {
-		args = append(args, "-jar", "/test-at-scale-java.jar",
-			global.ArgCommand, command, global.ArgFrameworVersion,
-			strconv.Itoa(frameworkVersion))
+		args = append(args, "test")
+		if command == "discover" {
+			args = append(args, "-Dmode=discover", "-DfailIfNoTests=false", "-Dforkcount=1")
+		} else {
+			args = append(args, "-Dmode=execute", "-Dforkcount=1")
+		}
+		return args
 	} else {
 		args = append(args, global.ArgCommand, command)
 	}
@@ -268,4 +272,39 @@ func GetArgs(command string, frameWork string, frameworkVersion int,
 	}
 
 	return args
+}
+
+func GetXMLUpdateCommand(surefireVersion string,
+	isPluginManagementPresent bool,
+	framworkversion int,
+	framework string) []string {
+
+	commands := []string{}
+	groupId := ""
+	commandString := ""
+
+	if framworkversion != 0 {
+		framework = framework + strconv.Itoa(framworkversion)
+	}
+
+	if isPluginManagementPresent {
+		//<pluginmanagement> tag wraps <plugin> tag
+		commandString = global.MavenSurefirePluginManagementDependencyUpdateCmds
+	} else {
+		commandString = global.MavenSurefirePluginDependencyUpdateCmds
+	}
+
+	if strings.HasPrefix(surefireVersion, "2.1") {
+		groupId = global.SurefireVersionMap["2.19"]
+	} else if strings.HasPrefix(surefireVersion, "2") {
+		groupId = global.SurefireVersionMap["2.22"]
+	} else if strings.HasPrefix(surefireVersion, "3") {
+		groupId = global.SurefireVersionMap[surefireVersion]
+	}
+
+	command := fmt.Sprintf(commandString, groupId, framework)
+	catCommand := "cat pom.xml"
+	commands = append(commands, command)
+	commands = append(commands, catCommand)
+	return commands
 }

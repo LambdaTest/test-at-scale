@@ -139,6 +139,11 @@ type ExecutionManager interface {
 		secretData map[string]string) error
 	// GetEnvVariables get the environment variables from the env map given by user.
 	GetEnvVariables(envMap, secretData map[string]string) ([]string, error)
+	ExecuteOutputCommand(ctx context.Context,
+		commandType CommandType,
+		commands []string,
+		cwd string,
+		envMap, secretData map[string]string) (string, error)
 }
 
 // Requests is a util interface for making API Requests
