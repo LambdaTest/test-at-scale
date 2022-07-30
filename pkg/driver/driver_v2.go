@@ -188,8 +188,8 @@ func (d *driverV2) runPreRunBeforeTestExecution(ctx context.Context,
 
 func getListofSubmodulesPath(subModuleList []core.SubModule) []string {
 	subModPathList := []string{}
-	for _, subModPath := range subModuleList {
-		subModPathList = append(subModPathList, subModPath.Path)
+	for i, _ := range subModuleList {
+		subModPathList = append(subModPathList, subModuleList[i].Path)
 	}
 
 	return subModPathList
