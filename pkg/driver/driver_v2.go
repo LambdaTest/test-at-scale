@@ -7,9 +7,9 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"os"
 	"path"
+	"strings"
 	"sync"
 
 	"github.com/LambdaTest/test-at-scale/pkg/core"
@@ -62,11 +62,9 @@ func (d *driverV2) RunDiscovery(ctx context.Context, payload *core.Payload,
 		return err
 	}
 	mainBuffer := new(bytes.Buffer)
-	blobPath := fmt.Sprintf("%s/%s/%s/%s.log", payload.OrgID, payload.BuildID, os.Getenv("TASK_ID"), core.PreRun)
-	azureLogWriter := logwriter.NewAzureLogWriter(d.AzureClient, blobPath, d.logger)
+	azureLogWriter := logwriter.NewAzureLogWriter(d.AzureClient, core.PurposePreRunLogs, d.logger)
 
 	defer func() {
-		d.logger.Debugf("Writing the preRUN logs to path %s", blobPath)
 		if writeErr := <-azureLogWriter.Write(ctx, mainBuffer); writeErr != nil {
 			// error in writing log should not fail the build
 			d.logger.Errorf("error in writing pre run log, error %v", writeErr)
@@ -144,9 +142,7 @@ func (d *driverV2) RunExecution(ctx context.Context, payload *core.Payload,
 
 	if subModule.Postrun != nil {
 		d.logger.Infof("Running post-run steps")
-		blobPath := fmt.Sprintf("%s/%s/%s/%s.log", payload.OrgID, payload.BuildID, os.Getenv("TASK_ID"), core.PostRun)
-
-		azureLogwriter := logwriter.NewAzureLogWriter(d.AzureClient, blobPath, d.logger)
+		azureLogwriter := logwriter.NewAzureLogWriter(d.AzureClient, core.PurposePostRunLogs, d.logger)
 
 		err = d.ExecutionManager.ExecuteUserCommands(ctx, core.PostRun, payload, subModule.Postrun, secretMap, azureLogwriter, modulePath)
 		if err != nil {
@@ -173,9 +169,7 @@ func (d *driverV2) runPreRunBeforeTestExecution(ctx context.Context,
 	}
 
 	d.logger.Infof("Running pre-run steps for submodule %s", subModule.Name)
-	blobPath := fmt.Sprintf("%s/%s/%s/%s.log", payload.OrgID, payload.BuildID, os.Getenv("TASK_ID"), core.PreRun)
-
-	azureLogwriter := logwriter.NewAzureLogWriter(d.AzureClient, blobPath, d.logger)
+	azureLogwriter := logwriter.NewAzureLogWriter(d.AzureClient, core.PurposePreRunLogs, d.logger)
 	err := d.ExecutionManager.ExecuteUserCommands(ctx, core.PreRun, payload, subModule.Prerun, secretMap, azureLogwriter, modulePath)
 	if err != nil {
 		d.logger.Errorf("Unable to run pre-run steps %v", err)
@@ -190,6 +184,15 @@ func (d *driverV2) runPreRunBeforeTestExecution(ctx context.Context,
 		return err
 	}
 	return nil
+}
+
+func getListofSubmodulesPath(subModuleList []core.SubModule) []string {
+	subModPathList := []string{}
+	for _, subModPath := range subModuleList {
+		subModPathList = append(subModPathList, subModPath.Path)
+	}
+
+	return subModPathList
 }
 
 func (d *driverV2) runDiscoveryHelper(ctx context.Context,
@@ -226,11 +229,12 @@ func (d *driverV2) runDiscoveryHelper(ctx context.Context,
 
 	errChannelDiscovery := make(chan error, totalSubmoduleCount)
 	discoveryWaitGroup := sync.WaitGroup{}
+	submodulePathList := getListofSubmodulesPath(subModuleList)
 	for i := 0; i < totalSubmoduleCount; i++ {
 		discoveryWaitGroup.Add(1)
 		go func(subModule *core.SubModule) {
 			defer discoveryWaitGroup.Done()
-			err := d.runDiscoveryForEachSubModule(ctx, payload, subModule, tasConfig, diff, diffExists, secretMap)
+			err := d.runDiscoveryForEachSubModule(ctx, payload, subModule, tasConfig, diff, diffExists, secretMap, submodulePathList)
 			errChannelDiscovery <- err
 		}(&subModuleList[i])
 	}
@@ -311,8 +315,9 @@ func (d *driverV2) runDiscoveryForEachSubModule(ctx context.Context,
 	tasConfig *core.TASConfigV2,
 	diff map[string]int,
 	diffExists bool,
-	secretMap map[string]string) error {
-	args := d.buildDiscoveryArgs(payload, tasConfig, subModule, secretMap, diffExists, diff)
+	secretMap map[string]string,
+	submodulesPath []string) error {
+	args := d.buildDiscoveryArgs(payload, tasConfig, subModule, secretMap, diffExists, diff, submodulesPath)
 
 	discoveryResult, err := d.TestDiscoveryService.Discover(ctx, &args)
 	if err != nil {
@@ -371,7 +376,7 @@ func (d *driverV2) setUpDiscovery(ctx context.Context,
 
 	// cache key will be empty in case of golang and java.
 	if tasConfig.Cache != nil && tasConfig.Cache.Key != "" {
-		cacheKey = fmt.Sprintf("%s/%s/%s/%s", tasConfig.Cache.Version, payload.OrgID, payload.RepoID, tasConfig.Cache.Key)
+		cacheKey = tasConfig.Cache.Key
 		g.Go(func() error {
 			if errG := d.CacheStore.Download(errCtx, cacheKey); errG != nil {
 				d.logger.Errorf("Unable to download cache: %v", errG)
@@ -412,7 +417,8 @@ func (d *driverV2) buildDiscoveryArgs(payload *core.Payload, tasConfig *core.TAS
 	subModule *core.SubModule,
 	secretMap map[string]string,
 	diffExists bool,
-	diff map[string]int) core.DiscoveyArgs {
+	diff map[string]int,
+	submodulesPath []string) core.DiscoveyArgs {
 	testPattern := subModule.Patterns
 	envMap := getEnv(payload, tasConfig, subModule)
 	modulePath := path.Join(global.RepoDir, subModule.Path)
@@ -425,9 +431,10 @@ func (d *driverV2) buildDiscoveryArgs(payload *core.Payload, tasConfig *core.TAS
 		TestConfigFile: subModule.ConfigFile,
 		FrameWork:      subModule.Framework,
 		SmartRun:       tasConfig.SmartRun,
-		Diff:           diff,
+		Diff:           GetSubmoduleBasedDiff(diff, subModule.Path),
 		DiffExists:     diffExists,
 		CWD:            modulePath,
+		SubmodulesPath: submodulesPath,
 	}
 }
 
@@ -487,11 +494,10 @@ func (d *driverV2) buildTestExecutionArgs(payload *core.Payload,
 	secretMap map[string]string,
 	coverageDir string) core.TestExecutionArgs {
 	target := subModule.Patterns
-	blobPath := fmt.Sprintf("%s/%s/%s/%s.log", payload.OrgID, payload.BuildID, os.Getenv("TASK_ID"), core.Execution)
 	envMap := getEnv(payload, tasConfig, subModule)
 	modulePath := path.Join(global.RepoDir, subModule.Path)
 
-	azureLogWriter := logwriter.NewAzureLogWriter(d.AzureClient, blobPath, d.logger)
+	azureLogWriter := logwriter.NewAzureLogWriter(d.AzureClient, core.PurposeExecutionLogs, d.logger)
 	return core.TestExecutionArgs{
 		Payload:           payload,
 		CoverageDir:       coverageDir,
@@ -503,4 +509,19 @@ func (d *driverV2) buildTestExecutionArgs(payload *core.Payload,
 		SecretData:        secretMap,
 		CWD:               modulePath,
 	}
+}
+
+func GetSubmoduleBasedDiff(diff map[string]int, subModulePath string) map[string]int {
+	newDiff := map[string]int{}
+	subModulePath = strings.TrimPrefix(subModulePath, "./")
+	if !strings.HasSuffix(subModulePath, "/") {
+		subModulePath += "/"
+	}
+
+	for file, value := range diff {
+		filePath := strings.TrimPrefix(file, subModulePath)
+
+		newDiff[filePath] = value
+	}
+	return newDiff
 }

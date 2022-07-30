@@ -29,7 +29,6 @@ const (
 	ExpiryDelta              = 15 * time.Minute
 	NewTASVersion            = 2
 	ModulePath               = "MODULE_PATH"
-	CacheVersion             = "v1"
 	PackageJSON              = "package.json"
 	SubModuleName            = "SUBMODULE_NAME"
 	ArgPattern               = "--pattern"
@@ -39,6 +38,7 @@ const (
 	ArgLocator               = "--locator-file"
 	ArgFrameworVersion       = "--frameworkVersion"
 	DefaultTASVersion        = "1.0.0"
+	ArgSubmodulePaths        = "--submodule-paths"
 )
 
 // FrameworkRunnerMap is map of framework with there respective runner location

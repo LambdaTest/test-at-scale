@@ -3,16 +3,17 @@ module github.com/LambdaTest/test-at-scale
 go 1.17
 
 require (
+	github.com/Azure/azure-sdk-for-go/sdk/azcore v0.21.1
 	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v0.3.0
 	github.com/bmatcuk/doublestar/v4 v4.0.2
 	github.com/cenkalti/backoff/v4 v4.1.3
 	github.com/denisbrodbeck/machineid v1.0.1
 	github.com/docker/docker v20.10.12+incompatible
+	github.com/docker/go-units v0.4.0
 	github.com/gin-gonic/gin v1.7.7
 	github.com/go-playground/locales v0.14.0
 	github.com/go-playground/universal-translator v0.18.0
 	github.com/go-playground/validator/v10 v10.10.0
-	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/websocket v1.4.2
 	github.com/joho/godotenv v1.4.0
@@ -30,7 +31,6 @@ require (
 )
 
 require (
-	github.com/Azure/azure-sdk-for-go/sdk/azcore v0.21.1 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/internal v0.8.3 // indirect
 	github.com/Microsoft/go-winio v0.4.17 // indirect
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
@@ -39,7 +39,6 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/docker/distribution v2.8.0+incompatible // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
-	github.com/docker/go-units v0.4.0 // indirect
 	github.com/dsnet/compress v0.0.2-0.20210315054119-f66993602bf5 // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect

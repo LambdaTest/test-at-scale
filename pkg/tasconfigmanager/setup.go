@@ -101,9 +101,8 @@ func (tc *tasConfigManager) validateYMLV1(ctx context.Context,
 			return nil, err
 		}
 		tasConfig.Cache = &core.Cache{
-			Key:     checksum,
-			Paths:   []string{},
-			Version: global.CacheVersion,
+			Key:   checksum,
+			Paths: []string{},
 		}
 	}
 	return tasConfig, nil

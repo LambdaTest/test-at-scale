@@ -11,14 +11,13 @@ import (
 	"testing"
 
 	"github.com/LambdaTest/test-at-scale/config"
+	"github.com/LambdaTest/test-at-scale/mocks"
 	"github.com/LambdaTest/test-at-scale/pkg/core"
 	"github.com/LambdaTest/test-at-scale/pkg/global"
 	"github.com/LambdaTest/test-at-scale/pkg/lumber"
 	"github.com/LambdaTest/test-at-scale/pkg/requestutils"
 	"github.com/LambdaTest/test-at-scale/testutils"
-	"github.com/LambdaTest/test-at-scale/testutils/mocks"
 	"github.com/cenkalti/backoff/v4"
-	"github.com/stretchr/testify/mock"
 )
 
 type validatePayloadArgs struct {
@@ -66,16 +65,7 @@ func Test_payloadManager_FetchPayload(t *testing.T) {
 		t.Errorf("Couldn't get config, received: %s", err)
 	}
 
-	ct := core.PayloadContainer
 	azureClient := new(mocks.AzureClient)
-	azureClient.On("GetSASURL", mock.AnythingOfType("*context.emptyCtx"), "/index.txt", ct).Return(
-		func(ctc context.Context, blobPath string, containerType core.ContainerType) string {
-			return server.URL + "/index.txt"
-		},
-		func(ctc context.Context, blobPath string, containerType core.ContainerType) error {
-			return nil
-		},
-	)
 
 	wantResp, err := os.ReadFile("../../testutils/testdata/index.json")
 	if err != nil {

@@ -231,19 +231,24 @@ func ValidateSubModule(module *core.SubModule) error {
 	return nil
 }
 
-// FetchQueryParams returns the params which are required in API
-func FetchQueryParams() (params map[string]string) {
-	params = map[string]string{
+// GetDefaultQueryAndHeaders returns the query and headers that should be supplied with each request made to TAS Server
+func GetDefaultQueryAndHeaders() (query map[string]interface{}, headers map[string]string) {
+	query = map[string]interface{}{
 		"repoID":  os.Getenv("REPO_ID"),
 		"buildID": os.Getenv("BUILD_ID"),
 		"orgID":   os.Getenv("ORG_ID"),
+		"taskID":  os.Getenv("TASK_ID"),
 	}
-	return params
+	headers = map[string]string{
+		"Authorization": fmt.Sprintf("Bearer %s", os.Getenv("TOKEN")),
+	}
+	return query, headers
 }
 
 func GetArgs(command string, frameWork string, frameworkVersion int,
 	configFile string,
-	target []string) []string {
+	target,
+	submodulesPath []string) []string {
 	language := global.FrameworkLanguageMap[frameWork]
 
 	args := []string{}
@@ -261,6 +266,13 @@ func GetArgs(command string, frameWork string, frameworkVersion int,
 
 	for _, pattern := range target {
 		args = append(args, global.ArgPattern, pattern)
+	}
+
+	// for golang repos passing submodules path in order to handle duplicate tests discovery.
+	if language == "golang" && len(submodulesPath) > 0 {
+		for _, submodulePath := range submodulesPath {
+			args = append(args, global.ArgSubmodulePaths, submodulePath)
+		}
 	}
 
 	return args

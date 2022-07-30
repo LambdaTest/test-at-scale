@@ -24,3 +24,12 @@ build-synapse-image:		## Builds synapse docker image
 
 build-synapse-bin:			## Builds synapse binary
 	bash build/synapse/build.sh
+
+install-mockery-mac:
+	brew install mockery
+
+install-mockery-linux:
+	apt update && apt install -y mockery
+
+gen-mock-files:
+	mockery --dir=./pkg --all

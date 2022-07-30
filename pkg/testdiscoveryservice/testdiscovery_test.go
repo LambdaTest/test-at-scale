@@ -6,11 +6,11 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/LambdaTest/test-at-scale/mocks"
 	"github.com/LambdaTest/test-at-scale/pkg/core"
 	"github.com/LambdaTest/test-at-scale/pkg/global"
 	"github.com/LambdaTest/test-at-scale/pkg/requestutils"
 	"github.com/LambdaTest/test-at-scale/testutils"
-	"github.com/LambdaTest/test-at-scale/testutils/mocks"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/stretchr/testify/mock"
 )

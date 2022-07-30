@@ -10,7 +10,6 @@ import (
 	"github.com/LambdaTest/test-at-scale/pkg/core"
 	"github.com/LambdaTest/test-at-scale/pkg/global"
 	"github.com/LambdaTest/test-at-scale/pkg/lumber"
-	"github.com/LambdaTest/test-at-scale/pkg/utils"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/denisbrodbeck/machineid"
 	"github.com/gorilla/websocket"
@@ -28,6 +27,8 @@ const (
 	AuthenticationFailed             = "Synapse authentication failed"
 	duplicateConnectionSleepDuration = 15 * time.Second
 )
+
+var buildAbortMap = make(map[string]bool)
 
 type synapse struct {
 	conn                     *websocket.Conn
@@ -47,7 +48,6 @@ func New(
 	logger lumber.Logger,
 	secretsManager core.SecretsManager,
 ) core.SynapseManager {
-
 	return &synapse{
 		runner:                   runner,
 		logger:                   logger,
@@ -216,6 +216,9 @@ func (s *synapse) processMessage(msg []byte, duplicateConnectionChan chan struct
 	case core.MsgTask:
 		s.logger.Debugf("task message received from server")
 		go s.processTask(message)
+	case core.MsgBuildAbort:
+		s.logger.Debugf("abort-build message received from server")
+		go s.processAbortBuild(message)
 	default:
 		s.logger.Errorf("message type not found")
 	}
@@ -230,6 +233,17 @@ func (s *synapse) processErrorMessage(message core.Message, duplicateConnectionC
 	}
 	if errMsg == DuplicateConnectionErr {
 		duplicateConnectionChan <- struct{}{}
+	}
+}
+
+// processAbortBuild handles aborting a running build
+func (s *synapse) processAbortBuild(message core.Message) {
+	buildID := string(message.Content)
+	buildAbortMap[buildID] = true
+	s.logger.Debugf("message received to abort build %s", buildID)
+	if err := s.runner.KillContainerForBuildID(buildID); err != nil {
+		s.logger.Errorf("error while terminating container for buildID: %s, error: %v", buildID, err)
+		return
 	}
 }
 
@@ -251,38 +265,30 @@ func (s *synapse) processTask(message core.Message) {
 	// mounting secrets to container
 	runnerOpts.HostVolumePath = fmt.Sprintf("/tmp/synapse/data/%s", runnerOpts.ContainerName)
 
-	if err := utils.CreateDirectory(runnerOpts.HostVolumePath); err != nil {
-		s.logger.Errorf("error creating file directory: %v", err)
-	}
-	if err := s.secretsManager.WriteGitSecrets(runnerOpts.HostVolumePath); err != nil {
-		s.logger.Errorf("error creating secrets %v", err)
-	}
-
-	if err := s.secretsManager.WriteRepoSecrets(runnerOpts.Label[Repo], runnerOpts.HostVolumePath); err != nil {
-		s.logger.Errorf("error creating repo secrets %v", err)
-	}
-	s.runAndUpdateJobStatus(runnerOpts)
-
+	s.runAndUpdateJobStatus(&runnerOpts)
 }
 
 // runAndUpdateJobStatus intiate and sends jobs status
-func (s *synapse) runAndUpdateJobStatus(runnerOpts core.RunnerOptions) {
+func (s *synapse) runAndUpdateJobStatus(runnerOpts *core.RunnerOptions) {
 	// starting container
 	statusChan := make(chan core.ContainerStatus)
 	defer close(statusChan)
 	s.logger.Debugf("starting container %s for build %s...", runnerOpts.ContainerName, runnerOpts.Label[BuildID])
-	go s.runner.Initiate(context.TODO(), &runnerOpts, statusChan)
+	go s.runner.Initiate(context.TODO(), runnerOpts, statusChan)
 
 	status := <-statusChan
 	// post job completion steps
 	s.logger.Debugf("jobID %s, buildID %s  status  %+v", runnerOpts.Label[JobID], runnerOpts.Label[BuildID], status)
 
-	s.sendResourceUpdates(core.ResourceRelease, &runnerOpts, runnerOpts.Label[JobID], runnerOpts.Label[BuildID])
+	s.sendResourceUpdates(core.ResourceRelease, runnerOpts, runnerOpts.Label[JobID], runnerOpts.Label[BuildID])
 	jobStatus := core.JobFailed
 	if status.Done {
 		jobStatus = core.JobCompleted
 	}
-	jobInfo := CreateJobInfo(jobStatus, &runnerOpts, status.Error.Message)
+	if buildAbortMap[runnerOpts.Label[BuildID]] {
+		jobStatus = core.JobAborted
+	}
+	jobInfo := CreateJobInfo(jobStatus, runnerOpts, status.Error.Message)
 	s.logger.Infof("Sending update to neuron %+v", jobInfo)
 	resourceStatsMessage := CreateJobUpdateMessage(jobInfo)
 	s.writeMessageToBuffer(&resourceStatsMessage)

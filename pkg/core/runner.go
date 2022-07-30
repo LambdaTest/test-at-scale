@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"time"
 
 	"github.com/LambdaTest/test-at-scale/config"
 	"github.com/LambdaTest/test-at-scale/pkg/errs"
@@ -15,12 +16,12 @@ type Specs struct {
 
 // TierOpts is const map which map each tier to specs
 var TierOpts = map[Tier]Specs{
-	Internal: {CPU: 0.5, RAM: 384},
-	XSmall:   {CPU: 1, RAM: 2000},
-	Small:    {CPU: 2, RAM: 4000},
-	Medium:   {CPU: 4, RAM: 8000},
-	Large:    {CPU: 8, RAM: 16000},
-	XLarge:   {CPU: 16, RAM: 32000},
+	Internal: {CPU: 0.5, RAM: 256},
+	XSmall:   {CPU: 1, RAM: 2048},
+	Small:    {CPU: 2, RAM: 4096},
+	Medium:   {CPU: 4, RAM: 8192},
+	Large:    {CPU: 8, RAM: 16384},
+	XLarge:   {CPU: 16, RAM: 32768},
 }
 
 // ContainerStatus contains status of container
@@ -45,7 +46,7 @@ type DockerRunner interface {
 	// Run runs the execution engine
 	Run(context.Context, *RunnerOptions) ContainerStatus
 
-	//WaitForRunning waits for runner to get completed
+	// WaitForRunning waits for runner to get completed
 	WaitForCompletion(ctx context.Context, r *RunnerOptions) error
 
 	// Destroy the execution engine
@@ -62,29 +63,57 @@ type DockerRunner interface {
 
 	// KillRunningDocker kills  container spawn by synapse
 	KillRunningDocker(ctx context.Context)
+
+	// KillContainerForBuildID kills synapse container which is running for given buildID
+	KillContainerForBuildID(buildID string) error
+
+	CreateVolume(ctx context.Context, r *RunnerOptions) error
+
+	// RemoveOldVolumes removes volumes that are older than X hours
+	RemoveOldVolumes(ctx context.Context)
+
+	// CopyFileToContainer copies content to container in file
+	CopyFileToContainer(ctx context.Context, path, fileName, containerID string, content []byte) error
+
+	// FindVolumes checks if docker volume is available
+	FindVolumes(volumeName string) (bool, error)
+
+	// RemoveVolume removes volume
+	RemoveVolume(ctx context.Context, volumeName string) error
+}
+
+// VolumeDetails docker volume options
+type VolumeDetails struct {
+	CreatedAt  time.Time              `json:"CreatedAt,omitempty"`
+	Driver     string                 `json:"Driver"`
+	Labels     map[string]string      `json:"Labels"`
+	Mountpoint string                 `json:"Mountpoint"`
+	Name       string                 `json:"Name"`
+	Options    map[string]string      `json:"Options"`
+	Scope      string                 `json:"Scope"`
+	Status     map[string]interface{} `json:"Status,omitempty"`
 }
 
 // RunnerOptions provides the the required instructions for execution engine.
 type RunnerOptions struct {
-	ContainerID               string            `json:"container_id"`
-	DockerImage               string            `json:"docker_image"`
-	ContainerPort             int               `json:"container_port"`
-	HostPort                  int               `json:"host_port"`
-	Label                     map[string]string `json:"label"`
-	NameSpace                 string            `json:"name_space"`
-	ServiceAccount            string            `json:"service_account"`
-	PodName                   string            `json:"pod_name"`
-	ContainerName             string            `json:"container_name"`
-	ContainerArgs             []string          `json:"container_args"`
-	ContainerCommands         []string          `json:"container_commands"`
-	HostVolumePath            string            `json:"host_volume_path"`
-	PersistentVolumeClaimName string            `json:"persistent_volume_claim_name"`
-	Env                       []string          `json:"env"`
-	OrgID                     string            `json:"org_id"`
-	Vault                     *VaultOpts        `json:"vault"`
-	LogfilePath               string            `json:"logfile_path"`
-	PodType                   PodType           `json:"pod_type"`
-	Tier                      Tier              `json:"tier"`
+	ContainerID       string            `json:"container_id"`
+	DockerImage       string            `json:"docker_image"`
+	ContainerPort     int               `json:"container_port"`
+	HostPort          int               `json:"host_port"`
+	Label             map[string]string `json:"label"`
+	NameSpace         string            `json:"name_space"`
+	ServiceAccount    string            `json:"service_account"`
+	PodName           string            `json:"pod_name"`
+	ContainerName     string            `json:"container_name"`
+	ContainerArgs     []string          `json:"container_args"`
+	ContainerCommands []string          `json:"container_commands"`
+	HostVolumePath    string            `json:"host_volume_path"`
+	Env               []string          `json:"env"`
+	OrgID             string            `json:"org_id"`
+	Vault             *VaultOpts        `json:"vault"`
+	LogfilePath       string            `json:"logfile_path"`
+	PodType           PodType           `json:"pod_type"`
+	Tier              Tier              `json:"tier"`
 }
 
 // VaultOpts provides the vault path options

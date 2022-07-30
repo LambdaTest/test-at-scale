@@ -4,9 +4,7 @@ package testdiscoveryservice
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
-	"os"
 	"os/exec"
 	"strings"
 
@@ -48,7 +46,7 @@ func (tds *testDiscoveryService) Discover(ctx context.Context, discoveryArgs *co
 	impactAll := tds.shouldImpactAll(discoveryArgs.SmartRun, configFilePath, discoveryArgs.Diff)
 
 	args := utils.GetArgs("discover", discoveryArgs.FrameWork, discoveryArgs.FrameWorkVersion,
-		discoveryArgs.TestConfigFile, discoveryArgs.TestPattern)
+		discoveryArgs.TestConfigFile, discoveryArgs.TestPattern, discoveryArgs.SubmodulesPath)
 
 	if !impactAll {
 		if len(discoveryArgs.Diff) == 0 && discoveryArgs.DiffExists {
@@ -109,11 +107,8 @@ func (tds *testDiscoveryService) SendResult(ctx context.Context, testDiscoveryRe
 		tds.logger.Errorf("error while json marshal %v", err)
 		return err
 	}
-	params := utils.FetchQueryParams()
-	headers := map[string]string{
-		"Authorization": fmt.Sprintf("%s %s", "Bearer", os.Getenv("TOKEN")),
-	}
-	if _, _, err := tds.requests.MakeAPIRequest(ctx, http.MethodPost, tds.discoveryEndpoint, reqBody, params, headers); err != nil {
+	query, headers := utils.GetDefaultQueryAndHeaders()
+	if _, _, err := tds.requests.MakeAPIRequest(ctx, http.MethodPost, tds.discoveryEndpoint, reqBody, query, headers); err != nil {
 		return err
 	}
 

@@ -90,7 +90,6 @@ func recursivelySet(val reflect.Value, prefix string) error {
 				return fmt.Errorf("unexpected type detected ~ aborting: %s", thisField.Kind())
 			}
 		}
-
 	}
 
 	return nil

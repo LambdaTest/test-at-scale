@@ -7,11 +7,11 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/LambdaTest/test-at-scale/mocks"
 	"github.com/LambdaTest/test-at-scale/pkg/core"
 	"github.com/LambdaTest/test-at-scale/pkg/lumber"
 	"github.com/LambdaTest/test-at-scale/pkg/secret"
 	"github.com/LambdaTest/test-at-scale/testutils"
-	"github.com/LambdaTest/test-at-scale/testutils/mocks"
 )
 
 func TestNewExecutionManager(t *testing.T) {
