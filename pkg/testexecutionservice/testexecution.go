@@ -75,6 +75,11 @@ func (tes *testExecutionService) Run(ctx context.Context,
 		tes.logger.Errorf("failed to parse env variables, error: %v", err)
 		return nil, err
 	}
+	if tes.cfg.ShuffleTest {
+		envVars = append(envVars, "SHUFFLE_TEST=true")
+	} else {
+		envVars = append(envVars, "SHUFFLE_TEST=false")
+	}
 
 	executionResults := &core.ExecutionResults{
 		TaskID:   payload.TaskID,

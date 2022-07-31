@@ -27,6 +27,7 @@ type NucleusConfig struct {
 	LocalRunner     bool   `env:"local"`
 	SynapseHost     string `env:"synapsehost"`
 	SubModule       string `json:"subModule"`
+	ShuffleTest     bool   `env:"SHUFFLE_TEST"`
 }
 
 // Azure providers the storage configuration.
