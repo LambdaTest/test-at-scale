@@ -6,6 +6,7 @@ package driver
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 
 	"github.com/LambdaTest/test-at-scale/pkg/core"
@@ -130,6 +131,16 @@ func (d *driverV1) RunExecution(ctx context.Context, payload *core.Payload,
 		errG = errs.New(errs.GenericErrRemark.Error())
 		return errG
 	}
+
+	if tasConfig.JavaVersion != "" {
+		d.logger.Infof("Setting java version to %s", tasConfig.JavaVersion)
+		javaVersionToInstall := global.JavaVersionMap[tasConfig.JavaVersion]
+		commands := []string{}
+		commands = append(commands, "source $HOME/.sdkman/bin/sdkman-init.sh")
+		commands = append(commands, fmt.Sprintf(global.JavaVersionSetupCmds, javaVersionToInstall))
+		d.ExecutionManager.ExecuteInternalCommands(ctx, core.JavaRunnerConfiguration, commands, global.RepoDir, nil, nil)
+	}
+
 	buildArgs := d.buildTestExecutionArgs(payload, tasConfig, secretMap, coverageDir)
 	executionResults, err := d.TestExecutionService.Run(ctx, &buildArgs)
 	if err != nil {
@@ -197,9 +208,30 @@ func (d *driverV1) setUp(ctx context.Context, payload *core.Payload,
 		})
 	}
 
+	d.ExecutionManager.ExecuteInternalCommands(ctx, core.JavaRunnerConfiguration, global.EchoXMX, global.RepoDir, nil, nil)
+
 	//java setup
 	if language == "java" {
+
+		//install java version
+		if tasConfig.JavaVersion != "" {
+			d.logger.Infof("Setting java version to %s", tasConfig.JavaVersion)
+			javaVersionToInstall := global.JavaVersionMap[tasConfig.JavaVersion]
+			commands := []string{}
+			commands = append(commands, "source $HOME/.sdkman/bin/sdkman-init.sh")
+			commands = append(commands, fmt.Sprintf(global.JavaVersionSetupCmds, javaVersionToInstall))
+			d.ExecutionManager.ExecuteInternalCommands(ctx, core.JavaRunnerConfiguration, commands, global.RepoDir, nil, nil)
+		}
+
 		isPluginManagementTagPresent := false
+
+		//surefire generate effective POM
+		err := d.ExecutionManager.ExecuteInternalCommands(ctx, core.JavaRunnerConfiguration, global.MavenGenerateEffectivePOM, global.RepoDir, nil, nil)
+		if err != nil {
+			d.logger.Errorf("update pom.xml %v", err)
+			err = errs.New(errs.GenericErrRemark.Error())
+			return nil, err
+		}
 
 		//check if surefire present directly under build plugins
 		surefireVersion, err := d.ExecutionManager.ExecuteOutputCommand(ctx, core.JavaRunnerConfiguration, global.MavenSurefireVersionPluginGetCmds, global.RepoDir, nil, nil)

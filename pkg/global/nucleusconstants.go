@@ -59,10 +59,14 @@ var APIHostURLMap = map[string]string{
 // InstallRunnerCmds  are list of command used to install custom runner
 var InstallRunnerCmds = []string{"tar -xzf /custom-runners/custom-runners.tgz"}
 
-var MavenSurefireVersionPluginGetCmds = []string{"xmlstarlet sel -t -v \"_:project/_:build/_:plugins/_:plugin[_:artifactId='maven-surefire-plugin']/_:version\" pom.xml"}
-var MavenSurefireVersionPluginManagementGetCmds = []string{"xmlstarlet sel -t -v \"_:project/_:build/_:pluginManagement/_:plugins/_:plugin[_:artifactId='maven-surefire-plugin']/_:version\" pom.xml"}
+var MavenGenerateEffectivePOM = []string{"mvn help:effective-pom -Doutput=epom.xml"}
+var MavenSurefireVersionPluginGetCmds = []string{"xmlstarlet sel -t -v \"_:project/_:build/_:plugins/_:plugin[_:artifactId='maven-surefire-plugin']/_:version\" epom.xml"}
+var MavenSurefireVersionPluginManagementGetCmds = []string{"xmlstarlet sel -t -v \"_:project/_:build/_:pluginManagement/_:plugins/_:plugin[_:artifactId='maven-surefire-plugin']/_:version\" epom.xml"}
 var MavenSurefirePluginDependencyUpdateCmds = "xmlstarlet ed -O --inplace -a  \"/_:project/_:build/_:plugins/_:plugin[_:artifactId='maven-surefire-plugin']/_:artifactId\" --type elem --name \"dependencies\" -s //dependencies -t elem -n \"dependency\" -s //dependency -t elem -n \"groupId\" -v \"%s\" -s //dependency -t elem -n \"artifactId\" -v \"%s\" -s //dependency -t elem -n \"version\" -v \"1.0-SNAPSHOT\" pom.xml"
 var MavenSurefirePluginManagementDependencyUpdateCmds = "xmlstarlet ed -O --inplace -a  \"/_:project/_:build/_:pluginManagement/_:plugins/_:plugin[_:artifactId='maven-surefire-plugin']/_:artifactId\" --type elem --name \"dependencies\" -s //dependencies -t elem -n \"dependency\" -s //dependency -t elem -n \"groupId\" -v \"%s\" -s //dependency -t elem -n \"artifactId\" -v \"%s\" -s //dependency -t elem -n \"version\" -v \"1.0-SNAPSHOT\" pom.xml"
+var JavaVersionSetupCmds = "yes | sdk install java %s"
+
+var EchoXMX = []string{"sh -c \"mkdir .mvn;cd .mvn;echo -Xmx3072m -Xms1024m > jvm.config\""}
 
 // NeuronHost is neuron host end point
 var NeuronHost string
@@ -90,4 +94,10 @@ var SurefireVersionMap = map[string]string{
 	"3.0.0-M5": "com.lambdatest.surefire-3.0.0-M5",
 	"3.0.0-M6": "com.lambdatest.surefire-3.0.0-M7",
 	"3.0.0-M7": "com.lambdatest.surefire-3.0.0-M7",
+}
+
+var JavaVersionMap = map[string]string{
+	"11": "11.0.15-ms",
+	"8":  "8.0.332-zulu",
+	"18": "18.0.1-oracle",
 }

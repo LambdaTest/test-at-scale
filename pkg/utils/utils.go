@@ -254,9 +254,9 @@ func GetArgs(command string, frameWork string, frameworkVersion int,
 	if language == "java" {
 		args = append(args, "test")
 		if command == "discover" {
-			args = append(args, "-Dmode=discover", "-DfailIfNoTests=false", "-Dforkcount=1")
+			args = append(args, "-Dmode=discover", "-DfailIfNoTests=false", "-Dforkcount=1", "-Drat.numUnapprovedLicenses=50000")
 		} else {
-			args = append(args, "-Dmode=execute", "-Dforkcount=1")
+			args = append(args, "-Dmode=execute", "-Dforkcount=1", "-Drat.numUnapprovedLicenses=50000")
 		}
 		return args
 	} else {
