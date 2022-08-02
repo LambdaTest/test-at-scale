@@ -345,7 +345,6 @@ func (d *docker) KillContainerForBuildID(buildID string) error {
 				d.logger.Errorf("error while destroying container: %v", err)
 				return err
 			}
-			return nil
 		}
 	}
 	return nil
