@@ -6,7 +6,6 @@ package driver
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
 
 	"github.com/LambdaTest/test-at-scale/pkg/core"
@@ -14,7 +13,6 @@ import (
 	"github.com/LambdaTest/test-at-scale/pkg/global"
 	"github.com/LambdaTest/test-at-scale/pkg/logwriter"
 	"github.com/LambdaTest/test-at-scale/pkg/lumber"
-	"github.com/LambdaTest/test-at-scale/pkg/utils"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -34,6 +32,7 @@ type (
 		DiffManager          core.DiffManager
 		ListSubModuleService core.ListSubModuleService
 		TASVersion           int
+		javaInstaller        JavaInstaller
 	}
 
 	setUpResultV1 struct {
@@ -132,13 +131,13 @@ func (d *driverV1) RunExecution(ctx context.Context, payload *core.Payload,
 		return errG
 	}
 
+	//setup java
 	if tasConfig.JavaVersion != "" {
-		d.logger.Infof("Setting java version to %s", tasConfig.JavaVersion)
-		javaVersionToInstall := global.JavaVersionMap[tasConfig.JavaVersion]
-		commands := []string{}
-		commands = append(commands, "source $HOME/.sdkman/bin/sdkman-init.sh")
-		commands = append(commands, fmt.Sprintf(global.JavaVersionSetupCmds, javaVersionToInstall))
-		d.ExecutionManager.ExecuteInternalCommands(ctx, core.JavaRunnerConfiguration, commands, global.RepoDir, nil, nil)
+		err = d.javaInstaller.InstallJavaVersion(ctx, tasConfig.JavaVersion)
+		if err != nil {
+			d.logger.Infof("Unable to install java: %v", err)
+			return err
+		}
 	}
 
 	buildArgs := d.buildTestExecutionArgs(payload, tasConfig, secretMap, coverageDir)
@@ -208,57 +207,11 @@ func (d *driverV1) setUp(ctx context.Context, payload *core.Payload,
 		})
 	}
 
-	d.ExecutionManager.ExecuteInternalCommands(ctx, core.JavaRunnerConfiguration, global.EchoXMX, global.RepoDir, nil, nil)
-
 	//java setup
-	if language == "java" {
-
-		//install java version
-		if tasConfig.JavaVersion != "" {
-			d.logger.Infof("Setting java version to %s", tasConfig.JavaVersion)
-			javaVersionToInstall := global.JavaVersionMap[tasConfig.JavaVersion]
-			commands := []string{}
-			commands = append(commands, "source $HOME/.sdkman/bin/sdkman-init.sh")
-			commands = append(commands, fmt.Sprintf(global.JavaVersionSetupCmds, javaVersionToInstall))
-			d.ExecutionManager.ExecuteInternalCommands(ctx, core.JavaRunnerConfiguration, commands, global.RepoDir, nil, nil)
-		}
-
-		isPluginManagementTagPresent := false
-
-		//surefire generate effective POM
-		err := d.ExecutionManager.ExecuteInternalCommands(ctx, core.JavaRunnerConfiguration, global.MavenGenerateEffectivePOM, global.RepoDir, nil, nil)
+	if language == "java" && tasConfig.JavaVersion != "" {
+		err := d.javaInstaller.InstallJavaVersion(ctx, tasConfig.JavaVersion)
 		if err != nil {
-			d.logger.Errorf("update pom.xml %v", err)
-			err = errs.New(errs.GenericErrRemark.Error())
-			return nil, err
-		}
-
-		//check if surefire present directly under build plugins
-		surefireVersion, err := d.ExecutionManager.ExecuteOutputCommand(ctx, core.JavaRunnerConfiguration, global.MavenSurefireVersionPluginGetCmds, global.RepoDir, nil, nil)
-		if surefireVersion == "" || err != nil {
-
-			//check if surefire prensent under pluginmanagement
-			surefireVersion, err = d.ExecutionManager.ExecuteOutputCommand(ctx, core.JavaRunnerConfiguration, global.MavenSurefireVersionPluginManagementGetCmds, global.RepoDir, nil, nil)
-			if err != nil {
-				d.logger.Errorf("Unable to get Surefire version %v", err)
-				err = errs.New(errs.GenericErrRemark.Error())
-				return nil, err
-			}
-			if surefireVersion != "" {
-				isPluginManagementTagPresent = true
-			} else {
-				d.logger.Errorf("Unable to get Surefire version in both under <plugin> and <pluginmanagement>")
-				err = errs.New(errs.GenericErrRemark.Error())
-				return nil, err
-			}
-		}
-
-		d.logger.Debugf("Surefire version found %s", surefireVersion)
-		xmlUpdateCommand := utils.GetXMLUpdateCommand(surefireVersion, isPluginManagementTagPresent, tasConfig.FrameworkVersion, tasConfig.Framework)
-		err = d.ExecutionManager.ExecuteInternalCommands(ctx, core.JavaRunnerConfiguration, xmlUpdateCommand, global.RepoDir, nil, nil)
-		if err != nil {
-			d.logger.Errorf("update pom.xml %v", err)
-			err = errs.New(errs.GenericErrRemark.Error())
+			d.logger.Infof("Unable to install java: %v", err)
 			return nil, err
 		}
 	}

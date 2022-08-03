@@ -7,6 +7,7 @@ import (
 
 	"github.com/LambdaTest/test-at-scale/pkg/core"
 	"github.com/LambdaTest/test-at-scale/pkg/errs"
+	"github.com/LambdaTest/test-at-scale/pkg/global"
 	"github.com/LambdaTest/test-at-scale/pkg/lumber"
 )
 
@@ -32,6 +33,10 @@ type (
 		logger           lumber.Logger
 		ExecutionManager core.ExecutionManager
 	}
+	JavaInstaller struct {
+		logger           lumber.Logger
+		ExecutionManager core.ExecutionManager
+	}
 )
 
 func (b *Builder) GetDriver(version int) (core.Driver, error) {
@@ -50,6 +55,10 @@ func (b *Builder) GetDriver(version int) (core.Driver, error) {
 			ListSubModuleService: b.ListSubModuleService,
 			TASVersion:           firstVersion,
 			nodeInstaller: NodeInstaller{
+				logger:           b.Logger,
+				ExecutionManager: b.ExecutionManager,
+			},
+			javaInstaller: JavaInstaller{
 				logger:           b.Logger,
 				ExecutionManager: b.ExecutionManager,
 			},
@@ -94,5 +103,20 @@ func (n *NodeInstaller) InstallNodeVersion(ctx context.Context, nodeVersion stri
 	}
 	origPath := os.Getenv("PATH")
 	os.Setenv("PATH", fmt.Sprintf("/home/nucleus/.nvm/versions/node/v%s/bin:%s", nodeVersion, origPath))
+	return nil
+}
+
+func (j *JavaInstaller) InstallJavaVersion(ctx context.Context, javaVersion string) error {
+	j.logger.Infof("Setting java version to %s", javaVersion)
+	javaVersionToInstall := global.JavaVersionMap[javaVersion]
+	commands := []string{}
+	commands = append(commands, "source $HOME/.sdkman/bin/sdkman-init.sh")
+	commands = append(commands, fmt.Sprintf(global.JavaVersionSetupCmds, javaVersionToInstall))
+	err := j.ExecutionManager.ExecuteInternalCommands(ctx, core.JavaRunnerConfiguration, commands, global.RepoDir, nil, nil)
+	if err != nil {
+		j.logger.Errorf("Unable to install user-defined nodeversion %v", err)
+		err = errs.New(errs.GenericErrRemark.Error())
+		return err
+	}
 	return nil
 }
