@@ -24,7 +24,6 @@ var tierEnumMapping = map[core.Tier]int{
 	core.Large:  4,
 	core.XLarge: 5,
 }
-var getTasFilePathFn = getTasFilePath
 
 // tasConfigManager represents an instance of TASConfigManager instance
 type tasConfigManager struct {
@@ -48,17 +47,13 @@ func (tc *tasConfigManager) LoadAndValidate(ctx context.Context,
 }
 
 func (tc *tasConfigManager) loadAndValidateV1(ctx context.Context,
-	path string,
+	filePath string,
 	eventType core.EventType,
 	licenseTier core.Tier) (*core.TASConfig, error) {
-	filePath, err := getTasFilePathFn(path)
-	if err != nil {
-		return nil, err
-	}
 	yamlFile, err := os.ReadFile(filePath)
 	if err != nil {
 		tc.logger.Errorf("Error while reading file %s, error %v", filePath, err)
-		return nil, errs.New(fmt.Sprintf("Error while reading configuration file at path: %s", path))
+		return nil, errs.New(fmt.Sprintf("Error while reading configuration file at path: %s", filePath))
 	}
 	return tc.validateYMLV1(ctx, yamlFile, eventType, licenseTier, filePath)
 }
@@ -90,19 +85,6 @@ func (tc *tasConfigManager) validateYMLV1(ctx context.Context,
 	if err := isValidLicenseTier(tasConfig.Tier, licenseTier); err != nil {
 		tc.logger.Errorf("LicenseTier validation failed. error: %v", err)
 		return nil, err
-	}
-
-	language := global.FrameworkLanguageMap[tasConfig.Framework]
-	if tasConfig.Cache == nil && language == "javascript" {
-		checksum, err := utils.ComputeChecksum(fmt.Sprintf("%s/%s", global.RepoDir, global.PackageJSON))
-		if err != nil {
-			tc.logger.Errorf("Error while computing checksum, error %v", err)
-			return nil, err
-		}
-		tasConfig.Cache = &core.Cache{
-			Key:   checksum,
-			Paths: []string{},
-		}
 	}
 	return tasConfig, nil
 }
@@ -167,22 +149,12 @@ func (tc *tasConfigManager) validateYMLV2(ctx context.Context,
 		tc.logger.Errorf("LicenseTier validation failed. error: %v", err)
 		return nil, err
 	}
-	if tasConfig.Cache == nil {
-		checksum, err := utils.ComputeChecksum(fmt.Sprintf("%s/%s", global.RepoDir, packageJSON))
-		if err != nil {
-			tc.logger.Errorf("Error while computing checksum, error %v", err)
-			return nil, err
-		}
-		tasConfig.Cache = &core.Cache{
-			Key:   checksum,
-			Paths: []string{},
-		}
-	}
+
 	return tasConfig, nil
 }
 
 func (tc *tasConfigManager) GetVersion(path string) (int, error) {
-	yamlFile, err := os.ReadFile(fmt.Sprintf("%s/%s", global.RepoDir, path))
+	yamlFile, err := os.ReadFile(path)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return 0, errs.New(fmt.Sprintf("Configuration file not found at path: %s", path))
@@ -199,29 +171,26 @@ func (tc *tasConfigManager) GetVersion(path string) (int, error) {
 }
 
 func (tc *tasConfigManager) loadAndValidateV2(ctx context.Context,
-	path string,
+	yamlFilePath string,
 	eventType core.EventType,
 	licenseTier core.Tier) (*core.TASConfigV2, error) {
-	yamlFilePath, err := getTasFilePathFn(path)
-	if err != nil {
-		return nil, err
-	}
 	yamlFile, err := os.ReadFile(yamlFilePath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return nil, errs.New(fmt.Sprintf("Configuration file not found at path: %s", path))
+			return nil, errs.New(fmt.Sprintf("Configuration file not found at path: %s", yamlFilePath))
 		}
 		tc.logger.Errorf("Error while reading file, error %v", err)
-		return nil, errs.New(fmt.Sprintf("Error while reading configuration file at path: %s", path))
+		return nil, errs.New(fmt.Sprintf("Error while reading configuration file at path: %s", yamlFilePath))
 	}
 	return tc.validateYMLV2(ctx, yamlFile, eventType, licenseTier, yamlFilePath)
 }
 
-func getTasFilePath(path string) (string, error) {
-	path, err := utils.GetConfigFileName(path)
+func (tc *tasConfigManager) GetTasConfigFilePath(payload *core.Payload) (string, error) {
+	// load tas yaml file
+	filePath, err := utils.GetTASFilePath(payload.TasFileName)
 	if err != nil {
+		tc.logger.Errorf("Unable to load tas yaml file, error: %v", err)
 		return "", err
 	}
-	filePath := fmt.Sprintf("%s/%s", global.RepoDir, path)
 	return filePath, nil
 }
