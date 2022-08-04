@@ -86,9 +86,6 @@ func TestLoadAndValidateV1(t *testing.T) {
 	if err != nil {
 		t.Errorf("Couldn't initialize logger, error: %v", err)
 	}
-	getTasFilePathFn = func(path string) (string, error) {
-		return path, nil
-	}
 
 	tasConfigManager := NewTASConfigManager(logger)
 	ctx := context.TODO()
@@ -160,7 +157,7 @@ func TestLoadAndValidateV1(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tas, err := tasConfigManager.LoadAndValidate(ctx, 1, tt.FilePath, tt.EventType, core.Small)
+		tas, err := tasConfigManager.LoadAndValidate(ctx, 1, tt.FilePath, tt.EventType, core.Small, tt.FilePath)
 		if err != nil {
 			assert.Equal(t, err.Error(), tt.wantErr.Error(), "error mismatch")
 		} else {
@@ -179,9 +176,6 @@ func TestLoadAndValidateV2(t *testing.T) {
 	logger, err := testutils.GetLogger()
 	if err != nil {
 		t.Errorf("Couldn't initialize logger, error: %v", err)
-	}
-	getTasFilePathFn = func(path string) (string, error) {
-		return path, nil
 	}
 
 	tasConfigManager := NewTASConfigManager(logger)
@@ -286,7 +280,7 @@ func TestLoadAndValidateV2(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tas, err := tasConfigManager.LoadAndValidate(ctx, 2, tt.FilePath, tt.EventType, core.Small)
+		tas, err := tasConfigManager.LoadAndValidate(ctx, 2, tt.FilePath, tt.EventType, core.Small, tt.FilePath)
 		if err != nil {
 			assert.Equal(t, err.Error(), tt.wantErr.Error(), "error mismatch")
 		} else {

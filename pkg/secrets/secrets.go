@@ -89,3 +89,10 @@ func (s *secertManager) GetDockerSecrets(r *core.RunnerOptions) (core.ContainerI
 	containerImageConfig.AuthRegistry = base64.StdEncoding.EncodeToString(jsonBytes)
 	return containerImageConfig, nil
 }
+
+func (s *secertManager) GetOauthToken() *core.Oauth {
+	return &core.Oauth{
+		AccessToken: s.cfg.Git.Token,
+		Type:        core.TokenType(s.cfg.Git.TokenType),
+	}
+}

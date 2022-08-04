@@ -34,7 +34,7 @@ type (
 	}
 )
 
-func (b *Builder) GetDriver(version int) (core.Driver, error) {
+func (b *Builder) GetDriver(version int, filePath string) (core.Driver, error) {
 	switch version {
 	case firstVersion:
 		return &driverV1{
@@ -49,6 +49,7 @@ func (b *Builder) GetDriver(version int) (core.Driver, error) {
 			DiffManager:          b.DiffManager,
 			ListSubModuleService: b.ListSubModuleService,
 			TASVersion:           firstVersion,
+			TASFilePath:          filePath,
 			nodeInstaller: NodeInstaller{
 				logger:           b.Logger,
 				ExecutionManager: b.ExecutionManager,
@@ -67,6 +68,7 @@ func (b *Builder) GetDriver(version int) (core.Driver, error) {
 			DiffManager:          b.DiffManager,
 			ListSubModuleService: b.ListSubModuleService,
 			TASVersion:           secondVersion,
+			TASFilePath:          filePath,
 			nodeInstaller: NodeInstaller{
 				logger:           b.Logger,
 				ExecutionManager: b.ExecutionManager,
