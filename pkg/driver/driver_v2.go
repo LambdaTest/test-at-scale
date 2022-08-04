@@ -557,15 +557,15 @@ func (d *driverV2) setCache(tasConfig *core.TASConfigV2) error {
 
 // this will return true if any submodule have a javascript module.
 func hasJsSubmodule(tasConfig *core.TASConfigV2) bool {
-	for _, sub := range tasConfig.PreMerge.SubModules {
-		language := global.FrameworkLanguageMap[sub.Framework]
+	for i := range tasConfig.PreMerge.SubModules {
+		language := global.FrameworkLanguageMap[tasConfig.PreMerge.SubModules[i].Framework]
 		if language == languageJs {
 			return true
 		}
 	}
 
-	for _, sub := range tasConfig.PostMerge.SubModules {
-		language := global.FrameworkLanguageMap[sub.Framework]
+	for i := range tasConfig.PostMerge.SubModules {
+		language := global.FrameworkLanguageMap[tasConfig.PostMerge.SubModules[i].Framework]
 		if language == languageJs {
 			return true
 		}
