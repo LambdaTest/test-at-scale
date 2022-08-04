@@ -39,23 +39,19 @@ func (tc *tasConfigManager) LoadAndValidate(ctx context.Context,
 	version int,
 	path string,
 	eventType core.EventType,
-	licenseTier core.Tier) (interface{}, error) {
-	if version < global.NewTASVersion {
-		return tc.loadAndValidateV1(ctx, path, eventType, licenseTier)
-	}
-	return tc.loadAndValidateV2(ctx, path, eventType, licenseTier)
-}
-
-func (tc *tasConfigManager) loadAndValidateV1(ctx context.Context,
-	filePath string,
-	eventType core.EventType,
-	licenseTier core.Tier) (*core.TASConfig, error) {
-	yamlFile, err := os.ReadFile(filePath)
+	licenseTier core.Tier, tasFilePathInRepo string) (interface{}, error) {
+	yamlFile, err := os.ReadFile(path)
 	if err != nil {
-		tc.logger.Errorf("Error while reading file %s, error %v", filePath, err)
-		return nil, errs.New(fmt.Sprintf("Error while reading configuration file at path: %s", filePath))
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, errs.New(fmt.Sprintf("Configuration file not found at path: %s", tasFilePathInRepo))
+		}
+		tc.logger.Errorf("Error while reading file, error %v", err)
+		return nil, errs.New(fmt.Sprintf("Error while reading configuration file at path: %s", tasFilePathInRepo))
 	}
-	return tc.validateYMLV1(ctx, yamlFile, eventType, licenseTier, filePath)
+	if version < global.NewTASVersion {
+		return tc.validateYMLV1(ctx, yamlFile, eventType, licenseTier, tasFilePathInRepo)
+	}
+	return tc.validateYMLV2(ctx, yamlFile, eventType, licenseTier, tasFilePathInRepo)
 }
 
 func (tc *tasConfigManager) validateYMLV1(ctx context.Context,
@@ -168,21 +164,6 @@ func (tc *tasConfigManager) GetVersion(path string) (int, error) {
 		return 0, errs.New("Error while reading tas yml version")
 	}
 	return versionYml, nil
-}
-
-func (tc *tasConfigManager) loadAndValidateV2(ctx context.Context,
-	yamlFilePath string,
-	eventType core.EventType,
-	licenseTier core.Tier) (*core.TASConfigV2, error) {
-	yamlFile, err := os.ReadFile(yamlFilePath)
-	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return nil, errs.New(fmt.Sprintf("Configuration file not found at path: %s", yamlFilePath))
-		}
-		tc.logger.Errorf("Error while reading file, error %v", err)
-		return nil, errs.New(fmt.Sprintf("Error while reading configuration file at path: %s", yamlFilePath))
-	}
-	return tc.validateYMLV2(ctx, yamlFile, eventType, licenseTier, yamlFilePath)
 }
 
 func (tc *tasConfigManager) GetTasConfigFilePath(payload *core.Payload) (string, error) {

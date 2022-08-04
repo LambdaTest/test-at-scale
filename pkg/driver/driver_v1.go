@@ -46,7 +46,7 @@ type (
 
 func (d *driverV1) RunDiscovery(ctx context.Context, payload *core.Payload,
 	taskPayload *core.TaskPayload, oauth *core.Oauth, coverageDir string, secretMap map[string]string) error {
-	tas, err := d.TASConfigManager.LoadAndValidate(ctx, d.TASVersion, d.TASFilePath, payload.EventType, payload.LicenseTier)
+	tas, err := d.TASConfigManager.LoadAndValidate(ctx, d.TASVersion, d.TASFilePath, payload.EventType, payload.LicenseTier, d.TASFilePath)
 	if err != nil {
 		d.logger.Errorf("Unable to load tas yaml file, error: %v", err)
 		err = &errs.StatusFailed{Remark: err.Error()}
@@ -120,7 +120,7 @@ func (d *driverV1) RunDiscovery(ctx context.Context, payload *core.Payload,
 
 func (d *driverV1) RunExecution(ctx context.Context, payload *core.Payload,
 	taskPayload *core.TaskPayload, oauth *core.Oauth, coverageDir string, secretMap map[string]string) error {
-	tas, err := d.TASConfigManager.LoadAndValidate(ctx, 1, d.TASFilePath, payload.EventType, payload.LicenseTier)
+	tas, err := d.TASConfigManager.LoadAndValidate(ctx, 1, d.TASFilePath, payload.EventType, payload.LicenseTier, d.TASFilePath)
 	if err != nil {
 		d.logger.Errorf("Unable to load tas yaml file, error: %v", err)
 		err = &errs.StatusFailed{Remark: err.Error()}

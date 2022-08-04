@@ -16,7 +16,8 @@ type PayloadManager interface {
 // TASConfigManager defines operations for tas config
 type TASConfigManager interface {
 	// LoadAndValidate loads and returns the tas config
-	LoadAndValidate(ctx context.Context, version int, path string, eventType EventType, licenseTier Tier) (interface{}, error)
+	LoadAndValidate(ctx context.Context, version int, path string, eventType EventType, licenseTier Tier,
+		tasFilePathInRepo string) (interface{}, error)
 
 	// GetVersion returns TAS yml version
 	GetVersion(path string) (int, error)
