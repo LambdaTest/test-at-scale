@@ -541,7 +541,7 @@ func GetSubmoduleBasedDiff(diff map[string]int, subModulePath string) map[string
 }
 
 func (d *driverV2) setCache(tasConfig *core.TASConfigV2) error {
-	if tasConfig.Cache == nil {
+	if tasConfig.Cache == nil && hasJsSubmodule(tasConfig) {
 		checksum, err := utils.ComputeChecksum(fmt.Sprintf("%s/%s", global.RepoDir, global.PackageJSON))
 		if err != nil {
 			d.logger.Errorf("Error while computing checksum, error %v", err)
