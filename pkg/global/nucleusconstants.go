@@ -82,18 +82,6 @@ var FrameworkLanguageMap = map[string]string{
 	"testng":  "java",
 }
 
-var SurefireVersionMap = map[string]string{
-	"2.19":     "com.lambdatest.surefire-2.19",
-	"2.22":     "com.lambdatest.surefire-2.22",
-	"3.0.0-M1": "com.lambdatest.surefire-3.0.0-M2",
-	"3.0.0-M2": "com.lambdatest.surefire-3.0.0-M2",
-	"3.0.0-M3": "com.lambdatest.surefire-3.0.0-M4",
-	"3.0.0-M4": "com.lambdatest.surefire-3.0.0-M4",
-	"3.0.0-M5": "com.lambdatest.surefire-3.0.0-M5",
-	"3.0.0-M6": "com.lambdatest.surefire-3.0.0-M7",
-	"3.0.0-M7": "com.lambdatest.surefire-3.0.0-M7",
-}
-
 var JavaVersionMap = map[string]string{
 	"11": "11.0.15-ms",
 	"8":  "8.0.332-zulu",
