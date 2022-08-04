@@ -83,7 +83,6 @@ func (tc *tasConfigManager) validateYMLV1(ctx context.Context,
 		tc.logger.Errorf("LicenseTier validation failed. error: %v", err)
 		return nil, err
 	}
-<<<<<<< HEAD
 
 	language := global.FrameworkLanguageMap[tasConfig.Framework]
 	if tasConfig.Cache == nil && language == languageJs {
@@ -97,8 +96,6 @@ func (tc *tasConfigManager) validateYMLV1(ctx context.Context,
 			Paths: []string{},
 		}
 	}
-=======
->>>>>>> d99e76461c5a3081e26abf62488f5084edfe62f9
 	return tasConfig, nil
 }
 
