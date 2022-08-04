@@ -23,7 +23,7 @@ const (
 	OauthSecretPath            = "/vault/secrets/oauth"
 	NeuronRemoteHost           = "http://neuron-service.phoenix.svc.cluster.local"
 	BlockTestFileLocation      = "/tmp/blocktests.json"
-	SecretRegex                = `\${{\s*secrets\.(.*?)\s*}}`
+	SecretRegex                = `\${{\s*secrets\.(.*?)\s*}}` // nolint: gosec
 	ExecutionResultChunkSize   = 50
 	TestLocatorsDelimiter      = "#TAS#"
 	ExpiryDelta                = 15 * time.Minute
