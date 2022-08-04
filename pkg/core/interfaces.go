@@ -16,16 +16,22 @@ type PayloadManager interface {
 // TASConfigManager defines operations for tas config
 type TASConfigManager interface {
 	// LoadAndValidate loads and returns the tas config
-	LoadAndValidate(ctx context.Context, version int, path string, eventType EventType, licenseTier Tier) (interface{}, error)
+	LoadAndValidate(ctx context.Context, version int, path string, eventType EventType, licenseTier Tier,
+		tasFilePathInRepo string) (interface{}, error)
 
 	// GetVersion returns TAS yml version
 	GetVersion(path string) (int, error)
+
+	// GetTasConfigFilePath returns file path of tas config
+	GetTasConfigFilePath(payload *Payload) (string, error)
 }
 
 // GitManager manages the cloning of git repositories
 type GitManager interface {
 	// Clone repository from TAS config
 	Clone(ctx context.Context, payload *Payload, oauth *Oauth) error
+	// DownloadFileByCommit download file from repo for given commit
+	DownloadFileByCommit(ctx context.Context, gitProvider, repoSlug, commitID, filePath string, oauth *Oauth) (string, error)
 }
 
 // DiffManager manages the diff findings for the given payload
@@ -139,11 +145,6 @@ type ExecutionManager interface {
 		secretData map[string]string) error
 	// GetEnvVariables get the environment variables from the env map given by user.
 	GetEnvVariables(envMap, secretData map[string]string) ([]string, error)
-	ExecuteOutputCommand(ctx context.Context,
-		commandType CommandType,
-		commands []string,
-		cwd string,
-		envMap, secretData map[string]string) (string, error)
 }
 
 // Requests is a util interface for making API Requests
@@ -178,5 +179,5 @@ type LogWriterStrategy interface {
 // Builder builds the driver for given tas yml version
 type Builder interface {
 	// GetDriver returns driver for use
-	GetDriver(version int) (Driver, error)
+	GetDriver(version int, ymlFilePath string) (Driver, error)
 }

@@ -6,6 +6,7 @@ package driver
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 
 	"github.com/LambdaTest/test-at-scale/pkg/core"
@@ -13,6 +14,7 @@ import (
 	"github.com/LambdaTest/test-at-scale/pkg/global"
 	"github.com/LambdaTest/test-at-scale/pkg/logwriter"
 	"github.com/LambdaTest/test-at-scale/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/pkg/utils"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -33,6 +35,7 @@ type (
 		ListSubModuleService core.ListSubModuleService
 		TASVersion           int
 		javaInstaller        JavaInstaller
+		TASFilePath          string
 	}
 
 	setUpResultV1 struct {
@@ -44,7 +47,7 @@ type (
 
 func (d *driverV1) RunDiscovery(ctx context.Context, payload *core.Payload,
 	taskPayload *core.TaskPayload, oauth *core.Oauth, coverageDir string, secretMap map[string]string) error {
-	tas, err := d.TASConfigManager.LoadAndValidate(ctx, d.TASVersion, payload.TasFileName, payload.EventType, payload.LicenseTier)
+	tas, err := d.TASConfigManager.LoadAndValidate(ctx, d.TASVersion, d.TASFilePath, payload.EventType, payload.LicenseTier, d.TASFilePath)
 	if err != nil {
 		d.logger.Errorf("Unable to load tas yaml file, error: %v", err)
 		err = &errs.StatusFailed{Remark: err.Error()}
@@ -118,13 +121,16 @@ func (d *driverV1) RunDiscovery(ctx context.Context, payload *core.Payload,
 
 func (d *driverV1) RunExecution(ctx context.Context, payload *core.Payload,
 	taskPayload *core.TaskPayload, oauth *core.Oauth, coverageDir string, secretMap map[string]string) error {
-	tas, err := d.TASConfigManager.LoadAndValidate(ctx, 1, payload.TasFileName, payload.EventType, payload.LicenseTier)
+	tas, err := d.TASConfigManager.LoadAndValidate(ctx, 1, d.TASFilePath, payload.EventType, payload.LicenseTier, d.TASFilePath)
 	if err != nil {
 		d.logger.Errorf("Unable to load tas yaml file, error: %v", err)
 		err = &errs.StatusFailed{Remark: err.Error()}
 		return err
 	}
 	tasConfig := tas.(*core.TASConfig)
+	if cachErr := d.setCache(tasConfig); cachErr != nil {
+		return cachErr
+	}
 	if errG := d.BlockTestService.GetBlockTests(ctx, tasConfig.Blocklist, payload.BranchName); errG != nil {
 		d.logger.Errorf("Unable to fetch blocklisted tests: %v", errG)
 		errG = errs.New(errs.GenericErrRemark.Error())
@@ -175,7 +181,9 @@ func (d *driverV1) RunExecution(ctx context.Context, payload *core.Payload,
 func (d *driverV1) setUp(ctx context.Context, payload *core.Payload,
 	tasConfig *core.TASConfig, oauth *core.Oauth, language string) (*setUpResultV1, error) {
 	d.logger.Infof("Tas yaml: %+v", tasConfig)
-
+	if err := d.setCache(tasConfig); err != nil {
+		return nil, err
+	}
 	cacheKey := ""
 	if language == languageJs {
 		cacheKey = tasConfig.Cache.Key
@@ -293,6 +301,20 @@ func (d *driverV1) getEnvAndPattern(payload *core.Payload, tasConfig *core.TASCo
 func populateDiscovery(testDiscoveryResult *core.DiscoveryResult, tasConfig *core.TASConfig) {
 	testDiscoveryResult.Parallelism = tasConfig.Parallelism
 	testDiscoveryResult.SplitMode = tasConfig.SplitMode
-	testDiscoveryResult.ContainerImage = tasConfig.ContainerImage
-	testDiscoveryResult.Tier = tasConfig.Tier
+}
+
+func (d *driverV1) setCache(tasConfig *core.TASConfig) error {
+	language := global.FrameworkLanguageMap[tasConfig.Framework]
+	if tasConfig.Cache == nil && language == "javascript" {
+		checksum, err := utils.ComputeChecksum(fmt.Sprintf("%s/%s", global.RepoDir, global.PackageJSON))
+		if err != nil {
+			d.logger.Errorf("Error while computing checksum, error %v", err)
+			return err
+		}
+		tasConfig.Cache = &core.Cache{
+			Key:   checksum,
+			Paths: []string{},
+		}
+	}
+	return nil
 }

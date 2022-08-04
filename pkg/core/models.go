@@ -153,9 +153,7 @@ type DiscoveryResult struct {
 	TaskID          string             `json:"taskID"`
 	OrgID           string             `json:"orgID"`
 	Branch          string             `json:"branch"`
-	Tier            Tier               `json:"tier"`
 	SubModule       string             `json:"subModule"`
-	ContainerImage  string             `json:"containerImage"`
 }
 
 // ExecutionResult represents the request body for test and test suite execution
@@ -457,4 +455,30 @@ type TestExecutionArgs struct {
 	SecretData        map[string]string
 	FrameWorkVersion  int
 	CWD               string
+}
+
+// YMLParsingRequestMessage defines yml parsing request received from TAS server
+type YMLParsingRequestMessage struct {
+	GitProvider string    `json:"gitProvider"`
+	CommitID    string    `json:"commitID"`
+	Event       EventType `json:"eventType"`
+	RepoSlug    string    `json:"repoSlug"`
+	TasFileName string    `json:"tasFilePath"`
+	LicenseTier Tier      `json:"license_tier"`
+	OrgID       string    `json:"orgID"`
+	BuildID     string    `json:"buildID"`
+}
+
+// TASConfigDownloaderOutput repersent output return by tasconfig downloader
+type TASConfigDownloaderOutput struct {
+	Version   int         `json:"version"`
+	TASConfig interface{} `json:"tasConfig"`
+}
+
+// YMLParsingResultMessage repersent message sent to TAS server in response of yml parsing request
+type YMLParsingResultMessage struct {
+	ErrorMsg  string                    `json:"ErrorMsg"`
+	OrgID     string                    `json:"orgID"`
+	BuildID   string                    `json:"buildID"`
+	YMLOutput TASConfigDownloaderOutput `json:"ymlOutput"`
 }

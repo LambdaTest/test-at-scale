@@ -19,6 +19,7 @@ import (
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
 	en_translations "github.com/go-playground/validator/v10/translations/en"
+	"github.com/google/uuid"
 	"gopkg.in/yaml.v3"
 )
 
@@ -27,6 +28,8 @@ const (
 	emptyTagName       = "-"
 	yamlTagName        = "yaml"
 	requiredTagName    = "required"
+	v1                 = 1
+	v2                 = 2
 )
 
 // Min returns the smaller of x or y.
@@ -279,4 +282,41 @@ func GetArgs(command string, frameWork string, frameworkVersion int,
 	}
 
 	return args
+}
+
+// GetTASFilePath returns tas file path
+func GetTASFilePath(path string) (string, error) {
+	path, err := GetConfigFileName(path)
+	if err != nil {
+		return "", err
+	}
+	filePath := fmt.Sprintf("%s/%s", global.RepoDir, path)
+	return filePath, nil
+}
+
+// GenerateUUID generates uuid v4
+func GenerateUUID() string {
+	uuidV4 := uuid.New() // panics on error
+	return strings.Map(func(r rune) rune {
+		if r == '-' {
+			return -1
+		}
+		return r
+	}, uuidV4.String())
+}
+
+// ValidateStructTASYml validates the TAS config for all supported version
+func ValidateStructTASYml(ctx context.Context, ymlContent []byte, ymlFilename string) (interface{}, error) {
+	version, err := GetVersion(ymlContent)
+	if err != nil {
+		return nil, err
+	}
+	switch version {
+	case v1:
+		return ValidateStructTASYmlV1(ctx, ymlContent, ymlFilename)
+	case v2:
+		return ValidateStructTASYmlV2(ctx, ymlContent, ymlFilename)
+	default:
+		return nil, fmt.Errorf("")
+	}
 }

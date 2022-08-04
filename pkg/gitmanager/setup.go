@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -13,18 +12,29 @@ import (
 	"strings"
 
 	"github.com/LambdaTest/test-at-scale/pkg/core"
-	"github.com/LambdaTest/test-at-scale/pkg/errs"
 	"github.com/LambdaTest/test-at-scale/pkg/global"
 	"github.com/LambdaTest/test-at-scale/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/pkg/requestutils"
 	"github.com/LambdaTest/test-at-scale/pkg/urlmanager"
+	"github.com/LambdaTest/test-at-scale/pkg/utils"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/mholt/archiver/v3"
 )
+
+type GitLabSingleFileResponse struct {
+	Content string `json:"content"`
+}
 
 type gitManager struct {
 	logger      lumber.Logger
 	httpClient  http.Client
 	execManager core.ExecutionManager
+	request     core.Requests
 }
+
+const (
+	authorization = "Authorization"
+)
 
 // NewGitManager returns a new GitManager
 func NewGitManager(logger lumber.Logger, execManager core.ExecutionManager) core.GitManager {
@@ -34,6 +44,7 @@ func NewGitManager(logger lumber.Logger, execManager core.ExecutionManager) core
 			Timeout: global.DefaultGitCloneTimeout,
 		},
 		execManager: execManager,
+		request:     requestutils.New(logger, global.DefaultAPITimeout, &backoff.StopBackOff{}),
 	}
 }
 
@@ -66,25 +77,16 @@ func (gm *gitManager) Clone(ctx context.Context, payload *core.Payload, oauth *c
 
 // downloadFile clones the archive from github and extracts the file if it is a zip file.
 func (gm *gitManager) downloadFile(ctx context.Context, archiveURL, fileName string, oauth *core.Oauth) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, archiveURL, nil)
+	header := getHeaderMap(oauth)
+	respBody, stausCode, err := gm.request.MakeAPIRequest(ctx, http.MethodGet, archiveURL, nil, nil, header)
 	if err != nil {
 		return err
 	}
-	if oauth.AccessToken != "" {
-		req.Header.Add("Authorization", fmt.Sprintf("%s %s", oauth.Type, oauth.AccessToken))
+	if stausCode >= http.StatusMultipleChoices {
+		return fmt.Errorf("received non 200 status code [%d]", stausCode)
 	}
-	resp, err := gm.httpClient.Do(req)
-	if err != nil {
-		gm.logger.Errorf("error while making http request %v", err)
-		return err
-	}
-	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		gm.logger.Errorf("non 200 status while cloning from endpoint %s, status %d ", archiveURL, resp.StatusCode)
-		return errs.ErrAPIStatus
-	}
-	err = gm.copyAndExtractFile(ctx, resp, fileName)
+	err = gm.copyAndExtractFile(ctx, respBody, fileName)
 	if err != nil {
 		gm.logger.Errorf("failed to copy file %v", err)
 		return err
@@ -94,15 +96,15 @@ func (gm *gitManager) downloadFile(ctx context.Context, archiveURL, fileName str
 
 // copyAndExtractFile copies the content of http response directly to the local storage
 // and extracts the file if it is a zip file.
-func (gm *gitManager) copyAndExtractFile(ctx context.Context, resp *http.Response, path string) error {
+func (gm *gitManager) copyAndExtractFile(ctx context.Context, respBody []byte, path string) error {
 	out, err := os.Create(path)
 	if err != nil {
 		gm.logger.Errorf("failed to create file err %v", err)
 		return err
 	}
-	_, err = io.Copy(out, resp.Body)
+	_, err = out.Write(respBody)
 	if err != nil {
-		gm.logger.Errorf("failed to copy file %v", err)
+		gm.logger.Errorf("failed to write to file %v", err)
 		out.Close()
 		return err
 	}
@@ -115,7 +117,6 @@ func (gm *gitManager) copyAndExtractFile(ctx context.Context, resp *http.Respons
 		if err = zip.Unarchive(path, fmt.Sprintf("%s/clonedir", filepath.Dir(path))); err != nil {
 			gm.logger.Errorf("failed to unarchive file %v", err)
 			return err
-
 		}
 	}
 
@@ -173,4 +174,41 @@ func (gm *gitManager) initGit(ctx context.Context, payload *core.Payload, oauth 
 		return err
 	}
 	return nil
+}
+
+func (gm *gitManager) DownloadFileByCommit(ctx context.Context, gitProvider, repoSlug,
+	commitID, filePath string, oauth *core.Oauth) (string, error) {
+	downloadURL, err := urlmanager.GetFileDownloadURL(gitProvider, commitID, repoSlug, filePath)
+	if err != nil {
+		return "", err
+	}
+	header := getHeaderMap(oauth)
+	respBody, stausCode, err := gm.request.MakeAPIRequest(ctx, http.MethodGet, downloadURL, nil, nil, header)
+	if err != nil {
+		return "", err
+	}
+	if stausCode >= http.StatusMultipleChoices {
+		return "", fmt.Errorf("received non 200 status code [%d]", stausCode)
+	}
+	path := utils.GenerateUUID() + ".yml"
+	out, err := os.Create(path)
+	if err != nil {
+		gm.logger.Errorf("failed to create file err %v", err)
+		return "", err
+	}
+	_, err = out.Write(respBody)
+	if err != nil {
+		gm.logger.Errorf("failed to copy file %v", err)
+		out.Close()
+		return "", err
+	}
+	out.Close()
+	return path, nil
+}
+
+func getHeaderMap(oauth *core.Oauth) map[string]string {
+	header := map[string]string{}
+
+	header[authorization] = fmt.Sprintf("%s %s", oauth.Type, oauth.AccessToken)
+	return header
 }
