@@ -8,6 +8,7 @@ import (
 	"github.com/LambdaTest/test-at-scale/pkg/core"
 	"github.com/LambdaTest/test-at-scale/pkg/errs"
 	"github.com/LambdaTest/test-at-scale/pkg/lumber"
+	"github.com/andrewkroh/gvm"
 )
 
 const (
@@ -32,6 +33,9 @@ type (
 		logger           lumber.Logger
 		ExecutionManager core.ExecutionManager
 	}
+	GoInstaller struct {
+		logger lumber.Logger
+	}
 )
 
 func (b *Builder) GetDriver(version int) (core.Driver, error) {
@@ -53,6 +57,9 @@ func (b *Builder) GetDriver(version int) (core.Driver, error) {
 				logger:           b.Logger,
 				ExecutionManager: b.ExecutionManager,
 			},
+			goInstaller: GoInstaller{
+				logger: b.Logger,
+			},
 		}, nil
 	case secondVersion:
 		return &driverV2{
@@ -70,6 +77,9 @@ func (b *Builder) GetDriver(version int) (core.Driver, error) {
 			nodeInstaller: NodeInstaller{
 				logger:           b.Logger,
 				ExecutionManager: b.ExecutionManager,
+			},
+			goInstaller: GoInstaller{
+				logger: b.Logger,
 			},
 		}, nil
 	default:
@@ -94,5 +104,31 @@ func (n *NodeInstaller) InstallNodeVersion(ctx context.Context, nodeVersion stri
 	}
 	origPath := os.Getenv("PATH")
 	os.Setenv("PATH", fmt.Sprintf("/home/nucleus/.nvm/versions/node/v%s/bin:%s", nodeVersion, origPath))
+	return nil
+}
+
+func (g *GoInstaller) InstallGoVersion(ctx context.Context, goVersion string) error {
+	version, err := gvm.ParseVersion(goVersion)
+
+	if err != nil {
+		g.logger.Errorf("go version is invalid, err: %v", err)
+
+		return err
+	}
+
+	gvmManager := &gvm.Manager{}
+	hasVersion, _ := gvmManager.HasVersion(version)
+
+	if !hasVersion {
+		ver, err := gvmManager.Install(version)
+		if err != nil {
+			g.logger.Errorf("failed to install go version, err: %v", err)
+
+			return err
+		}
+
+		g.logger.Debugf("go version intalled: %v", ver)
+	}
+
 	return nil
 }

@@ -321,6 +321,7 @@ type TASConfig struct {
 	ContainerImage    string             `yaml:"containerImage"`
 	FrameworkVersion  int                `yaml:"frameworkVersion" validate:"omitempty"`
 	Version           string             `yaml:"version" validate:"required"`
+	GoVersion         string             `yaml:"goVersion" validate:"omitempty,semver"`
 }
 
 // CoverageThreshold reprents the code coverage threshold
@@ -394,6 +395,7 @@ type TASConfigV2 struct {
 	SplitMode         SplitMode          `yaml:"splitMode" validate:"oneof=test file"`
 	ContainerImage    string             `yaml:"containerImage"`
 	NodeVersion       string             `yaml:"nodeVersion" validate:"omitempty,semver"`
+	GoVersion         string             `yaml:"goVersion" validate:"omitempty,semver"`
 }
 
 // MergeV2 repersent MergeConfig for version 2 and above

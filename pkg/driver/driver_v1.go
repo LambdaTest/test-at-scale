@@ -32,6 +32,7 @@ type (
 		DiffManager          core.DiffManager
 		ListSubModuleService core.ListSubModuleService
 		TASVersion           int
+		goInstaller          GoInstaller
 	}
 
 	setUpResultV1 struct {
@@ -177,6 +178,14 @@ func (d *driverV1) setUp(ctx context.Context, payload *core.Payload,
 			return nil, nodeErr
 		}
 	}
+
+	if tasConfig.GoVersion != "" {
+		goVersion := tasConfig.GoVersion
+		if goErr := d.goInstaller.InstallGoVersion(ctx, goVersion); goErr != nil {
+			return nil, goErr
+		}
+	}
+
 	blYml := tasConfig.Blocklist
 	if errG := d.BlockTestService.GetBlockTests(ctx, blYml, payload.BranchName); errG != nil {
 		d.logger.Errorf("Unable to fetch blocklisted tests: %v", errG)

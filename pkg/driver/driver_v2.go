@@ -36,6 +36,7 @@ type (
 		nodeInstaller        NodeInstaller
 		TestDiscoveryService core.TestDiscoveryService
 		TASVersion           int
+		goInstaller          GoInstaller
 	}
 
 	setUpResultV2 struct {
@@ -163,6 +164,13 @@ func (d *driverV2) runPreRunBeforeTestExecution(ctx context.Context,
 		}
 	}
 
+	if tasConfig.GoVersion != "" {
+		if err := d.goInstaller.InstallGoVersion(ctx, tasConfig.GoVersion); err != nil {
+			d.logger.Debugf("error while installing go of version %s, error %v ", tasConfig.GoVersion, err)
+			return err
+		}
+	}
+
 	d.logger.Infof("Running pre-run steps for submodule %s", subModule.Name)
 	azureLogwriter := logwriter.NewAzureLogWriter(d.AzureClient, core.PurposePreRunLogs, d.logger)
 	err := d.ExecutionManager.ExecuteUserCommands(ctx, core.PreRun, payload, subModule.Prerun, secretMap, azureLogwriter, modulePath)
@@ -198,6 +206,12 @@ func (d *driverV2) runDiscoveryHelper(ctx context.Context,
 
 	if tasConfig.NodeVersion != "" {
 		if err := d.nodeInstaller.InstallNodeVersion(ctx, tasConfig.NodeVersion); err != nil {
+			return err
+		}
+	}
+
+	if tasConfig.GoVersion != "" {
+		if err := d.goInstaller.InstallGoVersion(ctx, tasConfig.GoVersion); err != nil {
 			return err
 		}
 	}
