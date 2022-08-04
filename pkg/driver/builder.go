@@ -112,7 +112,7 @@ func (j *JavaInstaller) InstallJavaVersion(ctx context.Context, javaVersion stri
 	j.logger.Infof("Setting java version to %s", javaVersion)
 	javaVersionToInstall := global.JavaVersionMap[javaVersion]
 	commands := []string{}
-	commands = append(commands, "source $HOME/.sdkman/bin/sdkman-init.sh")
+	commands = append(commands, "source $SDKMAN_DIR/bin/sdkman-init.sh")
 	commands = append(commands, fmt.Sprintf(global.JavaVersionSetupCmds, javaVersionToInstall))
 	err := j.ExecutionManager.ExecuteInternalCommands(ctx, core.JavaRunnerConfiguration, commands, global.RepoDir, nil, nil)
 	if err != nil {

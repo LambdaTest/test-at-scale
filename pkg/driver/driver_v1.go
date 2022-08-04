@@ -137,15 +137,6 @@ func (d *driverV1) RunExecution(ctx context.Context, payload *core.Payload,
 		return errG
 	}
 
-	//setup java
-	if tasConfig.JavaVersion != "" {
-		err = d.javaInstaller.InstallJavaVersion(ctx, tasConfig.JavaVersion)
-		if err != nil {
-			d.logger.Infof("Unable to install java: %v", err)
-			return err
-		}
-	}
-
 	buildArgs := d.buildTestExecutionArgs(payload, tasConfig, secretMap, coverageDir)
 	executionResults, err := d.TestExecutionService.Run(ctx, &buildArgs)
 	if err != nil {

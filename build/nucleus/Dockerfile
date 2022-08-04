@@ -64,10 +64,12 @@ COPY ./build/nucleus/entrypoint.sh /
 
 RUN apt update -y && apt upgrade -y
 
-RUN  curl -s https://get.sdkman.io | bash
-RUN /bin/bash -c "source $HOME/.sdkman/bin/sdkman-init.sh;sdk install java 18.0.1-oracle"
 
-ENV JAVA_HOME="/root/.sdkman/candidates/java/current"
+ENV SDKMAN_DIR=/home/nucleus/.sdkman
+RUN  curl -s https://get.sdkman.io | bash
+RUN /bin/bash -c "source ${SDKMAN_DIR}/bin/sdkman-init.sh;sdk install java 18.0.1-oracle"
+
+ENV JAVA_HOME="${SDKMAN_DIR}/candidates/java/current"
 ENV PATH=$JAVA_HOME:$PATH
 ENV PATH=$JAVA_HOME/bin:$PATH
 
