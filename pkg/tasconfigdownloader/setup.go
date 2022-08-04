@@ -38,7 +38,7 @@ func (t *TASConfigDownloader) GetTASConfig(ctx context.Context, gitProvider, com
 		return nil, err
 	}
 
-	tasConfig, err := t.tasconfigmanager.LoadAndValidate(ctx, version, ymlPath, eventType, licenseTier)
+	tasConfig, err := t.tasconfigmanager.LoadAndValidate(ctx, version, ymlPath, eventType, licenseTier, filePath)
 	if err != nil {
 		t.logger.Errorf("error while parsing yml for commitID %s error %v", commitID, err)
 		return nil, err
