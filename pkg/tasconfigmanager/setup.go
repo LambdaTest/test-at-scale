@@ -171,7 +171,6 @@ func (tc *tasConfigManager) validateYMLV2(ctx context.Context,
 		tc.logger.Errorf("LicenseTier validation failed. error: %v", err)
 		return nil, err
 	}
-<<<<<<< HEAD
 	// caching only if language is js.
 	if tasConfig.Cache == nil && hasJsModule {
 		checksum, err := utils.ComputeChecksum(fmt.Sprintf("%s/%s", global.RepoDir, packageJSON))
@@ -184,9 +183,6 @@ func (tc *tasConfigManager) validateYMLV2(ctx context.Context,
 			Paths: []string{},
 		}
 	}
-=======
-
->>>>>>> d99e76461c5a3081e26abf62488f5084edfe62f9
 	return tasConfig, nil
 }
 
