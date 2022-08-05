@@ -321,7 +321,7 @@ type TASConfig struct {
 	ContainerImage    string             `yaml:"containerImage"`
 	FrameworkVersion  int                `yaml:"frameworkVersion" validate:"omitempty"`
 	Version           string             `yaml:"version" validate:"required"`
-	GoVersion         string             `yaml:"goVersion" validate:"omitempty,semver"`
+	GoVersion         string             `yaml:"goVersion" validate:"omitempty"`
 }
 
 // CoverageThreshold reprents the code coverage threshold

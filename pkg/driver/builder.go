@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path"
+	"runtime"
 
 	"github.com/LambdaTest/test-at-scale/pkg/core"
 	"github.com/LambdaTest/test-at-scale/pkg/errs"
@@ -118,17 +120,27 @@ func (g *GoInstaller) InstallGoVersion(ctx context.Context, goVersion string) er
 
 	gvmManager := &gvm.Manager{}
 	hasVersion, _ := gvmManager.HasVersion(version)
+	verRoot := ""
 
 	if !hasVersion {
-		ver, err := gvmManager.Install(version)
+		gvmManager.GOOS = runtime.GOOS
+		gvmManager.GOARCH = runtime.GOARCH
+		gvmManager.GoStorageHome = "https://storage.googleapis.com/golang"
+		verRoot, err = gvmManager.Install(version)
 		if err != nil {
 			g.logger.Errorf("failed to install go version, err: %v", err)
 
 			return err
 		}
 
-		g.logger.Debugf("go version intalled: %v", ver)
+		g.logger.Debugf("go version installed: %v", verRoot)
+	} else {
+		verRoot = gvmManager.VersionGoROOT(version)
 	}
+
+	os.Setenv("GOROOT", path.Join("/home/nucleus", verRoot))
+	origPath := os.Getenv("PATH")
+	os.Setenv("PATH", fmt.Sprintf("/home/nucleus/%s/bin:%s", verRoot, origPath))
 
 	return nil
 }
