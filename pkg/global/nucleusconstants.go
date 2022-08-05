@@ -10,34 +10,35 @@ var TestServer string
 
 // All constant related to nucleus
 const (
-	CoverageManifestFileName = "manifest.json"
-	HomeDir                  = "/home/nucleus"
-	WorkspaceCacheDir        = "/workspace-cache"
-	RepoDir                  = HomeDir + "/repo"
-	CodeCoverageDir          = RepoDir + "/coverage"
-	RepoCacheDir             = RepoDir + "/__tas"
-	DefaultAPITimeout        = 45 * time.Second
-	DefaultGitCloneTimeout   = 30 * time.Minute
-	SamplingTime             = 5 * time.Millisecond
-	RepoSecretPath           = "/vault/secrets/reposecrets"
-	OauthSecretPath          = "/vault/secrets/oauth"
-	NeuronRemoteHost         = "http://neuron-service.phoenix.svc.cluster.local"
-	BlockTestFileLocation    = "/tmp/blocktests.json"
-	SecretRegex              = `\${{\s*secrets\.(.*?)\s*}}`
-	ExecutionResultChunkSize = 50
-	TestLocatorsDelimiter    = "#TAS#"
-	ExpiryDelta              = 15 * time.Minute
-	NewTASVersion            = 2
-	ModulePath               = "MODULE_PATH"
-	PackageJSON              = "package.json"
-	SubModuleName            = "SUBMODULE_NAME"
-	ArgPattern               = "--pattern"
-	ArgConfig                = "--config"
-	ArgDiff                  = "--diff"
-	ArgCommand               = "--command"
-	ArgLocator               = "--locator-file"
-	ArgFrameworVersion       = "--frameworkVersion"
-	DefaultTASVersion        = "1.0.0"
+	CoverageManifestFileName   = "manifest.json"
+	HomeDir                    = "/home/nucleus"
+	WorkspaceCacheDir          = "/workspace-cache"
+	RepoDir                    = HomeDir + "/repo"
+	CodeCoverageDir            = RepoDir + "/coverage"
+	RepoCacheDir               = RepoDir + "/__tas"
+	DefaultAPITimeout          = 45 * time.Second
+	DefaultGitCloneTimeout     = 30 * time.Minute
+	SamplingTime               = 5 * time.Millisecond
+	RepoSecretPath             = "/vault/secrets/reposecrets"
+	OauthSecretPath            = "/vault/secrets/oauth"
+	NeuronRemoteHost           = "http://neuron-service.phoenix.svc.cluster.local"
+	BlockTestFileLocation      = "/tmp/blocktests.json"
+	SecretRegex                = `\${{\s*secrets\.(.*?)\s*}}` // nolint: gosec
+	ExecutionResultChunkSize   = 50
+	TestLocatorsDelimiter      = "#TAS#"
+	ExpiryDelta                = 15 * time.Minute
+	NewTASVersion              = 2
+	ModulePath                 = "MODULE_PATH"
+	PackageJSON                = "package.json"
+	SubModuleName              = "SUBMODULE_NAME"
+	ArgPattern                 = "--pattern"
+	ArgConfig                  = "--config"
+	ArgDiff                    = "--diff"
+	ArgCommand                 = "--command"
+	ArgLocator                 = "--locator-file"
+	ArgFrameworVersion         = "--frameworkVersion"
+	DefaultTASVersion          = "1.0.0"
+	TASYmlConfigurationDocLink = "https://www.lambdatest.com/support/docs/tas-configuring-tas-yml"
 )
 
 // FrameworkRunnerMap is map of framework with there respective runner location
@@ -74,3 +75,6 @@ var FrameworkLanguageMap = map[string]string{
 	"golang":  "golang",
 	"junit":   "java",
 }
+
+// ValidYMLVersions defines all valid yml version
+var ValidYMLVersions = []int{1, 2}
