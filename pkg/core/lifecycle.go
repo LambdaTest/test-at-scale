@@ -19,7 +19,6 @@ import (
 const (
 	endpointPostTestResults = "http://localhost:9876/results"
 	endpointPostTestList    = "http://localhost:9876/test-list"
-	languageJs              = "javascript"
 )
 
 // NewPipeline creates and returns a new Pipeline instance
