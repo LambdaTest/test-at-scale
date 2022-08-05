@@ -126,11 +126,13 @@ func (d *driverV1) RunExecution(ctx context.Context, payload *core.Payload,
 	}
 
 	tasConfig := tas.(*core.TASConfig)
-	err = d.goInstaller.InstallGoVersion(ctx, tasConfig.GoVersion)
+	if tasConfig.GoVersion != "" {
+		err = d.goInstaller.InstallGoVersion(ctx, tasConfig.GoVersion)
 
-	if err != nil {
-		d.logger.Errorf("Unable to install go version. err: %v", err)
-		return err
+		if err != nil {
+			d.logger.Errorf("Unable to install go version. err: %v", err)
+			return err
+		}
 	}
 
 	if errG := d.BlockTestService.GetBlockTests(ctx, tasConfig.Blocklist, payload.BranchName); errG != nil {
