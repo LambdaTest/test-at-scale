@@ -194,8 +194,8 @@ func (tc *tasConfigManager) GetVersion(path string) (int, error) {
 	}
 	versionYml, err := utils.GetVersion(yamlFile)
 	if err != nil {
-		tc.logger.Errorf("Error while reading tas yml version error %v", err)
-		return 0, errs.New("Error while reading tas yml version")
+		tc.logger.Errorf("error while reading tas yml version : %v", err)
+		return 0, err
 	}
 	return versionYml, nil
 }
