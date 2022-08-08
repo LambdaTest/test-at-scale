@@ -88,7 +88,6 @@ type NotifMessage struct {
 // AzureClient defines operation for working with azure store
 type AzureClient interface {
 	FindUsingSASUrl(ctx context.Context, sasURL string) (io.ReadCloser, error)
-	Find(ctx context.Context, path string) (io.ReadCloser, error)
 	Create(ctx context.Context, path string, reader io.Reader, mimeType string) (string, error)
 	CreateUsingSASURL(ctx context.Context, sasURL string, reader io.Reader, mimeType string) (string, error)
 	GetSASURL(ctx context.Context, purpose SASURLPurpose, query map[string]interface{}) (string, error)

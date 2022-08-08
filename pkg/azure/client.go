@@ -92,7 +92,7 @@ func (s *store) FindUsingSASUrl(ctx context.Context, sasURL string) (io.ReadClos
 	if err != nil {
 		return nil, err
 	}
-	blobClient, err := azblob.NewBlockBlobClientWithNoCredential(u.String(), &azblob.ClientOptions{})
+	blobClient, err := azblob.NewBlockBlobClientWithNoCredential(u.String(), getClientOptions())
 	if err != nil {
 		s.logger.Errorf("failed to create blob client, error: %v", err)
 		return nil, err
@@ -126,18 +126,6 @@ func (s *store) CreateUsingSASURL(ctx context.Context, sasURL string, reader io.
 	})
 
 	return blobClient.URL(), err
-}
-
-// Find function downloads blob based on URI
-func (s *store) Find(ctx context.Context, path string) (io.ReadCloser, error) {
-	blobClient := s.containerClient.NewBlockBlobClient(path)
-	out, err := blobClient.Download(ctx, &azblob.DownloadBlobOptions{})
-	if err != nil {
-		return nil, handleError(err)
-	}
-	defer out.RawResponse.Body.Close()
-
-	return out.Body(&azblob.RetryReaderOptions{MaxRetryRequests: 5}), nil
 }
 
 // Create function ulploads blob to URI
