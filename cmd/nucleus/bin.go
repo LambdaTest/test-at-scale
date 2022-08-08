@@ -118,7 +118,7 @@ func run(cmd *cobra.Command, args []string) {
 	// attach plugins to pipeline
 	pm := payloadmanager.NewPayloadManger(azureClient, logger, cfg, defaultRequests)
 	secretParser := secret.New(logger)
-	tcm := tasconfigmanager.NewTASConfigManager(logger)
+	tcm := tasconfigmanager.NewTASConfigManager(logger, secretParser)
 	execManager := command.NewExecutionManager(secretParser, azureClient, logger)
 	gm := gitmanager.NewGitManager(logger, execManager)
 	dm := diffmanager.NewDiffManager(cfg, logger)

@@ -10,6 +10,7 @@ import (
 	"github.com/LambdaTest/test-at-scale/pkg/gitmanager"
 	"github.com/LambdaTest/test-at-scale/pkg/global"
 	"github.com/LambdaTest/test-at-scale/pkg/lumber"
+	"github.com/LambdaTest/test-at-scale/pkg/secret"
 	"github.com/LambdaTest/test-at-scale/pkg/tasconfigmanager"
 )
 
@@ -22,15 +23,23 @@ type TASConfigDownloader struct {
 }
 
 func New(logger lumber.Logger) *TASConfigDownloader {
+	secretParser := secret.New(logger)
 	return &TASConfigDownloader{
 		logger:           logger,
 		gitmanager:       gitmanager.NewGitManager(logger, nil),
-		tasconfigmanager: tasconfigmanager.NewTASConfigManager(logger),
+		tasconfigmanager: tasconfigmanager.NewTASConfigManager(logger, secretParser),
 	}
 }
 
-func (t *TASConfigDownloader) GetTASConfig(ctx context.Context, gitProvider, commitID, repoSlug,
-	filePath string, oauth *core.Oauth, eventType core.EventType, licenseTier core.Tier) (*core.TASConfigDownloaderOutput, error) {
+func (t *TASConfigDownloader) GetTASConfig(ctx context.Context,
+	gitProvider,
+	commitID,
+	repoSlug,
+	filePath string,
+	oauth *core.Oauth,
+	repoSecret map[string]string,
+	eventType core.EventType,
+	licenseTier core.Tier) (*core.TASConfigDownloaderOutput, error) {
 	ymlPath, err := t.gitmanager.DownloadFileByCommit(ctx, gitProvider, repoSlug, commitID, filePath, oauth)
 	if err != nil {
 		t.logger.Errorf("error occurred while downloading file %s from %s for commitID %s, error %v", filePath, repoSlug, commitID, err)
@@ -43,10 +52,10 @@ func (t *TASConfigDownloader) GetTASConfig(ctx context.Context, gitProvider, com
 		return nil, err
 	}
 
-	tasConfig, err := t.tasconfigmanager.LoadAndValidate(ctx, version, ymlPath, eventType, licenseTier, filePath)
+	tasConfig, err := t.tasconfigmanager.LoadAndValidate(ctx, version, ymlPath, eventType, licenseTier, repoSecret, filePath)
 	if err != nil {
 		if supportedVersion := t.checkYmlValidityForOtherVersion(ctx, version, ymlPath, eventType,
-			licenseTier, filePath); supportedVersion != -1 {
+			licenseTier, repoSecret, filePath); supportedVersion != -1 {
 			errMsg := fmt.Sprintf(ymlVersionMismtachRemarks, global.TASYmlConfigurationDocLink)
 			t.logger.Errorf("error while parsing yml for commitID %s, error: %s", commitID, errMsg)
 			return nil, errors.New(errMsg)
@@ -65,12 +74,15 @@ func (t *TASConfigDownloader) checkYmlValidityForOtherVersion(ctx context.Contex
 	version int,
 	ymlPath string,
 	eventType core.EventType,
-	licenseTier core.Tier, filePath string) int {
+	licenseTier core.Tier,
+	repoSecret map[string]string,
+	filePath string) int {
 	for _, supportedVersion := range global.ValidYMLVersions {
 		if version == supportedVersion {
 			continue
 		}
-		if _, err := t.tasconfigmanager.LoadAndValidate(ctx, supportedVersion, ymlPath, eventType, licenseTier, filePath); err == nil {
+		if _, err := t.tasconfigmanager.LoadAndValidate(ctx, supportedVersion, ymlPath, eventType, licenseTier,
+			repoSecret, filePath); err == nil {
 			return supportedVersion
 		}
 	}

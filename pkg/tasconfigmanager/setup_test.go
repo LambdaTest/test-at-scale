@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/LambdaTest/test-at-scale/pkg/core"
+	"github.com/LambdaTest/test-at-scale/pkg/secret"
 	"github.com/LambdaTest/test-at-scale/testutils"
 	"github.com/stretchr/testify/assert"
 )
@@ -86,8 +87,8 @@ func TestLoadAndValidateV1(t *testing.T) {
 	if err != nil {
 		t.Errorf("Couldn't initialize logger, error: %v", err)
 	}
-
-	tasConfigManager := NewTASConfigManager(logger)
+	secretParser := secret.New(logger)
+	tasConfigManager := NewTASConfigManager(logger, secretParser)
 	ctx := context.TODO()
 	tests := []struct {
 		Name      string
@@ -156,8 +157,9 @@ func TestLoadAndValidateV1(t *testing.T) {
 				"../../testutils/testdata/tasyml/postmerge_emptyv1.yml"),
 		},
 	}
+	emptySecretMap := map[string]string{}
 	for _, tt := range tests {
-		tas, err := tasConfigManager.LoadAndValidate(ctx, 1, tt.FilePath, tt.EventType, core.Small, tt.FilePath)
+		tas, err := tasConfigManager.LoadAndValidate(ctx, 1, tt.FilePath, tt.EventType, core.Small, emptySecretMap, tt.FilePath)
 		if err != nil {
 			assert.Equal(t, err.Error(), tt.wantErr.Error(), "error mismatch")
 		} else {
@@ -177,8 +179,8 @@ func TestLoadAndValidateV2(t *testing.T) {
 	if err != nil {
 		t.Errorf("Couldn't initialize logger, error: %v", err)
 	}
-
-	tasConfigManager := NewTASConfigManager(logger)
+	secretParser := secret.New(logger)
+	tasConfigManager := NewTASConfigManager(logger, secretParser)
 	ctx := context.TODO()
 	tests := []struct {
 		Name      string
@@ -279,8 +281,9 @@ func TestLoadAndValidateV2(t *testing.T) {
 			nil,
 		},
 	}
+	emptySecretMap := map[string]string{}
 	for _, tt := range tests {
-		tas, err := tasConfigManager.LoadAndValidate(ctx, 2, tt.FilePath, tt.EventType, core.Small, tt.FilePath)
+		tas, err := tasConfigManager.LoadAndValidate(ctx, 2, tt.FilePath, tt.EventType, core.Small, emptySecretMap, tt.FilePath)
 		if err != nil {
 			assert.Equal(t, err.Error(), tt.wantErr.Error(), "error mismatch")
 		} else {

@@ -2,6 +2,7 @@ package secret
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"regexp"
@@ -108,4 +109,23 @@ func (s *secretParser) Expired(token *core.Oauth) bool {
 	}
 	return token.Expiry.Add(-global.ExpiryDelta).
 		Before(time.Now())
+}
+
+func (s *secretParser) ValidateRepoSecret(command string, secretData map[string]string) error {
+	matches := s.secretRegex.FindAllStringSubmatch(command, -1)
+	// if no matches then we don't need to subsitute repo secret
+	if matches == nil {
+		return nil
+	}
+	for _, match := range matches {
+		if len(match) < 2 {
+			return nil
+		}
+		// validating secret key exists or not
+		if _, ok := secretData[match[1]]; !ok {
+			s.logger.Errorf("secret with name %s not found in map", match[1])
+			return fmt.Errorf("secret with name %s not found", match[1])
+		}
+	}
+	return nil
 }

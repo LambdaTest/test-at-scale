@@ -2,6 +2,8 @@ package synapse
 
 import (
 	"encoding/json"
+	"fmt"
+	"strings"
 
 	"github.com/LambdaTest/test-at-scale/pkg/core"
 )
@@ -87,4 +89,13 @@ func createYMlParsingResultMessage(ymlParsingOutput core.YMLParsingResultMessage
 		Content: ymlParsingOutputJSON,
 		Success: true,
 	}
+}
+
+func getRepoFromRepoSlug(repoSlug string) (string, error) {
+	r := strings.Split(repoSlug, "/")
+	if len(r) > 1 {
+		return r[len(r)-1], nil
+	}
+	return "", fmt.Errorf("unable to fetch repo from repoSlug %s", repoSlug)
+
 }

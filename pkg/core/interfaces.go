@@ -17,7 +17,7 @@ type PayloadManager interface {
 type TASConfigManager interface {
 	// LoadAndValidate loads and returns the tas config
 	LoadAndValidate(ctx context.Context, version int, path string, eventType EventType, licenseTier Tier,
-		tasFilePathInRepo string) (interface{}, error)
+		secretMap map[string]string, tasFilePathInRepo string) (interface{}, error)
 
 	// GetVersion returns TAS yml version
 	GetVersion(path string) (int, error)
@@ -124,6 +124,8 @@ type SecretParser interface {
 	SubstituteSecret(command string, secretData map[string]string) (string, error)
 	// Expired reports whether the token is expired.
 	Expired(token *Oauth) bool
+	// ValidateRepoSecret validates secret mentioned in command
+	ValidateRepoSecret(command string, secretData map[string]string) error
 }
 
 // ExecutionManager has responsibility for executing the preRun, postRun and internal commands

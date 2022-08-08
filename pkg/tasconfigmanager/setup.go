@@ -25,21 +25,30 @@ var tierEnumMapping = map[core.Tier]int{
 	core.XLarge: 5,
 }
 
+const (
+	v1 = 1
+	v2 = 2
+)
+
 // tasConfigManager represents an instance of TASConfigManager instance
 type tasConfigManager struct {
-	logger lumber.Logger
+	secretParser core.SecretParser
+	logger       lumber.Logger
 }
 
 // NewTASConfigManager creates and returns a new TASConfigManager instance
-func NewTASConfigManager(logger lumber.Logger) core.TASConfigManager {
-	return &tasConfigManager{logger: logger}
+func NewTASConfigManager(logger lumber.Logger,
+	secretParser core.SecretParser) core.TASConfigManager {
+	return &tasConfigManager{logger: logger, secretParser: secretParser}
 }
 
 func (tc *tasConfigManager) LoadAndValidate(ctx context.Context,
 	version int,
 	path string,
 	eventType core.EventType,
-	licenseTier core.Tier, tasFilePathInRepo string) (interface{}, error) {
+	licenseTier core.Tier,
+	secretMap map[string]string,
+	tasFilePathInRepo string) (interface{}, error) {
 	yamlFile, err := os.ReadFile(path)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
@@ -49,15 +58,16 @@ func (tc *tasConfigManager) LoadAndValidate(ctx context.Context,
 		return nil, errs.New(fmt.Sprintf("Error while reading configuration file at path: %s", tasFilePathInRepo))
 	}
 	if version < global.NewTASVersion {
-		return tc.validateYMLV1(ctx, yamlFile, eventType, licenseTier, tasFilePathInRepo)
+		return tc.validateYMLV1(ctx, yamlFile, eventType, licenseTier, secretMap, tasFilePathInRepo)
 	}
-	return tc.validateYMLV2(ctx, yamlFile, eventType, licenseTier, tasFilePathInRepo)
+	return tc.validateYMLV2(ctx, yamlFile, eventType, licenseTier, secretMap, tasFilePathInRepo)
 }
 
 func (tc *tasConfigManager) validateYMLV1(ctx context.Context,
 	yamlFile []byte,
 	eventType core.EventType,
 	licenseTier core.Tier,
+	secretMap map[string]string,
 	filePath string) (*core.TASConfig, error) {
 	tasConfig, err := utils.ValidateStructTASYmlV1(ctx, yamlFile, filePath)
 	if err != nil {
@@ -82,6 +92,9 @@ func (tc *tasConfigManager) validateYMLV1(ctx context.Context,
 		tc.logger.Errorf("LicenseTier validation failed. error: %v", err)
 		return nil, err
 	}
+	if err := tc.validateTASWithRepoSecretV1(secretMap, tasConfig); err != nil {
+		return nil, err
+	}
 	return tasConfig, nil
 }
 
@@ -99,6 +112,7 @@ func (tc *tasConfigManager) validateYMLV2(ctx context.Context,
 	yamlFile []byte,
 	eventType core.EventType,
 	licenseTier core.Tier,
+	secretMap map[string]string,
 	yamlFilePath string) (*core.TASConfigV2, error) {
 	tasConfig, err := utils.ValidateStructTASYmlV2(ctx, yamlFile, yamlFilePath)
 	if err != nil {
@@ -145,6 +159,9 @@ func (tc *tasConfigManager) validateYMLV2(ctx context.Context,
 		tc.logger.Errorf("LicenseTier validation failed. error: %v", err)
 		return nil, err
 	}
+	if err := tc.validateTASWithRepoSecretV2(eventType, secretMap, tasConfig); err != nil {
+		return nil, err
+	}
 
 	return tasConfig, nil
 }
@@ -174,4 +191,68 @@ func (tc *tasConfigManager) GetTasConfigFilePath(payload *core.Payload) (string,
 		return "", err
 	}
 	return filePath, nil
+}
+
+func (tc *tasConfigManager) validateTASWithRepoSecretV1(secretMap map[string]string,
+	tasConfig *core.TASConfig) error {
+	if tasConfig.Prerun == nil {
+		return nil
+	}
+	commands := tasConfig.Prerun.Commands
+	for _, cmd := range commands {
+		if err := tc.secretParser.ValidateRepoSecret(cmd, secretMap); err != nil {
+			return err
+		}
+	}
+	for _, val := range tasConfig.Prerun.EnvMap {
+		if err := tc.secretParser.ValidateRepoSecret(val, secretMap); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (tc *tasConfigManager) validateTASWithRepoSecretV2(eventType core.EventType,
+	secretMap map[string]string,
+	tasConfig *core.TASConfigV2) error {
+	switch eventType {
+	case core.EventPullRequest:
+		if tasConfig.PreMerge != nil {
+			for i := 0; i < len(tasConfig.PreMerge.SubModules); i++ {
+				subModule := tasConfig.PreMerge.SubModules[i]
+				if err := tc.validateSubModuleWithRepoSecret(secretMap, &subModule); err != nil {
+					return err
+				}
+			}
+		}
+	case core.EventPush:
+		for i := 0; i < len(tasConfig.PostMerge.SubModules); i++ {
+			subModule := tasConfig.PostMerge.SubModules[i]
+			if err := tc.validateSubModuleWithRepoSecret(secretMap, &subModule); err != nil {
+				return err
+			}
+		}
+	default:
+		return fmt.Errorf("event type %s is not supported", eventType)
+	}
+	return nil
+}
+
+func (tc *tasConfigManager) validateSubModuleWithRepoSecret(secretMap map[string]string,
+	subModule *core.SubModule) error {
+	if subModule.Prerun == nil {
+		return nil
+	}
+	commands := subModule.Prerun.Commands
+	for _, cmd := range commands {
+		if err := tc.secretParser.ValidateRepoSecret(cmd, secretMap); err != nil {
+			return err
+		}
+	}
+	for _, val := range subModule.Prerun.EnvMap {
+		if err := tc.secretParser.ValidateRepoSecret(val, secretMap); err != nil {
+			return err
+		}
+	}
+	return nil
 }

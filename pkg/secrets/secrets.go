@@ -60,6 +60,14 @@ func (s *secertManager) GetRepoSecretBytes(repo string) ([]byte, error) {
 	return repoSecretsJSON, nil
 }
 
+func (s *secertManager) GetRepoSecret(repo string) map[string]string {
+	val, ok := s.cfg.RepoSecrets[repo]
+	if !ok {
+		return map[string]string{}
+	}
+	return val
+}
+
 func (s *secertManager) GetDockerSecrets(r *core.RunnerOptions) (core.ContainerImageConfig, error) {
 	containerImageConfig := core.ContainerImageConfig{}
 	containerImageConfig.Mode = s.cfg.ContainerRegistry.Mode

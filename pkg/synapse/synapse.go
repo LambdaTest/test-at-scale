@@ -399,10 +399,21 @@ func (s *synapse) processYMLParsingRequest(message core.Message) {
 		return
 	}
 	oauth := s.secretsManager.GetOauthToken()
-
+	repo, err := getRepoFromRepoSlug(parsingReqMsg.RepoSlug)
+	if err != nil {
+		s.logger.Errorf("error occurred while extracting repo from repoSlug:  %v", err)
+		writeMsg = createYMlParsingResultMessage(core.YMLParsingResultMessage{
+			OrgID:    parsingReqMsg.OrgID,
+			BuildID:  parsingReqMsg.BuildID,
+			ErrorMsg: err.Error(),
+		})
+		return
+	}
+	repoSecret := s.secretsManager.GetRepoSecret(repo)
 	tasOutput, err := s.tasConfigDownloader.GetTASConfig(context.TODO(), parsingReqMsg.GitProvider,
 		parsingReqMsg.CommitID,
 		parsingReqMsg.RepoSlug, parsingReqMsg.TasFileName, oauth,
+		repoSecret,
 		parsingReqMsg.Event, parsingReqMsg.LicenseTier)
 	if err != nil {
 		s.logger.Errorf("error occurred while fetching tas config file for buildID %s orgID %s, error %v",

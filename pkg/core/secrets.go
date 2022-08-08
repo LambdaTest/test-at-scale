@@ -28,4 +28,7 @@ type SecretsManager interface {
 
 	// GetRepoSecretBytes get repo secrets in bytes
 	GetRepoSecretBytes(repo string) ([]byte, error)
+
+	// GetRepoSecret returns repo secret mentioned in the config file
+	GetRepoSecret(repo string) map[string]string
 }
