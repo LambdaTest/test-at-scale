@@ -317,5 +317,4 @@ func Test_ValidateRepoScrete(t *testing.T) {
 			}
 		})
 	}
-
 }

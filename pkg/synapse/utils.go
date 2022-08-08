@@ -97,5 +97,4 @@ func getRepoFromRepoSlug(repoSlug string) (string, error) {
 		return r[len(r)-1], nil
 	}
 	return "", fmt.Errorf("unable to fetch repo from repoSlug %s", repoSlug)
-
 }

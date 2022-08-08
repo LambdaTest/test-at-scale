@@ -25,11 +25,6 @@ var tierEnumMapping = map[core.Tier]int{
 	core.XLarge: 5,
 }
 
-const (
-	v1 = 1
-	v2 = 2
-)
-
 // tasConfigManager represents an instance of TASConfigManager instance
 type tasConfigManager struct {
 	secretParser core.SecretParser
