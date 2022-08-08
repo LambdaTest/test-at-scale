@@ -2,6 +2,7 @@ package secret
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"os"
 	"reflect"
@@ -266,4 +267,55 @@ func TestExpired(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_ValidateRepoScrete(t *testing.T) {
+	logger, err := lumber.NewLogger(lumber.LoggingConfig{EnableConsole: true}, true, lumber.InstanceZapLogger)
+	if err != nil {
+		log.Fatalf("unable to create logger %s", err.Error())
+	}
+
+	s := &secretParser{logger: logger, secretRegex: regexp.MustCompile(global.SecretRegex)}
+	tests := []struct {
+		name      string
+		secretMap map[string]string
+		command   string
+		want      error
+	}{
+		{
+			name: "Test secret present in config",
+			secretMap: map[string]string{
+				"ENGLISHCODE": "en-us",
+			},
+			command: "value : ${{secrets.ENGLISHCODE}}",
+			want:    nil,
+		},
+		{
+			name:      "Test secret not present in config",
+			secretMap: map[string]string{},
+			command:   "value : ${{secrets.ENGLISHCODE}}",
+			want:      fmt.Errorf("secret with name %s not found", "ENGLISHCODE"),
+		},
+		{
+			name: "Test secret present in config and not mentioned in command",
+			secretMap: map[string]string{
+				"ENGLISHCODE": "en-us",
+			},
+			command: "value : some randome value",
+			want:    nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := s.ValidateRepoSecret(tt.command, tt.secretMap)
+			if got == nil && tt.want == nil {
+				return
+			}
+			if (got == nil && tt.want != nil) || (got != nil && tt.want == nil) || (got.Error() != tt.want.Error()) {
+				t.Errorf("got %v want %+v", got, tt.want)
+				return
+			}
+		})
+	}
+
 }

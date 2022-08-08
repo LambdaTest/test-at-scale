@@ -20,6 +20,8 @@ type secretParser struct {
 	secretRegex *regexp.Regexp
 }
 
+const minNumOfRegexMatch = 2
+
 // New return new secret parser
 func New(logger lumber.Logger) core.SecretParser {
 	return &secretParser{
@@ -118,7 +120,7 @@ func (s *secretParser) ValidateRepoSecret(command string, secretData map[string]
 		return nil
 	}
 	for _, match := range matches {
-		if len(match) < 2 {
+		if len(match) < minNumOfRegexMatch {
 			return nil
 		}
 		// validating secret key exists or not
