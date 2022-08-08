@@ -11,6 +11,14 @@ RUN GOARCH=amd64 GOOS=linux go build -ldflags="-w -s" -o nucleus cmd/nucleus/*.g
 # RUN strip --strip-unneeded ts
 # RUN upx ts
 
+FROM maven:3.8.6-openjdk-18-slim as javabuilder
+
+COPY ./build/nucleus/java/test-at-scale-java-runner.tar.gz /
+RUN tar -xvzf /test-at-scale-java-runner.tar.gz
+WORKDIR "/test-at-scale-java-runner"
+RUN mvn clean install
+
+
 # use a minimal alpine image
 FROM nikolaik/python-nodejs:python3.10-nodejs16-slim
 
@@ -96,15 +104,10 @@ RUN mkdir -p /usr/share/maven /usr/share/maven/ref \
 ENV MAVEN_HOME /usr/share/maven
 RUN mkdir -p /home/nucleus/.m2
 
+COPY --from=javabuilder /root/.m2/repository /home/nucleus/.m2/repository
+COPY --from=javabuilder /root/.m2/repository/com/lambdatest/ext/1.0-SNAPSHOT/ext-1.0-SNAPSHOT-jar-with-dependencies.jar /usr/share/maven/lib/ext/
 #update settings.xml file for new maven local repo location
-RUN xmlstarlet ed -O --inplace -N a='http://maven.apache.org/SETTINGS/1.0.0' -s /a:settings --type elem --name "localRepository" -v /home/nucleus/.m2/repository /usr/share/maven/conf/settings.xml
-
-COPY ./build/nucleus/java/test-at-scale-java-runner.tar.gz /home/nucleus/
-RUN tar -xvzf /home/nucleus/test-at-scale-java-runner.tar.gz
-WORKDIR "/home/nucleus/test-at-scale-java-runner"
-RUN mvn clean install
-
-COPY ./build/nucleus/java/ext-1.0-SNAPSHOT-jar-with-dependencies.jar /usr/share/maven/lib/ext/
+RUN xmlstarlet ed -O --inplace -s "/_:settings"  --type elem --name "localRepository" -v /home/nucleus/.m2/repository /usr/share/maven/conf/settings.xml
 
 COPY ./build/nucleus/entrypoint.sh /
 ENTRYPOINT  ["/bin/sh", "/entrypoint.sh"]

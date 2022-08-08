@@ -62,7 +62,7 @@ var InstallRunnerCmds = []string{"tar -xzf /custom-runners/custom-runners.tgz"}
 
 var JavaVersionSetupCmds = "yes | sdk install java %s"
 
-var JavaDiscoveryArgs = []string{"-Dmode=discover", "-DfailIfNoTests=false", "-Dforkcount=1", "-Drat.numUnapprovedLicenses=50000"}
+var JavaDiscoveryArgs = []string{"-Dmode=discover", "-DfailIfNoTests=false", "-Dforkcount=1", "-Drat.numUnapprovedLicenses=50000", "-Dmaven.test.failure.ignore=true"}
 var JavaExecutionArgs = []string{"-Dmode=execute", "-Dforkcount=1", "-Drat.numUnapprovedLicenses=50000", "-Dmaven.test.failure.ignore=true"}
 
 // NeuronHost is neuron host end point
