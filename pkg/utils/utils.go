@@ -166,7 +166,11 @@ func GetVersion(ymlContent []byte) (int, error) {
 	}
 	majorVersion := strings.Split(tasVersion.Version, ".")[0]
 
-	return strconv.Atoi(majorVersion)
+	version, err := strconv.Atoi(majorVersion)
+	if err != nil {
+		return version, errs.New("error while parsing version for tas yml")
+	}
+	return version, err
 }
 
 // ValidateStructTASYmlV2 validates tas configuration file
@@ -317,6 +321,6 @@ func ValidateStructTASYml(ctx context.Context, ymlContent []byte, ymlFilename st
 	case v2:
 		return ValidateStructTASYmlV2(ctx, ymlContent, ymlFilename)
 	default:
-		return nil, fmt.Errorf("")
+		return nil, fmt.Errorf("version %d is not supported ", version)
 	}
 }

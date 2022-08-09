@@ -322,7 +322,7 @@ func TestGetVersion(t *testing.T) {
 		{
 			"Test with invalid version type",
 			"testutils/testdata/tasyml/invalidVersion.yml",
-			fmt.Errorf("strconv.Atoi: parsing \"a\": invalid syntax"),
+			fmt.Errorf("error while parsing version for tas yml"),
 			0,
 		},
 		{
