@@ -359,39 +359,80 @@ func TestValidateSubModule(t *testing.T) {
 	tests := []struct {
 		name      string
 		subModule core.SubModule
+		path      string
 		wantErr   error
 	}{
 		{
 			"Test submodule if name is empty",
 			core.SubModule{
-				Path:     "/x/y",
-				Patterns: []string{"/a/c"},
+				Path:      "/x/y",
+				Patterns:  []string{"/a/c"},
+				Framework: "mocha",
 			},
-
-			errs.New("module name is not defined"),
+			"/ab/cd.yml",
+			&errs.ErrInvalidConf{
+				// nolint:lll
+				Message: "Invalid values provided for the following fields in the `/ab/cd.yml` configuration file: \n",
+				Fields:  []string{"name"},
+				Values:  []interface{}{""}},
 		},
 		{
 			"Test submodule if path is empty",
 			core.SubModule{
-				Name:     "some name",
-				Patterns: []string{"/a/c"},
+				Name:      "some name",
+				Framework: "jest",
+				Patterns:  []string{"/a/c"},
 			},
-
-			errs.New("module path is not defined for module some name "),
+			"/ab/cd.yml",
+			&errs.ErrInvalidConf{
+				// nolint:lll
+				Message: "Invalid values provided for the following fields in the `/ab/cd.yml` configuration file: \n",
+				Fields:  []string{"path"},
+				Values:  []interface{}{""}},
 		},
 		{
 			"Test submodule if pattern length is empty",
 			core.SubModule{
-				Name: "some-name",
-				Path: "/x/y",
+				Name:      "some-name",
+				Path:      "/x/y",
+				Framework: "jasmine",
 			},
-
-			errs.New("module some-name pattern length is 0"),
+			"/ab/cd.yml",
+			&errs.ErrInvalidConf{
+				// nolint:lll
+				Message: "Invalid values provided for the following fields in the `/ab/cd.yml` configuration file: \n",
+				Fields:  []string{"pattern"},
+				Values:  []interface{}{[]string(nil)}},
+		},
+		{
+			"Test submodule if framework is not mentioned",
+			core.SubModule{
+				Name:     "some name",
+				Path:     "/x/y",
+				Patterns: []string{"/a/c"},
+			},
+			"/ab/cd.yml",
+			&errs.ErrInvalidConf{
+				// nolint:lll
+				Message: "Invalid values provided for the following fields in the `/ab/cd.yml` configuration file: \n",
+				Fields:  []string{"framework"},
+				Values:  []interface{}{""}},
+		},
+		{
+			"Test submodule if framework is  mentioned",
+			core.SubModule{
+				Name:      "some name",
+				Path:      "/x/y",
+				Patterns:  []string{"/a/c"},
+				Framework: "mocha",
+			},
+			"/ab/cd.yml",
+			nil,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotErr := ValidateSubModule(&tt.subModule)
+			gotErr := ValidateSubModule(&tt.subModule, tt.path)
 			assert.Equal(t, tt.wantErr, gotErr, "Error mismatch")
 		})
 	}

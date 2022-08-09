@@ -116,7 +116,7 @@ func (tc *tasConfigManager) validateYMLV2(ctx context.Context,
 		}
 		subModuleMap := map[string]bool{}
 		for i := 0; i < len(tasConfig.PreMerge.SubModules); i++ {
-			if err := utils.ValidateSubModule(&tasConfig.PreMerge.SubModules[i]); err != nil {
+			if err := utils.ValidateSubModule(&tasConfig.PreMerge.SubModules[i], yamlFilePath); err != nil {
 				return nil, err
 			}
 			if _, ok := subModuleMap[tasConfig.PreMerge.SubModules[i].Name]; ok {
@@ -132,7 +132,7 @@ func (tc *tasConfigManager) validateYMLV2(ctx context.Context,
 		subModuleMap := map[string]bool{}
 
 		for i := 0; i < len(tasConfig.PostMerge.SubModules); i++ {
-			if err := utils.ValidateSubModule(&tasConfig.PostMerge.SubModules[i]); err != nil {
+			if err := utils.ValidateSubModule(&tasConfig.PostMerge.SubModules[i], yamlFilePath); err != nil {
 				return nil, err
 			}
 			if _, ok := subModuleMap[tasConfig.PostMerge.SubModules[i].Name]; ok {

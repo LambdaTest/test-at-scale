@@ -224,15 +224,13 @@ func validateStruct(validate *validator.Validate, config interface{}, ymlFilenam
 }
 
 // ValidateSubModule validates submodule
-func ValidateSubModule(module *core.SubModule) error {
-	if module.Name == "" {
-		return errs.New("module name is not defined")
+func ValidateSubModule(module *core.SubModule, ymlFileName string) error {
+	validate, err := getValidator()
+	if err != nil {
+		return err
 	}
-	if module.Path == "" {
-		return errs.New(fmt.Sprintf("module path is not defined for module %s ", module.Name))
-	}
-	if len(module.Patterns) == 0 {
-		return errs.New(fmt.Sprintf("module %s pattern length is 0", module.Name))
+	if err := validateStruct(validate, module, ymlFileName); err != nil {
+		return err
 	}
 
 	return nil
