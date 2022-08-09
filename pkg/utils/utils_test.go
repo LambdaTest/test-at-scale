@@ -371,7 +371,6 @@ func TestValidateSubModule(t *testing.T) {
 			},
 			"/ab/cd.yml",
 			&errs.ErrInvalidConf{
-				// nolint:lll
 				Message: "Invalid values provided for the following fields in the `/ab/cd.yml` configuration file: \n",
 				Fields:  []string{"name"},
 				Values:  []interface{}{""}},
@@ -385,7 +384,6 @@ func TestValidateSubModule(t *testing.T) {
 			},
 			"/ab/cd.yml",
 			&errs.ErrInvalidConf{
-				// nolint:lll
 				Message: "Invalid values provided for the following fields in the `/ab/cd.yml` configuration file: \n",
 				Fields:  []string{"path"},
 				Values:  []interface{}{""}},
@@ -399,7 +397,6 @@ func TestValidateSubModule(t *testing.T) {
 			},
 			"/ab/cd.yml",
 			&errs.ErrInvalidConf{
-				// nolint:lll
 				Message: "Invalid values provided for the following fields in the `/ab/cd.yml` configuration file: \n",
 				Fields:  []string{"pattern"},
 				Values:  []interface{}{[]string(nil)}},
@@ -413,7 +410,6 @@ func TestValidateSubModule(t *testing.T) {
 			},
 			"/ab/cd.yml",
 			&errs.ErrInvalidConf{
-				// nolint:lll
 				Message: "Invalid values provided for the following fields in the `/ab/cd.yml` configuration file: \n",
 				Fields:  []string{"framework"},
 				Values:  []interface{}{""}},
