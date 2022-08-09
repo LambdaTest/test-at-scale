@@ -206,7 +206,7 @@ func (d *driverV1) setUp(ctx context.Context, payload *core.Payload,
 		})
 	}
 
-	//java setup
+	// java setup
 	if language == "java" && tasConfig.JavaVersion != "" {
 		err := d.javaInstaller.InstallJavaVersion(ctx, tasConfig.JavaVersion)
 		if err != nil {

@@ -111,9 +111,10 @@ func (n *NodeInstaller) InstallNodeVersion(ctx context.Context, nodeVersion stri
 func (j *JavaInstaller) InstallJavaVersion(ctx context.Context, javaVersion string) error {
 	j.logger.Infof("Setting java version to %s", javaVersion)
 	javaVersionToInstall := global.JavaVersionMap[javaVersion]
-	commands := []string{}
-	commands = append(commands, "source $SDKMAN_DIR/bin/sdkman-init.sh")
-	commands = append(commands, fmt.Sprintf(global.JavaVersionSetupCmds, javaVersionToInstall))
+
+	commands := []string{"source $SDKMAN_DIR/bin/sdkman-init.sh",
+		fmt.Sprintf(global.JavaVersionSetupCmds, javaVersionToInstall),
+	}
 	err := j.ExecutionManager.ExecuteInternalCommands(ctx, core.JavaRunnerConfiguration, commands, global.RepoDir, nil, nil)
 	if err != nil {
 		j.logger.Errorf("Unable to install user-defined javaversion %v", err)
