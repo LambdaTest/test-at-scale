@@ -116,7 +116,7 @@ func (j *JavaInstaller) InstallJavaVersion(ctx context.Context, javaVersion stri
 	commands = append(commands, fmt.Sprintf(global.JavaVersionSetupCmds, javaVersionToInstall))
 	err := j.ExecutionManager.ExecuteInternalCommands(ctx, core.JavaRunnerConfiguration, commands, global.RepoDir, nil, nil)
 	if err != nil {
-		j.logger.Errorf("Unable to install user-defined nodeversion %v", err)
+		j.logger.Errorf("Unable to install user-defined javaversion %v", err)
 		err = errs.New(errs.GenericErrRemark.Error())
 		return err
 	}
