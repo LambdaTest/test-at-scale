@@ -43,6 +43,7 @@ func (tds *testDiscoveryService) Discover(ctx context.Context, discoveryArgs *co
 	if err != nil {
 		return nil, err
 	}
+
 	impactAll := tds.shouldImpactAll(discoveryArgs.SmartRun, configFilePath, discoveryArgs.Diff)
 
 	args := utils.GetArgs("discover", discoveryArgs.FrameWork, discoveryArgs.FrameWorkVersion,
@@ -78,13 +79,37 @@ func (tds *testDiscoveryService) Discover(ctx context.Context, discoveryArgs *co
 	cmd.Stderr = maskWriter
 
 	tds.logger.Debugf("Executing test discovery command: %s", cmd.String())
-	if err := cmd.Run(); err != nil {
-		tds.logger.Errorf("command %s of type %s failed with error: %v", cmd.String(), core.Discovery, err)
-		return nil, err
+
+	payload := discoveryArgs.Payload
+	discoveryResults := &core.DiscoveryResult{
+		TaskID:          payload.TaskID,
+		BuildID:         payload.BuildID,
+		RepoID:          payload.RepoID,
+		OrgID:           payload.OrgID,
+		CommitID:        payload.BuildTargetCommit,
+		Branch:          payload.BranchName,
+		ExecuteAllTests: true,
 	}
 
-	testDiscoveryResult := <-tds.tdResChan
-	return &testDiscoveryResult, nil
+	go tds.executeCommand(cmd)
+
+	for res := range tds.tdResChan {
+		discoveryResults.Tests = append(discoveryResults.Tests, res.Tests...)
+		discoveryResults.TestSuites = append(discoveryResults.TestSuites, res.TestSuites...)
+	}
+	tds.logger.Debugf("discovery results %+v", discoveryResults)
+	tds.logger.Debugf("discovery results %+v", len(discoveryResults.Tests))
+	return discoveryResults, nil
+}
+
+func (tds *testDiscoveryService) executeCommand(cmd *exec.Cmd) error {
+	if err := cmd.Start(); err != nil {
+		tds.logger.Errorf("command %s of type %s failed with error: %v", cmd.String(), core.Discovery, err)
+		return err
+	}
+	cmd.Wait()
+	close(tds.tdResChan)
+	return nil
 }
 
 func (tds *testDiscoveryService) shouldImpactAll(smartRun bool, configFilePath string, diff map[string]int) bool {
