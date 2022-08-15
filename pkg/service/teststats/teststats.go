@@ -18,6 +18,7 @@ type ProcStats struct {
 	ExecutionResultInputChannel  chan core.ExecutionResults
 	wg                           sync.WaitGroup
 	ExecutionResultOutputChannel chan *core.ExecutionResults
+	DoneChan                     chan struct{}
 }
 
 // New returns instance of ProcStats
@@ -26,6 +27,7 @@ func New(cfg *config.NucleusConfig, logger lumber.Logger) (*ProcStats, error) {
 		logger:                       logger,
 		ExecutionResultInputChannel:  make(chan core.ExecutionResults),
 		ExecutionResultOutputChannel: make(chan *core.ExecutionResults),
+		DoneChan:                     make(chan struct{}),
 	}, nil
 
 }
@@ -33,20 +35,29 @@ func New(cfg *config.NucleusConfig, logger lumber.Logger) (*ProcStats, error) {
 // CaptureTestStats combines the ps stats for each test
 func (s *ProcStats) CaptureTestStats(pid int32, collectStats bool) error {
 	ps, err := procfs.New(pid, global.SamplingTime, false)
-	if err != nil {
-		s.logger.Errorf("failed to find process stats with pid %d %v", pid, err)
-		return err
-	}
+	// if err != nil {
+	// 	s.logger.Errorf("failed to find process stats with pid %d %v", pid, err)
+	// 	return err
+	// }
 
 	s.wg.Add(1)
 	go func() {
 		defer s.wg.Done()
+		s.logger.Debugf("Waiting for data collection input channel")
 		processStats := ps.GetStatsInInterval()
+		s.logger.Debugf("data collection done")
 		if len(processStats) == 0 {
 			s.logger.Errorf("no process stats found with pid %d", pid)
 		}
-		select {
-		case executionResults := <-s.ExecutionResultInputChannel:
+
+		s.logger.Debugf("Waiting for input channel")
+
+		// loop:
+		// 	for {
+		// 		select {
+		// case executionResults := <-s.ExecutionResultInputChannel:
+		for executionResults := range s.ExecutionResultInputChannel {
+
 			if collectStats {
 				for ind := range executionResults.Results {
 					// Refactor the impl of below 2 functions using generics when Go 1.18 arrives
@@ -55,14 +66,20 @@ func (s *ProcStats) CaptureTestStats(pid int32, collectStats bool) error {
 					s.appendStatsToTestSuites(executionResults.Results[ind].TestSuitePayload, processStats)
 				}
 			}
+			s.logger.Debugf("tests added : %v", len(executionResults.Results))
 			s.ExecutionResultOutputChannel <- &executionResults
-		default:
-			// Can reach here in 2 cases (ie `/results` API wasn't called):
-			// 1. runner process exited with zero exit exitCode but no testFiles were run (changes in Readme.md etc)
-			// 2. runner process exited with non-zero exitCode
-			s.logger.Warnf("No test results found, pid %d", pid)
-			s.ExecutionResultOutputChannel <- nil
+			// case <-s.DoneChan:
+			// 	break loop
+
+			// default:
+			// 	// Can reach here in 2 cases (ie `/results` API wasn't called):
+			// 	// 1. runner process exited with zero exit exitCode but no testFiles were run (changes in Readme.md etc)
+			// 	// 2. runner process exited with non-zero exitCode
+			// 	s.logger.Warnf("No test results found, pid %d", pid)
+			// 	s.ExecutionResultOutputChannel <- nil
 		}
+		// }
+		close(s.ExecutionResultOutputChannel)
 	}()
 
 	return nil

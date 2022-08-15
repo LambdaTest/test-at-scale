@@ -97,8 +97,6 @@ func (tds *testDiscoveryService) Discover(ctx context.Context, discoveryArgs *co
 		discoveryResults.Tests = append(discoveryResults.Tests, res.Tests...)
 		discoveryResults.TestSuites = append(discoveryResults.TestSuites, res.TestSuites...)
 	}
-	tds.logger.Debugf("discovery results %+v", discoveryResults)
-	tds.logger.Debugf("discovery results %+v", len(discoveryResults.Tests))
 	return discoveryResults, nil
 }
 

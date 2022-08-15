@@ -103,31 +103,40 @@ func (tes *testExecutionService) Run(ctx context.Context,
 		cmd.Stdout = maskWriter
 		cmd.Stderr = maskWriter
 		tes.logger.Debugf("Executing test execution command: %s", cmd.String())
-		if err := cmd.Start(); err != nil {
-			tes.logger.Errorf("failed to execute test %s %v", cmd.String(), err)
-			return nil, err
-		}
-		pid := int32(cmd.Process.Pid)
-		tes.logger.Debugf("execution command started with pid %d", pid)
 
-		if err := tes.ts.CaptureTestStats(pid, tes.cfg.CollectStats); err != nil {
-			tes.logger.Errorf("failed to find process for command %s with pid %d %v", cmd.String(), pid, err)
-			return nil, err
-		}
-		err := cmd.Wait()
-		result := <-tes.ts.ExecutionResultOutputChannel
-		if err != nil {
-			tes.logger.Errorf("error in test execution: %+v", err)
-			// returning error when result is nil to throw execution errors like heap out of memory
-			if result == nil {
-				return nil, err
+		go tes.executeCommand(cmd)
+
+		for result := range tes.ts.ExecutionResultOutputChannel {
+			if err != nil {
+				tes.logger.Errorf("error in test execution: %+v", err)
+				// returning error when result is nil to throw execution errors like heap out of memory
+				if result == nil {
+					return nil, err
+				}
 			}
-		}
-		if result != nil {
-			executionResults.Results = append(executionResults.Results, result.Results...)
+			if result != nil {
+				executionResults.Results = append(executionResults.Results, result.Results...)
+			}
 		}
 	}
 	return executionResults, nil
+}
+
+func (tes *testExecutionService) executeCommand(cmd *exec.Cmd) error {
+	if err := cmd.Start(); err != nil {
+		tes.logger.Errorf("command %s of type %s failed with error: %v", cmd.String(), core.Discovery, err)
+		return err
+	}
+
+	pid := int32(cmd.Process.Pid)
+	tes.logger.Debugf("execution command started with pid %d", pid)
+	if err := tes.ts.CaptureTestStats(pid, tes.cfg.CollectStats); err != nil {
+		tes.logger.Errorf("failed to find process for command %s with pid %d %v", cmd.String(), pid, err)
+		return err
+	}
+	cmd.Wait()
+	close(tes.ts.ExecutionResultInputChannel)
+	return nil
 }
 
 func getPatternAndEnvV1(payload *core.Payload, tasConfig *core.TASConfig) (target []string, envMap map[string]string) {
