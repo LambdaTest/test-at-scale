@@ -85,6 +85,11 @@ func (tes *testExecutionService) Run(ctx context.Context,
 		TaskType: payload.TaskType,
 	}
 	for i := 1; i <= tes.cfg.ConsecutiveRuns; i++ {
+
+		// recreation of channels since they are closed to collect results after command execution
+		tes.ts.ExecutionResultInputChannel = make(chan core.ExecutionResults)
+		tes.ts.ExecutionResultOutputChannel = make(chan *core.ExecutionResults)
+
 		var cmd *exec.Cmd
 		if testExecutionArgs.FrameWork == "jasmine" || testExecutionArgs.FrameWork == "mocha" {
 			if collectCoverage {
