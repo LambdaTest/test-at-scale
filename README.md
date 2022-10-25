@@ -1,5 +1,7 @@
 <p align="center">
+  <a href="https://www.lambdatest.com/?fp_ref=khalifa12">
   <img src="https://www.lambdatest.com/blog/wp-content/uploads/2020/08/LambdaTest-320-180.png" />
+  </a>
 </p>
 <h1 align="center">Test At Scale</h1>
 
