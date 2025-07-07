@@ -37,7 +37,7 @@ To learn more about TAS features and capabilities, see our [product page](https:
 - Allows blocking and unblocking tests directly from the UI or YAML directive. No more WIP commits!
 - Support for customizing testing environment using raw commands in pre and poststeps
 - Supports Javascript monorepos
-- Smart depdency caching to speedup subsequent test runs
+- Smart dependency caching to speedup subsequent test runs
 - Easily customizable to support all major language and frameworks
 - Available as [hosted solution](https://lambdatest.com/test-at-scale) as well as self-hosted opensource runner
 - [Upcoming] Smart flaky test management 🪄
@@ -101,7 +101,7 @@ curl https://raw.githubusercontent.com/LambdaTest/test-at-scale/main/.sample.syn
   ```bash
   docker info --format "CPU: {{.NCPU}}, RAM: {{.MemTotal}}"
   ```
-- Execute the above command to ensure that resources usable by Docker are atleast `CPU: 2, RAM: 4294967296`.
+- Execute the above command to ensure that resources usable by Docker are at least `CPU: 2, RAM: 4294967296`.
   > **NOTE:** In order to run test-at-scale you require a minimum configuration of 2 CPU cores and 4 GiBs of RAM.
 
 - The `.synapse.json` configuration file made in [Step 2](#step-2---creating-a-configuration-file-for-self-hosted-setup) will be required before executing the next command.
