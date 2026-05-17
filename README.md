@@ -1,12 +1,18 @@
 <p align="center">
   <img src="https://www.lambdatest.com/blog/wp-content/uploads/2020/08/LambdaTest-320-180.png" />
 </p>
-<h1 align="center">Test At Scale</h1>
+
+# Test At Scale - TestMu AI (Formerly LambdaTest)
 
 ![N|Solid](https://www.lambdatest.com/resources/images/TAS_banner.png)
 
 <p align="center">
   <b>Test Smarter, Release Faster with test-at-scale.</b>
+</p>
+
+<p align="center">
+  <a href="https://www.testmuai.com/"><img src="https://img.shields.io/badge/MADE%20BY%20TestMu%20AI-000000.svg?style=for-the-badge&labelColor=000" alt="Made by TestMu AI"></a>
+  <a href="https://community.testmuai.com/"><img src="https://img.shields.io/badge/Join%20the%20community-blueviolet.svg?style=for-the-badge&labelColor=000000" alt="Community"></a>
 </p>
 
 <p align="center">
@@ -23,7 +29,7 @@
 TAS helps you accelerate your testing, shorten job times and get faster feedback on code changes, manage flaky tests and keep master green at all times.
 <br/>
 
-To learn more about TAS features and capabilities, see our [product page](https://www.lambdatest.com/test-at-scale). 
+To learn more about TAS features and capabilities, see our product page on TestMu AI (Formerly LambdaTest).
 
 ## Features
 - Smart test selection to run only the subset of tests which get impacted by a commit ⚡
@@ -39,27 +45,34 @@ To learn more about TAS features and capabilities, see our [product page](https:
 - Supports Javascript monorepos
 - Smart depdency caching to speedup subsequent test runs
 - Easily customizable to support all major language and frameworks
-- Available as [hosted solution](https://lambdatest.com/test-at-scale) as well as self-hosted opensource runner
+- Available as hosted solution as well as self-hosted opensource runner
 - [Upcoming] Smart flaky test management 🪄
 
 ## Table of contents 
 - 🚀 [Getting Started](#getting-started)
 - 💡 [Tutorials](#tutorials)
 - 💖 [Contribute](#contribute)
-- 📖 [Docs](https://www.lambdatest.com/support/docs/tas-overview)
+- 📖 [Docs](https://www.testmuai.com/support/docs/)
 
 ## Getting Started
 
+TestMu AI (Formerly LambdaTest) is an AI-native, multi-agent quality engineering platform. Test At Scale (TAS) is part of this platform and helps you accelerate testing pipelines with smart test selection.
+
+Use this repository to set up and run TAS on TestMu AI (Formerly LambdaTest).
+
+- [Sign up on TestMu AI](https://www.testmuai.com/register/) (Formerly LambdaTest).
+- Follow the [TestMu AI Documentation](https://www.testmuai.com/support/docs/) for the full setup walkthrough.
+
 ### Step 1 - Setting up a New Account
 
-In order to create an account, visit [TAS Login Page](https://tas.lambdatest.com/login/). (Or [TAS Home Page](https://tas.lambdatest.com/))
+In order to create an account, visit the TestMu AI (Formerly LambdaTest) TAS Login Page.
 - Login using a suitable git provider and select your organization you want to continue with.
 - Tell us your specialization, team size. 
 
   ![N|Solid](https://www.lambdatest.com/support/assets/images/signup_gi-f776f9b5a6ad4d877e6c427094969e1e.gif)
   
 - Select **TAS Self Hosted** and click on Proceed.
-- You will find your **LambdaTest Secret Key** on this page which will be required in the next steps.
+- You will find your **Secret Key** on this page which will be required in the next steps.
 
   ![N|Solid](https://www.lambdatest.com/support/assets/images/synapse-e3e691d8f3d08ff6b3b2ced1a9ef61ed.gif)
 
@@ -82,9 +95,9 @@ curl https://raw.githubusercontent.com/LambdaTest/test-at-scale/main/.sample.syn
 - Open the downloaded `.synapse.json` configuration file in any editor of your choice such as `vi`, `nano`, `code`, etc.
 > **NOTE**: `.synapse.json` file is hidden by default. You can list it using `ls -la` command.
 - You will need to add the following in this file:
-  - 1- **LambdaTest Secret Key**, that you got at the end of **Step 1**.
-  - 2- **Git Token**, that would be required to clone the repositories after Step 3. Generating [GitHub](https://www.lambdatest.com/support/docs/tas-how-to-guides-gh-token), [GitLab](https://www.lambdatest.com/support/docs/tas-how-to-guides-gl-token) personal access token.
-- This file will also be used to store certain other parameters such as **Repository Secrets** (Optional), **Container Registry** (Optional) etc that might be required in configuring test-at-scale on your local/self-hosted environment. You can learn more about the configuration options [here](https://www.lambdatest.com/support/docs/tas-self-hosted-configuration#parameters).
+  - 1- **Secret Key**, that you got at the end of **Step 1**.
+  - 2- **Git Token**, that would be required to clone the repositories after Step 3. Generating GitHub, GitLab personal access token.
+- This file will also be used to store certain other parameters such as **Repository Secrets** (Optional), **Container Registry** (Optional) etc that might be required in configuring test-at-scale on your local/self-hosted environment. You can learn more about the configuration options in the [TestMu AI Documentation](https://www.testmuai.com/support/docs/).
 
 <br>
 
@@ -142,9 +155,9 @@ docker run --name synapse --restart always \
 <summary>Installation on <b> Local Machine </b> & <b> Supported Cloud Platforms </b> </summary>
 
 - Local Machine - Setup using [docker](#docker).
-- Setup on [Azure](https://www.lambdatest.com/support/docs/tas-self-hosted-installation#azure)
-- Setup on [AWS](https://www.lambdatest.com/support/docs/tas-self-hosted-installation#aws)
-- Setup on [GCP](https://www.lambdatest.com/support/docs/tas-self-hosted-installation#gcp)
+- Setup on Azure (see [TestMu AI Documentation](https://www.testmuai.com/support/docs/))
+- Setup on AWS (see [TestMu AI Documentation](https://www.testmuai.com/support/docs/))
+- Setup on GCP (see [TestMu AI Documentation](https://www.testmuai.com/support/docs/))
 </details>
 
 - Once the installation is complete, go back to the TAS portal.
@@ -166,7 +179,7 @@ docker run --name synapse --restart always \
 ### Step 5 - Configuring TAS yml
 A `.tas.yml` file is a basic yaml configuration file that contains steps required for installing necessary dependencies and executing the tests present in your repository.
 - In order to configure your imported repository, follow the steps given on the `.tas.yml`  configuration page.
-- You can also know more about `.tas.yml` configuration parameters [here](https://www.lambdatest.com/support/docs/tas-configuring-tas-yml).
+- You can also know more about `.tas.yml` configuration parameters in the [TestMu AI Documentation](https://www.testmuai.com/support/docs/).
 
   ![N|Solid](https://www.lambdatest.com/support/assets/images/yml-download-6e7366b290de36ef8cb74f3d564850af.gif)
   
@@ -181,10 +194,10 @@ A `.tas.yml` file is a basic yaml configuration file that contains steps require
 Currently we support Mocha, Jest and Jasmine for testing Javascript codebases.
 
 ## **Tutorials**
-- [Setting up you first repo on TAS - Cloud](https://www.lambdatest.com/support/docs/tas-getting-started-integrating-your-first-repo/) 
-- [Setting up you first repo on TAS - Self Hosted](https://www.lambdatest.com/support/docs/tas-self-hosted-installation) 
+- Setting up your first repo on TAS - Cloud (see [TestMu AI Documentation](https://www.testmuai.com/support/docs/))
+- Setting up your first repo on TAS - Self Hosted (see [TestMu AI Documentation](https://www.testmuai.com/support/docs/))
 - Sample repos : [Mocha](https://github.com/LambdaTest/mocha-demos), [Jest](https://github.com/LambdaTest/jest-demos), [Jasmine](https://github.com/LambdaTest/jasmine-node-js-example).
-- [How to configure a .tas.yml file](https://www.lambdatest.com/support/docs/tas-configuring-tas-yml)
+- How to configure a .tas.yml file (see [TestMu AI Documentation](https://www.testmuai.com/support/docs/))
 
 ## **Contribute**
 We love our contributors! If you'd like to contribute anything from a bug fix to a feature update, start here:
@@ -201,12 +214,34 @@ Join the Test-at-scale Community on [Discord](https://discord.gg/Wyf8srhf6K). Cl
 
 ### **Support & Troubleshooting** 
 The documentation and community will help you troubleshoot most issues. If you have encountered a bug, you can contact us using one of the following channels:
-- Help yourself with our [Documentation](https://www.lambdatest.com/support/docs/tas-overview)📚, and [FAQs](https://www.lambdatest.com/support/docs/tas-faq-and-troubleshooting/).
+- Help yourself with our [TestMu AI Documentation](https://www.testmuai.com/support/docs/).
 - In case of Issue & bugs go to [GitHub issues](https://github.com/LambdaTest/test-at-scale/issues)🐛.
-- For support & feedback join our [Discord](https://discord.gg/Wyf8srhf6K) or reach out to us on our [email](mailto:hello.tas@lambdatest.com)💬.
+- For support & feedback join our [Discord](https://discord.gg/Wyf8srhf6K) or reach out to us on our [email](mailto:support@testmuai.com)💬.
 
 We are committed to fostering an open and welcoming environment in the community. Please see the Code of Conduct.
 
 ## **License**
 
 TestAtScale is available under the [Apache License 2.0](https://github.com/LambdaTest/test-at-scale/blob/main/LICENSE). Use it wisely.
+
+## LambdaTest is Now TestMu AI
+
+On **January 12, 2026**, [LambdaTest evolved to TestMu AI](https://www.testmuai.com/lambdatest-is-now-testmuai/), the world's first fully autonomous **Agentic AI Quality Engineering Platform**.
+
+Same team. Same infrastructure. Same customer accounts. All existing LambdaTest logins, scripts, capabilities, and integrations continue to work without change.
+
+ð Find the new home for [LambdaTest](https://www.testmuai.com).
+
+### How LambdaTest Evolved into TestMu AI
+
+In 2017, we launched LambdaTest with a simple mission: make testing fast, reliable, and accessible. As LambdaTest grew, we expanded into Test Intelligence, Visual Regression Testing, Accessibility Testing, API Testing, and Performance Testing, covering the full depth of the testing lifecycle.
+
+As software development entered the AI era, testing had to evolve, too. We rebuilt the architecture to be AI-native from the ground up, with autonomous agents that **plan, author, execute, analyze, and optimize tests** while keeping humans in the loop. The platform integrates with your repos, CI, IDEs, and terminals, continuously learning from every code change and development signal.
+
+That evolution earned a new name: **TestMu AI**, built for an AI-first future of quality engineering. TestMu is not a new name for us. It is the name of our annual community conference, which has brought together 100,000+ quality engineers to discuss how AI would reshape testing, long before that became an industry norm. 
+
+What started as a high-performance cloud testing platform has transformed into an AI-native, multi-agent system powering a connected, end-to-end quality layer. That evolution defined a new identity: LambdaTest evolved into TestMu AI, built for an AI-first future of quality engineering.
+
+## Support
+
+Got a question? Email [support@testmuai.com](mailto:support@testmuai.com) or chat with us 24x7 from our chat portal.
